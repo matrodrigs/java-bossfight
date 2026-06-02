@@ -1,0 +1,10 @@
+.gradle/
+.codex-runtime/
+build/
+out/
+
+*.log
+*.tmp
+
+.idea/
+*.iml
