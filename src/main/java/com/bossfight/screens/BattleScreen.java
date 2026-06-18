@@ -52,6 +52,12 @@ public class BattleScreen extends ScreenAdapter {
     private static final float SPECIAL_CLOCK_SIZE = 70f;
     private static final float SPECIAL_CLOCK_X = PLAYER_HUD_X + HP_BOX_WIDTH + PLAYER_HUD_GAP;
     private static final float SPECIAL_CLOCK_Y = PLAYER_HUD_Y + (HP_BOX_HEIGHT - SPECIAL_CLOCK_SIZE) * 0.5f;
+    private static final int MAX_PHASE_SHOCKWAVES = 8;
+    private static final float PHASE_SHOCKWAVE_DURATION = 0.72f;
+    private static final float PHASE_SHOCKWAVE_START_RADIUS_X = 48f;
+    private static final float PHASE_SHOCKWAVE_END_RADIUS_X = 650f;
+    private static final float PHASE_SHOCKWAVE_START_RADIUS_Y = 18f;
+    private static final float PHASE_SHOCKWAVE_END_RADIUS_Y = 150f;
 
     private enum PlayerPose {
         HURT,
@@ -94,6 +100,8 @@ public class BattleScreen extends ScreenAdapter {
     private final ProjectileSystem projectileSystem;
     private final ParticleSystem particleSystem;
     private final CollisionSystem collisionSystem;
+    private final float[] phaseShockwaveTimers = new float[MAX_PHASE_SHOCKWAVES];
+    private final float[] phaseShockwaveStrengths = new float[MAX_PHASE_SHOCKWAVES];
     private float elapsed;
     private float introTimer;
     private float hitstopTimer;
@@ -215,6 +223,7 @@ public class BattleScreen extends ScreenAdapter {
         elapsed += delta;
         shakeTimer = Math.max(0f, shakeTimer - delta);
         particleSystem.update(delta);
+        updatePhaseShockwaves(delta);
 
         if (introPausedForTransition) {
             return true;
@@ -319,6 +328,14 @@ public class BattleScreen extends ScreenAdapter {
         projectileSystem.renderWarnings(shapeRenderer);
 
         shapeRenderer.end();
+
+        if (hasActivePhaseShockwave()) {
+            Gdx.gl.glLineWidth(4f);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            drawPhaseShockwaves(shapeRenderer);
+            shapeRenderer.end();
+            Gdx.gl.glLineWidth(1f);
+        }
 
         renderBossSprite();
         renderPlayerSprite();
@@ -745,8 +762,17 @@ public class BattleScreen extends ScreenAdapter {
                 case MAGIC_VOLLEY -> AudioManager.Cue.BOSS_MAGIC_VOLLEY;
                 case POLLEN_CHARGE -> AudioManager.Cue.BOSS_POLLEN_CHARGE;
                 case POLLEN_DROP -> AudioManager.Cue.BOSS_POLLEN_DROP;
+                case PHASE_ROAR -> AudioManager.Cue.BOSS_PHASE_ROAR;
+                case PHASE_SHOCKWAVE -> AudioManager.Cue.BOSS_PHASE_SHOCKWAVE;
             };
             game.getAudioManager().playCue(cue);
+            if (soundEvent == BossSoundEvent.PHASE_ROAR) {
+                requestShake(14f, 0.42f);
+                spawnPhaseShockwave(1.2f);
+            } else if (soundEvent == BossSoundEvent.PHASE_SHOCKWAVE) {
+                requestShake(10f, 0.24f);
+                spawnPhaseShockwave(1f);
+            }
         }
     }
 
@@ -809,6 +835,64 @@ public class BattleScreen extends ScreenAdapter {
         shakeMagnitude = Math.max(shakeMagnitude, magnitude);
         shakeDuration = Math.max(0.01f, duration);
         shakeTimer = Math.max(shakeTimer, duration);
+    }
+
+    private void updatePhaseShockwaves(float delta) {
+        for (int i = 0; i < phaseShockwaveTimers.length; i++) {
+            phaseShockwaveTimers[i] = Math.max(0f, phaseShockwaveTimers[i] - delta);
+        }
+    }
+
+    private void spawnPhaseShockwave(float strength) {
+        int slot = 0;
+        float lowestTimer = phaseShockwaveTimers[0];
+        for (int i = 0; i < phaseShockwaveTimers.length; i++) {
+            if (phaseShockwaveTimers[i] <= 0f) {
+                slot = i;
+                break;
+            }
+            if (phaseShockwaveTimers[i] < lowestTimer) {
+                lowestTimer = phaseShockwaveTimers[i];
+                slot = i;
+            }
+        }
+
+        phaseShockwaveTimers[slot] = PHASE_SHOCKWAVE_DURATION;
+        phaseShockwaveStrengths[slot] = strength;
+    }
+
+    private boolean hasActivePhaseShockwave() {
+        for (float timer : phaseShockwaveTimers) {
+            if (timer > 0f) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void drawPhaseShockwaves(ShapeRenderer shapeRenderer) {
+        float centerX = boss.getCenterX() - 42f;
+        float centerY = Constants.FLOOR_Y + 340f;
+
+        for (int i = 0; i < phaseShockwaveTimers.length; i++) {
+            float timer = phaseShockwaveTimers[i];
+            if (timer <= 0f) {
+                continue;
+            }
+
+            float progress = 1f - MathUtils.clamp(timer / PHASE_SHOCKWAVE_DURATION, 0f, 1f);
+            float strength = phaseShockwaveStrengths[i];
+            float eased = 1f - (1f - progress) * (1f - progress);
+            float radiusX = MathUtils.lerp(PHASE_SHOCKWAVE_START_RADIUS_X, PHASE_SHOCKWAVE_END_RADIUS_X, eased) * strength;
+            float radiusY = MathUtils.lerp(PHASE_SHOCKWAVE_START_RADIUS_Y, PHASE_SHOCKWAVE_END_RADIUS_Y, eased) * strength;
+            float alpha = (1f - progress) * (1f - progress) * 0.5f;
+
+            shapeRenderer.setColor(1f, 0.9f, 0.36f, alpha);
+            shapeRenderer.ellipse(centerX - radiusX, centerY - radiusY, radiusX * 2f, radiusY * 2f);
+            shapeRenderer.setColor(1f, 0.28f, 0.12f, alpha * 0.42f);
+            shapeRenderer.ellipse(centerX - radiusX * 0.72f, centerY - radiusY * 0.72f,
+                    radiusX * 1.44f, radiusY * 1.44f);
+        }
     }
 
     private void applyCameraShake() {

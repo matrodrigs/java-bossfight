@@ -13,7 +13,7 @@ Este build não copia sprites, músicas, efeitos, logos, fontes ou arquivos ofic
 - `sprites/background/floral_vintage/**/*.png`: camadas finais de cenário floral vintage, geradas com OpenAI imagegen e recortadas localmente para montagem em parallax.
 - `audio/voice/narrator_intro.wav`: locução gerada pelo Google AI Studio para a abertura da luta, sincronizada com os textos READY?/GO!.
 - `audio/voice/narrator_knockout.wav`: locução gerada pelo Google AI Studio para o encerramento da luta.
-- `audio/music/boss_fight_theme.mp3`: trilha usada na luta.
+- `audio/music/menu_theme.mp3`, `boss_fight_theme.mp3`, `victory_theme.mp3` e `defeat_theme.mp3`: trilhas sonoras obtidas no site Pixabay.
 - Demais efeitos sonoros: sintetizados proceduralmente em runtime pelo `AudioManager`.
 - Fontes/texto: texturas geradas localmente em runtime a partir de fontes do sistema/Java2D para evitar o visual borrado do `BitmapFont` padrão.
 

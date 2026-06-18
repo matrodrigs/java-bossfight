@@ -16,7 +16,10 @@ import com.bossfight.systems.OldFilmEffect;
 public class MainGame extends Game {
     private static final String MENU_MUSIC_PATH = "audio/music/menu_theme.mp3";
     private static final String VINYL_NOISE_PATH = "audio/music/vinyl_noise_loop.mp3";
+    private static final String VICTORY_MUSIC_PATH = "audio/music/victory_theme.mp3";
+    private static final String DEFEAT_MUSIC_PATH = "audio/music/defeat_theme.mp3";
     private static final float MENU_MUSIC_VOLUME = 0.07f;
+    private static final float END_MUSIC_VOLUME = 0.07f;
     private static final float VINYL_NOISE_BASE_VOLUME = 0.03f;
     private static final float VINYL_NOISE_IRIS_VOLUME = 0.1f;
 
@@ -187,6 +190,10 @@ public class MainGame extends Game {
     private void afterIrisTargetScreenChange(IrisTransition.Target target) {
         if (target == IrisTransition.Target.MENU) {
             audioManager.playMusic(MENU_MUSIC_PATH, true, MENU_MUSIC_VOLUME);
+        } else if (target == IrisTransition.Target.END_VICTORY) {
+            audioManager.playMusic(VICTORY_MUSIC_PATH, true, END_MUSIC_VOLUME);
+        } else if (target == IrisTransition.Target.END_DEFEAT) {
+            audioManager.playMusic(DEFEAT_MUSIC_PATH, true, END_MUSIC_VOLUME);
         }
     }
 

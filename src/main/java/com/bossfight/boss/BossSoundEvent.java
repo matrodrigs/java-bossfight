@@ -6,5 +6,7 @@ public enum BossSoundEvent {
     MAGIC_CHARGE,
     MAGIC_VOLLEY,
     POLLEN_CHARGE,
-    POLLEN_DROP
+    POLLEN_DROP,
+    PHASE_ROAR,
+    PHASE_SHOCKWAVE
 }

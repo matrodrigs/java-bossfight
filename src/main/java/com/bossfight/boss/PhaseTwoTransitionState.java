@@ -6,10 +6,11 @@ import com.bossfight.entities.Player;
 import com.bossfight.systems.ProjectileSystem;
 
 public class PhaseTwoTransitionState implements BossState {
-    private static final float DURATION = 1.15f;
+    private static final float DURATION = 1.55f;
+    private static final float[] SHOCKWAVE_TIMES = {0.16f, 0.48f, 0.82f, 1.16f};
 
     private float elapsed;
-    private boolean secondPulsePlayed;
+    private int shockwavesPlayed;
 
     @Override
     public BossVisualState getVisualState() {
@@ -19,8 +20,8 @@ public class PhaseTwoTransitionState implements BossState {
     @Override
     public void enter(Boss boss) {
         elapsed = 0f;
-        secondPulsePlayed = false;
-        boss.emitSound(BossSoundEvent.POLLEN_CHARGE);
+        shockwavesPlayed = 0;
+        boss.emitSound(BossSoundEvent.PHASE_ROAR);
         boss.showTelegraph(new Color(1f, 0.22f, 0.08f, 1f), DURATION);
     }
 
@@ -28,10 +29,10 @@ public class PhaseTwoTransitionState implements BossState {
     public void update(Boss boss, float delta, ProjectileSystem projectileSystem, Player player) {
         elapsed += delta;
 
-        if (!secondPulsePlayed && elapsed >= 0.55f) {
-            secondPulsePlayed = true;
-            boss.emitSound(BossSoundEvent.VINE_CHARGE);
-            boss.showTelegraph(new Color(1f, 0.74f, 0.18f, 1f), 0.46f);
+        while (shockwavesPlayed < SHOCKWAVE_TIMES.length && elapsed >= SHOCKWAVE_TIMES[shockwavesPlayed]) {
+            shockwavesPlayed++;
+            boss.emitSound(BossSoundEvent.PHASE_SHOCKWAVE);
+            boss.showTelegraph(new Color(1f, 0.74f, 0.18f, 1f), 0.32f);
         }
 
         if (elapsed >= DURATION) {

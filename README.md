@@ -1,6 +1,6 @@
 # Fúria Botânica
 
-Boss fight 2D em Java, com estética de desenho animado vintage, arena floral e uma flor-chefe bem pouco amigável. O projeto usa LibGDX + LWJGL3 para entregar uma experiência desktop com movimento rápido, projéteis, dash, ataque especial, efeitos de tela e áudio.
+Boss fight 2D em Java, com estética inspirada no Cuphead, arena floral e uma flor-chefe bem pouco amigável. O projeto usa LibGDX + LWJGL3 para entregar uma experiência desktop com movimento rápido, projéteis, dash, ataque especial, efeitos de tela e áudio.
 
 ## Screenshots
 
