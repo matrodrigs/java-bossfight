@@ -105,6 +105,10 @@ public class MenuScreen extends ScreenAdapter {
     }
 
     private boolean handleInput() {
+        if (game.isIrisTransitionActive()) {
+            return true;
+        }
+
         if (Gdx.input.isKeyJustPressed(Input.Keys.UP) || Gdx.input.isKeyJustPressed(Input.Keys.W)
                 || Gdx.input.isKeyJustPressed(Input.Keys.DOWN) || Gdx.input.isKeyJustPressed(Input.Keys.S)) {
             selectedIndex = 1 - selectedIndex;
@@ -114,11 +118,11 @@ public class MenuScreen extends ScreenAdapter {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
             game.getAudioManager().playCue(AudioManager.Cue.MENU_CONFIRM);
             if (selectedIndex == 0) {
-                game.showBattleScreen();
+                game.showBattleScreenWithIrisTransition();
             } else {
                 Gdx.app.exit();
+                return false;
             }
-            return false;
         }
 
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {

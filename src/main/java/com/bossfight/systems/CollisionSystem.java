@@ -63,7 +63,7 @@ public class CollisionSystem {
             }
 
             if (projectile.getDamage() > 0 && projectile.getHitbox().overlaps(player.getHitbox())) {
-                boolean damaged = player.takeDamage(projectile.getDamage(), projectile.getCenterX());
+                boolean damaged = player.takeDamage(projectile.getDamage(), impactSourceX(player, projectile));
                 projectile.deactivate();
                 projectiles.removeIndex(i);
                 if (damaged) {
@@ -74,6 +74,19 @@ public class CollisionSystem {
                 }
             }
         }
+    }
+
+    private float impactSourceX(Player player, Projectile projectile) {
+        float velocityX = projectile.getVelocityX();
+        if (Math.abs(velocityX) > 1f) {
+            return player.getCenterX() - Math.signum(velocityX);
+        }
+
+        if (projectile.getKind() == Projectile.Kind.BOSS_THORN) {
+            return projectile.getX();
+        }
+
+        return projectile.getCenterX();
     }
 
     private void resolveBossContact(Player player, Boss boss, ParticleSystem particleSystem, AudioManager audioManager) {

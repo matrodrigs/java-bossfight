@@ -52,51 +52,40 @@ public class AudioManager {
     private AudioDevice proceduralDevice;
     private Thread proceduralThread;
     private volatile boolean proceduralAudioRunning;
-    private Music currentMusic;
-    private Music currentVoice;
+    private final MusicChannel musicChannel = new MusicChannel();
+    private final MusicChannel voiceChannel = new MusicChannel();
+    private final MusicChannel ambienceChannel = new MusicChannel();
 
     public AudioManager() {
         startProceduralAudio();
     }
 
     public void playMusic(String path, boolean looping, float volume) {
-        if (!exists(path)) {
-            return;
-        }
-
-        stopMusic();
-        currentMusic = Gdx.audio.newMusic(Gdx.files.internal(path));
-        currentMusic.setLooping(looping);
-        currentMusic.setVolume(Math.max(0f, Math.min(1f, volume)));
-        currentMusic.play();
+        playChannel(musicChannel, path, looping, volume, false);
     }
 
     public void stopMusic() {
-        if (currentMusic != null) {
-            currentMusic.stop();
-            currentMusic.dispose();
-            currentMusic = null;
-        }
+        musicChannel.stop();
     }
 
     public void playVoice(String path, float volume) {
-        if (!exists(path)) {
-            return;
-        }
-
-        stopVoice();
-        currentVoice = Gdx.audio.newMusic(Gdx.files.internal(path));
-        currentVoice.setLooping(false);
-        currentVoice.setVolume(Math.max(0f, Math.min(1f, volume)));
-        currentVoice.play();
+        playChannel(voiceChannel, path, false, volume, false);
     }
 
     public void stopVoice() {
-        if (currentVoice != null) {
-            currentVoice.stop();
-            currentVoice.dispose();
-            currentVoice = null;
-        }
+        voiceChannel.stop();
+    }
+
+    public void playAmbience(String path, float volume) {
+        playChannel(ambienceChannel, path, true, volume, true);
+    }
+
+    public void setAmbienceVolume(float volume) {
+        ambienceChannel.setVolume(clampVolume(volume));
+    }
+
+    public void stopAmbience() {
+        ambienceChannel.stop();
     }
 
     public void playCue(Cue cue) {
@@ -123,6 +112,15 @@ public class AudioManager {
         }
         stopMusic();
         stopVoice();
+        stopAmbience();
+    }
+
+    private void playChannel(MusicChannel channel, String path, boolean looping, float volume, boolean reuseCurrent) {
+        if (!exists(path)) {
+            return;
+        }
+
+        channel.play(path, looping, clampVolume(volume), reuseCurrent);
     }
 
     private boolean exists(String path) {
@@ -189,6 +187,10 @@ public class AudioManager {
         return from + (to - from) * alpha;
     }
 
+    private float clampVolume(float volume) {
+        return Math.max(0f, Math.min(1f, volume));
+    }
+
     private void sleepQuietly(long millis) {
         try {
             Thread.sleep(millis);
@@ -210,6 +212,45 @@ public class AudioManager {
             this.volume = volume;
             this.sweep = sweep;
             this.noiseMix = noiseMix;
+        }
+    }
+
+    private static final class MusicChannel {
+        private Music music;
+        private String path;
+
+        private void play(String path, boolean looping, float volume, boolean reuseCurrent) {
+            if (reuseCurrent && music != null && path.equals(this.path)) {
+                music.setVolume(volume);
+                if (!music.isPlaying()) {
+                    music.play();
+                }
+                return;
+            }
+
+            stop();
+            music = Gdx.audio.newMusic(Gdx.files.internal(path));
+            this.path = path;
+            music.setLooping(looping);
+            music.setVolume(volume);
+            music.play();
+        }
+
+        private void setVolume(float volume) {
+            if (music != null) {
+                music.setVolume(volume);
+            }
+        }
+
+        private void stop() {
+            if (music == null) {
+                return;
+            }
+
+            music.stop();
+            music.dispose();
+            music = null;
+            path = null;
         }
     }
 }

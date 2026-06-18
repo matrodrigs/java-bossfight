@@ -19,7 +19,6 @@ public class ProjectileSystem {
     private final Texture bossPollen;
     private final Texture bossThorn;
     private final Texture bossPetalBomb;
-    private final Texture impactPuff;
 
     public ProjectileSystem() {
         playerPea = load("sprites/projectiles/player_pea.png");
@@ -29,7 +28,6 @@ public class ProjectileSystem {
         bossPollen = load("sprites/projectiles/boss_pollen.png");
         bossThorn = load("sprites/projectiles/boss_thorn.png");
         bossPetalBomb = load("sprites/projectiles/boss_petal_bomb.png");
-        impactPuff = load("sprites/projectiles/impact_puff.png");
     }
 
     public void addProjectile(Projectile projectile) {
@@ -73,7 +71,6 @@ public class ProjectileSystem {
         bossPollen.dispose();
         bossThorn.dispose();
         bossPetalBomb.dispose();
-        impactPuff.dispose();
     }
 
     public Array<Projectile> getPlayerProjectiles() {
@@ -104,16 +101,28 @@ public class ProjectileSystem {
     private void renderSprites(SpriteBatch batch, Array<Projectile> projectiles) {
         for (Projectile projectile : projectiles) {
             switch (projectile.getKind()) {
-                case PLAYER_BASIC -> drawTextureWithTrail(batch, playerPea, projectile,
-                        38f, 26f, MathUtils.sin(projectile.getAge() * 15f) * 3f,
-                        2, 16f, 0.48f, 0.95f, 1f, 0.2f);
-                case PLAYER_SPECIAL -> {
-                    drawTextureWithTrail(batch, impactPuff, projectile,
-                            74f, 62f, -projectile.getAge() * 110f,
-                            3, 19f, 1f, 0.66f, 0.18f, 0.22f);
-                    drawTextureWithTrail(batch, playerSpecial, projectile, 78f, 72f,
-                            projectile.getAge() * 130f, 2, 14f, 1f, 0.86f, 0.22f, 0.18f);
-                }
+                case PLAYER_BASIC -> drawTextureAt(batch, playerPea,
+                        projectile.getCenterX(),
+                        projectile.getCenterY(),
+                        58f + MathUtils.sin(projectile.getAge() * 15f) * 1.2f,
+                        27f + MathUtils.sin(projectile.getAge() * 15f) * 0.6f,
+                        MathUtils.sin(projectile.getAge() * 15f) * 2f,
+                        projectile.getVelocityX() < 0f,
+                        1f,
+                        1f,
+                        1f,
+                        1f);
+                case PLAYER_SPECIAL -> drawTextureAt(batch, playerSpecial,
+                        projectile.getCenterX(),
+                        projectile.getCenterY(),
+                        158f + MathUtils.sin(projectile.getAge() * 10f) * 4f,
+                        139f + MathUtils.sin(projectile.getAge() * 10f) * 3.5f,
+                        0f,
+                        projectile.getVelocityX() < 0f,
+                        1f,
+                        1f,
+                        1f,
+                        1f);
                 case BOSS_SEED -> drawTextureWithTrail(batch, bossSeed, projectile,
                         46f, 34f, rotationFor(projectile), 2, 14f, 1f, 0.42f, 0.18f, 0.16f);
                 case BOSS_ACORN -> drawTextureWithTrail(batch, bossAcorn, projectile,
@@ -148,6 +157,13 @@ public class ProjectileSystem {
     private void drawTextureWithTrail(SpriteBatch batch, Texture texture, Projectile projectile,
                                       float width, float height, float rotation, int trailCount, float trailSpacing,
                                       float red, float green, float blue, float alpha) {
+        drawTextureWithTrail(batch, texture, projectile, width, height, rotation, false, trailCount, trailSpacing,
+                red, green, blue, alpha);
+    }
+
+    private void drawTextureWithTrail(SpriteBatch batch, Texture texture, Projectile projectile,
+                                      float width, float height, float rotation, boolean flipX, int trailCount,
+                                      float trailSpacing, float red, float green, float blue, float alpha) {
         float velocityAngle = MathUtils.atan2(projectile.getVelocityY(), projectile.getVelocityX());
         float trailX = -MathUtils.cos(velocityAngle) * trailSpacing;
         float trailY = -MathUtils.sin(velocityAngle) * trailSpacing;
@@ -161,7 +177,7 @@ public class ProjectileSystem {
                     width * scale,
                     height * scale,
                     rotation - i * 5f,
-                    false,
+                    flipX,
                     red,
                     green,
                     blue,
@@ -169,7 +185,7 @@ public class ProjectileSystem {
         }
 
         drawTextureAt(batch, texture, projectile.getCenterX(), projectile.getCenterY(), width, height,
-                rotation, false, 1f, 1f, 1f, 1f);
+                rotation, flipX, 1f, 1f, 1f, 1f);
     }
 
     private void drawTextureAt(SpriteBatch batch, Texture texture, float centerX, float centerY,
@@ -197,37 +213,20 @@ public class ProjectileSystem {
     }
 
     private void drawThornLane(SpriteBatch batch, Projectile projectile) {
-        float startX = projectile.getX();
-        float centerY = projectile.getCenterY();
-        float segmentWidth = 92f;
-        float segmentHeight = 82f;
-        float step = 68f;
-
-        for (float segmentX = startX + 28f; segmentX < startX + projectile.getWidth(); segmentX += step) {
-            float wave = MathUtils.sin(projectile.getAge() * 22f + segmentX * 0.035f);
-            drawTextureAt(batch, bossThorn,
-                    segmentX,
-                    centerY + wave * 7f,
-                    segmentWidth + 18f,
-                    segmentHeight + 12f,
-                    wave * 13f,
-                    false,
-                    0.58f,
-                    1f,
-                    0.34f,
-                    0.18f);
-            drawTextureAt(batch, bossThorn,
-                    segmentX,
-                    centerY + wave * 7f,
-                    segmentWidth,
-                    segmentHeight,
-                    wave * 13f,
-                    false,
-                    1f,
-                    1f,
-                    1f,
-                    1f);
-        }
+        float drawWidth = projectile.getWidth() + 48f;
+        float drawHeight = Math.max(170f, projectile.getHeight() * 4.1f);
+        float rise = MathUtils.sin(projectile.getAge() * 18f) * 3f;
+        drawTextureAt(batch, bossThorn,
+                projectile.getCenterX(),
+                projectile.getCenterY() + rise,
+                drawWidth,
+                drawHeight,
+                0f,
+                false,
+                1f,
+                1f,
+                1f,
+                1f);
     }
 
     private float rotationFor(Projectile projectile) {

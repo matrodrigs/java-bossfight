@@ -7,7 +7,7 @@ import com.bossfight.Constants;
 
 public class Player {
     private static final float SHOOT_POSE_HOLD = Constants.PLAYER_SHOOT_COOLDOWN + 0.08f;
-    private static final float SPECIAL_SHOOT_POSE_HOLD = 0.32f;
+    private static final float SPECIAL_SHOOT_POSE_HOLD = 0.36f;
     private static final float SHOT_MUZZLE_Y_FACTOR = 0.70f;
 
     private final Hitbox hitbox;

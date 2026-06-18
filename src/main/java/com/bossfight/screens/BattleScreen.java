@@ -26,9 +26,12 @@ import com.bossfight.Constants;
 
 public class BattleScreen extends ScreenAdapter {
     private static final String BATTLE_MUSIC_PATH = "audio/music/boss_fight_theme.mp3";
+    private static final String INTRO_NARRATION_PATH = "audio/voice/narrator_intro.wav";
     private static final String KNOCKOUT_NARRATION_PATH = "audio/voice/narrator_knockout.wav";
-    private static final float BATTLE_MUSIC_VOLUME = 0.03f;
-    private static final float KNOCKOUT_NARRATION_VOLUME = 1f;
+    private static final float BATTLE_MUSIC_VOLUME = 0.04f;
+    private static final float INTRO_NARRATION_VOLUME = 1f;
+    private static final float KNOCKOUT_NARRATION_VOLUME = 1.3f;
+    private static final float INTRO_READY_TEXT_ONSET = 0.1f;
     private static final float KNOCKOUT_DURATION = 3.2f;
     private static final float KNOCKOUT_TEXT_ONSET = 0.1f;
     private static final float KNOCKOUT_TEXT_FADE_START = 1.2f;
@@ -89,16 +92,21 @@ public class BattleScreen extends ScreenAdapter {
     private float shakeMagnitude;
     private float knockoutTimer;
     private float knockoutParticleTimer;
-    private boolean readyCuePlayed;
-    private boolean goCuePlayed;
+    private boolean introVoicePlayed;
     private boolean fightStarted;
+    private boolean introPausedForTransition;
     private boolean knockoutSequenceActive;
+    private boolean endTransitionRequested;
 
     public BattleScreen(MainGame game) {
+        this(game, false);
+    }
+
+    public BattleScreen(MainGame game, boolean introPausedForTransition) {
         this.game = game;
         camera = new OrthographicCamera();
         viewport = new FitViewport(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT, camera);
-        bossSpriteSheet = loadTexture("sprites/boss/flower_boss_sheet_clean.png");
+        bossSpriteSheet = loadTexture("sprites/boss/flower_boss_sheet.png");
         bossFrames = splitBossFrames(bossSpriteSheet);
         playerSpriteSheet = loadTexture("sprites/player/clock_player_sheet.png");
         playerShootFrame = playerFrame(11, 272, 271, 271);
@@ -128,6 +136,7 @@ public class BattleScreen extends ScreenAdapter {
         projectileSystem = new ProjectileSystem();
         particleSystem = new ParticleSystem();
         collisionSystem = new CollisionSystem();
+        this.introPausedForTransition = introPausedForTransition;
     }
 
     @Override
@@ -163,6 +172,17 @@ public class BattleScreen extends ScreenAdapter {
         particleSystem.clear();
     }
 
+    public void startIntroAfterTransition() {
+        if (!introPausedForTransition) {
+            return;
+        }
+
+        introPausedForTransition = false;
+        introTimer = 0f;
+        introVoicePlayed = false;
+        fightStarted = false;
+    }
+
     private Texture loadTexture(String path) {
         Texture texture = new Texture(Gdx.files.internal(path));
         texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
@@ -174,7 +194,7 @@ public class BattleScreen extends ScreenAdapter {
     }
 
     private boolean update(float delta) {
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+        if (!introPausedForTransition && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             game.getAudioManager().playCue(AudioManager.Cue.MENU_BACK);
             game.showMenuScreen();
             return false;
@@ -183,6 +203,11 @@ public class BattleScreen extends ScreenAdapter {
         elapsed += delta;
         shakeTimer = Math.max(0f, shakeTimer - delta);
         particleSystem.update(delta);
+
+        if (introPausedForTransition) {
+            return true;
+        }
+
         updateIntro(delta);
 
         if (knockoutSequenceActive) {
@@ -258,9 +283,8 @@ public class BattleScreen extends ScreenAdapter {
         playBossSoundEvents();
 
         if (player.isDead()) {
-            game.getAudioManager().playCue(AudioManager.Cue.DEFEAT);
-            game.showEndScreen(false);
-            return false;
+            requestEndTransition(false);
+            return true;
         }
 
         return true;
@@ -462,7 +486,8 @@ public class BattleScreen extends ScreenAdapter {
     }
 
     private boolean shouldFlipPlayerPose(PlayerPose pose) {
-        if (pose == PlayerPose.SHOOT
+        if (pose == PlayerPose.HURT
+                || pose == PlayerPose.SHOOT
                 || pose == PlayerPose.AIR_SHOOT
                 || pose == PlayerPose.RUN_SHOOT
                 || pose == PlayerPose.JUMP) {
@@ -601,12 +626,17 @@ public class BattleScreen extends ScreenAdapter {
     }
 
     private void drawIntroOverlay() {
-        if (fightStarted) {
+        if (fightStarted || introPausedForTransition) {
             return;
         }
 
         if (introTimer < Constants.INTRO_READY_DURATION) {
-            float pop = MathUtils.clamp(introTimer / 0.18f, 0f, 1f);
+            float readyElapsed = introTimer - INTRO_READY_TEXT_ONSET;
+            if (readyElapsed < 0f) {
+                return;
+            }
+
+            float pop = MathUtils.clamp(readyElapsed / 0.18f, 0f, 1f);
             float wobble = MathUtils.sin(elapsed * 18f) * 2.2f;
             drawCenteredTexture(readyText, Constants.WORLD_HEIGHT * 0.58f, 0.9f + pop * 0.18f, wobble, 0f, 1f);
         } else {
@@ -662,21 +692,16 @@ public class BattleScreen extends ScreenAdapter {
     }
 
     private void updateIntro(float delta) {
-        if (fightStarted) {
+        if (fightStarted || introPausedForTransition) {
             return;
         }
 
+        if (!introVoicePlayed) {
+            introVoicePlayed = true;
+            game.getAudioManager().playVoice(INTRO_NARRATION_PATH, INTRO_NARRATION_VOLUME);
+        }
+
         introTimer = Math.min(Constants.INTRO_TOTAL_DURATION, introTimer + delta);
-
-        if (!readyCuePlayed) {
-            readyCuePlayed = true;
-            game.getAudioManager().playCue(AudioManager.Cue.READY);
-        }
-
-        if (!goCuePlayed && introTimer >= Constants.INTRO_READY_DURATION) {
-            goCuePlayed = true;
-            game.getAudioManager().playCue(AudioManager.Cue.GO);
-        }
 
         if (introTimer >= Constants.INTRO_TOTAL_DURATION) {
             fightStarted = true;
@@ -725,11 +750,22 @@ public class BattleScreen extends ScreenAdapter {
         }
 
         if (knockoutTimer >= KNOCKOUT_DURATION) {
-            game.showEndScreen(true);
-            return false;
+            requestEndTransition(true);
         }
 
         return true;
+    }
+
+    private void requestEndTransition(boolean victory) {
+        if (endTransitionRequested) {
+            return;
+        }
+
+        endTransitionRequested = true;
+        if (!victory) {
+            game.getAudioManager().playCue(AudioManager.Cue.DEFEAT);
+        }
+        game.showEndScreenWithIrisTransition(victory);
     }
 
     private void spawnKnockoutExplosion() {
