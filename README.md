@@ -16,9 +16,9 @@ Base inicial de um jogo 2D de boss fight em Java 21 com LibGDX e LWJGL3.
 - `A` / `Seta esquerda`: mover para a esquerda
 - `D` / `Seta direita`: mover para a direita
 - `W` / `Espaco` / `Seta cima`: pular
-- `J` / `Ctrl`: atirar
+- `F` / `Ctrl`: atirar
 - `K` / `Shift`: dash
-- `L` / `Alt`: ataque especial
+- `G` / `Alt`: ataque especial
 - `Esc`: voltar ao menu
 
 ## Destaques atuais
