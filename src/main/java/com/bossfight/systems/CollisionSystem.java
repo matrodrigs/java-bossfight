@@ -64,8 +64,10 @@ public class CollisionSystem {
 
             if (projectile.getDamage() > 0 && projectile.getHitbox().overlaps(player.getHitbox())) {
                 boolean damaged = player.takeDamage(projectile.getDamage(), impactSourceX(player, projectile));
-                projectile.deactivate();
-                projectiles.removeIndex(i);
+                if (projectile.shouldRemoveOnHit()) {
+                    projectile.deactivate();
+                    projectiles.removeIndex(i);
+                }
                 if (damaged) {
                     particleSystem.spawnPlayerDamage(player.getCenterX(), player.getCenterY());
                     audioManager.playCue(AudioManager.Cue.PLAYER_HIT);
