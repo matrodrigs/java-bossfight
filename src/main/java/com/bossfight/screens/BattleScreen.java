@@ -13,6 +13,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bossfight.MainGame;
 import com.bossfight.boss.BossSoundEvent;
+import com.bossfight.boss.BossVisualState;
 import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
@@ -21,6 +22,7 @@ import com.bossfight.systems.CollisionSystem;
 import com.bossfight.systems.ParticleSystem;
 import com.bossfight.systems.ProjectileSystem;
 import com.bossfight.systems.RetroTextFactory;
+import com.bossfight.systems.TextureDraw;
 import com.bossfight.systems.VintageFloralBackground;
 import com.bossfight.Constants;
 
@@ -250,7 +252,6 @@ public class BattleScreen extends ScreenAdapter {
 
         if (!fightStarted) {
             player.update(delta, false, false, false, false);
-            boss.updateEntrance(delta);
             return true;
         }
 
@@ -341,13 +342,13 @@ public class BattleScreen extends ScreenAdapter {
     }
 
     private void renderBossSprite() {
-        String state = boss.getStateName();
+        BossVisualState state = boss.getVisualState();
         boolean defeated = boss.isDefeated();
-        boolean vineStrike = "Bote de cipó".equals(state);
-        boolean magicHands = "Mãos mágicas".equals(state);
-        boolean pollenRain = "Chuva de pólen".equals(state);
-        boolean pollenBreath = "Sopro de Polen".equals(state);
-        boolean phaseTransition = "Enraivecendo".equals(state);
+        boolean vineStrike = state == BossVisualState.VINE_STRIKE;
+        boolean magicHands = state == BossVisualState.MAGIC_HANDS;
+        boolean pollenRain = state == BossVisualState.POLLEN_RAIN;
+        boolean pollenBreath = state == BossVisualState.POLLEN_BREATH;
+        boolean phaseTransition = state == BossVisualState.ENRAGING;
         TextureRegion frame = bossFrames[selectBossFrame(state)];
 
         float breath = defeated ? 0f : MathUtils.sin(elapsed * 3.4f);
@@ -545,29 +546,21 @@ public class BattleScreen extends ScreenAdapter {
         return frames;
     }
 
-    private int selectBossFrame(String state) {
+    private int selectBossFrame(BossVisualState state) {
         if (!fightStarted) {
             return 0;
         }
         if (boss.isDefeated()) {
             return 7;
         }
-        if ("Enraivecendo".equals(state)) {
-            return 3;
-        }
-        if ("Bote de cipó".equals(state)) {
-            return 4;
-        }
-        if ("Mãos mágicas".equals(state)) {
-            return 3;
-        }
-        if ("Chuva de pólen".equals(state)) {
-            return 6;
-        }
-        if ("Sopro de Polen".equals(state)) {
-            return 5;
-        }
-        return ((int) (elapsed * 4f) & 1) == 0 ? 1 : 2;
+        return switch (state) {
+            case ENRAGING, MAGIC_HANDS -> 3;
+            case VINE_STRIKE -> 4;
+            case POLLEN_BREATH -> 5;
+            case POLLEN_RAIN -> 6;
+            case DEFEATED -> 7;
+            case IDLE -> ((int) (elapsed * 4f) & 1) == 0 ? 1 : 2;
+        };
     }
 
     private void drawBossShadow(ShapeRenderer shapeRenderer) {
@@ -704,40 +697,16 @@ public class BattleScreen extends ScreenAdapter {
 
             float pop = MathUtils.clamp(readyElapsed / 0.18f, 0f, 1f);
             float wobble = MathUtils.sin(elapsed * 18f) * 2.2f;
-            drawCenteredTexture(readyText, Constants.WORLD_HEIGHT * 0.58f, 0.9f + pop * 0.18f, wobble, 0f, 1f);
+            TextureDraw.centeredAnimated(game.getBatch(), readyText, Constants.WORLD_WIDTH * 0.5f,
+                    Constants.WORLD_HEIGHT * 0.58f, 0.9f + pop * 0.18f, wobble, 0f, 1f);
         } else {
             float goElapsed = introTimer - Constants.INTRO_READY_DURATION;
             float pop = MathUtils.clamp(goElapsed / 0.15f, 0f, 1f);
             float scale = 0.98f + pop * 0.28f + MathUtils.sin(elapsed * 24f) * 0.035f;
-            drawCenteredTexture(goText, Constants.WORLD_HEIGHT * 0.58f, scale, -MathUtils.sin(elapsed * 20f) * 1.6f,
+            TextureDraw.centeredAnimated(game.getBatch(), goText, Constants.WORLD_WIDTH * 0.5f,
+                    Constants.WORLD_HEIGHT * 0.58f, scale, -MathUtils.sin(elapsed * 20f) * 1.6f,
                     MathUtils.sin(elapsed * 9f) * 1.8f, 1f);
         }
-    }
-
-    private void drawCenteredTexture(Texture texture, float centerY, float scale, float xOffset, float rotation,
-                                     float alpha) {
-        float width = texture.getWidth() * scale;
-        float height = texture.getHeight() * scale;
-        float x = (Constants.WORLD_WIDTH - width) * 0.5f + xOffset;
-        float y = centerY - height * 0.5f;
-        game.getBatch().setColor(1f, 1f, 1f, alpha);
-        game.getBatch().draw(texture,
-                x,
-                y,
-                width * 0.5f,
-                height * 0.5f,
-                width,
-                height,
-                1f,
-                1f,
-                rotation,
-                0,
-                0,
-                texture.getWidth(),
-                texture.getHeight(),
-                false,
-                false);
-        game.getBatch().setColor(Color.WHITE);
     }
 
     private void updateIntro(float delta) {
@@ -814,7 +783,7 @@ public class BattleScreen extends ScreenAdapter {
         if (!victory) {
             game.getAudioManager().playCue(AudioManager.Cue.DEFEAT);
         }
-        game.showEndScreenWithIrisTransition(victory);
+        game.showEndScreen(victory);
     }
 
     private void spawnKnockoutExplosion() {
@@ -836,7 +805,8 @@ public class BattleScreen extends ScreenAdapter {
         float pulse = MathUtils.sin(elapsed * 11f) * 0.025f;
         float scale = 0.88f + slam * 0.14f + pulse;
         float rotation = MathUtils.sin(elapsed * 6.5f) * 1.1f * alpha;
-        drawCenteredTexture(knockoutText, Constants.WORLD_HEIGHT * 0.6f, scale, 0f, rotation, alpha);
+        TextureDraw.centeredAnimated(game.getBatch(), knockoutText, Constants.WORLD_WIDTH * 0.5f,
+                Constants.WORLD_HEIGHT * 0.6f, scale, 0f, rotation, alpha);
     }
 
     private void requestShake(float magnitude, float duration) {

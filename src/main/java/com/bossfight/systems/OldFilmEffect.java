@@ -182,10 +182,6 @@ public class OldFilmEffect {
         Gdx.gl.glViewport(0, 0, frameBuffer.getWidth(), frameBuffer.getHeight());
     }
 
-    public void renderToScreen(float delta) {
-        renderToScreen(delta, 1f);
-    }
-
     public void renderToScreen(float delta, float irisProgress) {
         frameBuffer.end();
         elapsed += Math.min(delta, 1f / 20f);

@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bossfight.MainGame;
 import com.bossfight.systems.AudioManager;
 import com.bossfight.systems.RetroTextFactory;
+import com.bossfight.systems.TextureDraw;
 import com.bossfight.Constants;
 
 public class MenuScreen extends ScreenAdapter {
@@ -86,8 +87,9 @@ public class MenuScreen extends ScreenAdapter {
 
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
-        drawCenteredTexture(titleText, 525f + MathUtils.sin(elapsed * 2.2f) * 3f, 0.72f, 0f, MENU_CENTER_X);
-        drawCenteredTexture(subtitleText, 462f, 0.72f, 0f, MENU_CENTER_X);
+        TextureDraw.centered(game.getBatch(), titleText, MENU_CENTER_X, 525f + MathUtils.sin(elapsed * 2.2f) * 3f,
+                0.72f);
+        TextureDraw.centered(game.getBatch(), subtitleText, MENU_CENTER_X, 462f, 0.72f);
         drawOptionText(0, START_CENTER_Y);
         drawOptionText(1, EXIT_CENTER_Y);
         game.getBatch().end();
@@ -118,7 +120,7 @@ public class MenuScreen extends ScreenAdapter {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
             game.getAudioManager().playCue(AudioManager.Cue.MENU_CONFIRM);
             if (selectedIndex == 0) {
-                game.showBattleScreenWithIrisTransition();
+                game.showBattleScreen();
             } else {
                 Gdx.app.exit();
                 return false;
@@ -214,18 +216,6 @@ public class MenuScreen extends ScreenAdapter {
             texture = selected ? exitSelectedText : exitText;
         }
         float xOffset = OPTION_TEXT_X_OFFSET + (selected ? MathUtils.sin(elapsed * 10f) * 4f : 0f);
-        drawCenteredTexture(texture, centerY + OPTION_TEXT_Y_OFFSET, 0.64f, xOffset, MENU_CENTER_X);
-    }
-
-    private void drawCenteredTexture(Texture texture, float centerY, float scale) {
-        drawCenteredTexture(texture, centerY, scale, 0f, Constants.WORLD_WIDTH * 0.5f);
-    }
-
-    private void drawCenteredTexture(Texture texture, float centerY, float scale, float xOffset, float centerX) {
-        float width = texture.getWidth() * scale;
-        float height = texture.getHeight() * scale;
-        float x = centerX - width * 0.5f + xOffset;
-        float y = centerY - height * 0.5f;
-        game.getBatch().draw(texture, x, y, width, height);
+        TextureDraw.centered(game.getBatch(), texture, MENU_CENTER_X + xOffset, centerY + OPTION_TEXT_Y_OFFSET, 0.64f);
     }
 }

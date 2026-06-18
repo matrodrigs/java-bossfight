@@ -11,6 +11,11 @@ import com.bossfight.Constants;
 import com.bossfight.entities.Projectile;
 
 public class ProjectileSystem {
+    @FunctionalInterface
+    public interface ProjectileRemovalRule {
+        boolean shouldRemove(Projectile projectile);
+    }
+
     private static final String WARNING_BANNER_PATH = "sprites/ui/warning_banner.png";
     private static final float WARNING_VERTICAL_THRESHOLD = 2f;
     private static final int WARNING_HEAD_SOURCE_X = 0;
@@ -93,12 +98,12 @@ public class ProjectileSystem {
         warningBanner.dispose();
     }
 
-    public Array<Projectile> getPlayerProjectiles() {
-        return playerProjectiles;
+    public void removePlayerProjectilesIf(ProjectileRemovalRule removalRule) {
+        removeProjectilesIf(playerProjectiles, removalRule);
     }
 
-    public Array<Projectile> getBossProjectiles() {
-        return bossProjectiles;
+    public void removeBossProjectilesIf(ProjectileRemovalRule removalRule) {
+        removeProjectilesIf(bossProjectiles, removalRule);
     }
 
     private void updateProjectiles(Array<Projectile> projectiles, float delta) {
@@ -107,6 +112,16 @@ public class ProjectileSystem {
             projectile.update(delta);
 
             if (!projectile.isActive() || projectile.isOutsideWorld()) {
+                projectiles.removeIndex(i);
+            }
+        }
+    }
+
+    private void removeProjectilesIf(Array<Projectile> projectiles, ProjectileRemovalRule removalRule) {
+        for (int i = projectiles.size - 1; i >= 0; i--) {
+            Projectile projectile = projectiles.get(i);
+            if (removalRule.shouldRemove(projectile)) {
+                projectile.deactivate();
                 projectiles.removeIndex(i);
             }
         }

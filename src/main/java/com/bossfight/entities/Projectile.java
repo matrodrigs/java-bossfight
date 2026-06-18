@@ -34,28 +34,56 @@ public class Projectile {
     private float velocityY;
     private float age;
 
-    public Projectile(Owner owner, float x, float y, float width, float height, float velocityX, float velocityY, int damage) {
-        this(owner, x, y, width, height, velocityX, velocityY, damage,
-                owner == Owner.PLAYER ? Kind.PLAYER_BASIC : Kind.BOSS_SEED, -1f, 0f);
+    public static Projectile playerBasic(float x, float y, float velocityX) {
+        return new Projectile(Owner.PLAYER, Kind.PLAYER_BASIC, x, y,
+                Constants.PLAYER_PROJECTILE_WIDTH, Constants.PLAYER_PROJECTILE_HEIGHT,
+                velocityX, 0f, Constants.PLAYER_PROJECTILE_DAMAGE, -1f, 0f, true);
     }
 
-    public Projectile(Owner owner, float x, float y, float width, float height, float velocityX, float velocityY,
-                      int damage, Kind kind) {
-        this(owner, x, y, width, height, velocityX, velocityY, damage, kind, -1f, 0f);
+    public static Projectile playerSpecial(float x, float y, float velocityX) {
+        return new Projectile(Owner.PLAYER, Kind.PLAYER_SPECIAL, x, y,
+                Constants.PLAYER_SPECIAL_WIDTH, Constants.PLAYER_SPECIAL_HEIGHT,
+                velocityX, 0f, Constants.PLAYER_SPECIAL_DAMAGE, -1f, 0f, true);
     }
 
-    public Projectile(Owner owner, float x, float y, float width, float height, float velocityX, float velocityY,
-                      int damage, Kind kind, float lifetime) {
-        this(owner, x, y, width, height, velocityX, velocityY, damage, kind, lifetime, 0f);
+    public static Projectile bossWarning(float x, float y, float width, float height, float lifetime) {
+        return new Projectile(Owner.BOSS, Kind.BOSS_WARNING, x, y, width, height,
+                0f, 0f, 0, lifetime, 0f, true);
     }
 
-    public Projectile(Owner owner, float x, float y, float width, float height, float velocityX, float velocityY,
-                      int damage, Kind kind, float lifetime, float gravity) {
-        this(owner, x, y, width, height, velocityX, velocityY, damage, kind, lifetime, gravity, true);
+    public static Projectile bossThorn(float x, float y, float width, float height, float lifetime) {
+        return new Projectile(Owner.BOSS, Kind.BOSS_THORN, x, y, width, height,
+                0f, 0f, Constants.BOSS_PROJECTILE_DAMAGE, lifetime, 0f, false);
     }
 
-    public Projectile(Owner owner, float x, float y, float width, float height, float velocityX, float velocityY,
-                      int damage, Kind kind, float lifetime, float gravity, boolean removeOnHit) {
+    public static Projectile bossSeed(float x, float y, float width, float height, float velocityX, float velocityY,
+                                      float gravity) {
+        return bossProjectile(Kind.BOSS_SEED, x, y, width, height, velocityX, velocityY, gravity);
+    }
+
+    public static Projectile bossAcorn(float x, float y, float width, float height, float velocityX, float velocityY,
+                                       float gravity) {
+        return bossProjectile(Kind.BOSS_ACORN, x, y, width, height, velocityX, velocityY, gravity);
+    }
+
+    public static Projectile bossPollen(float x, float y, float width, float height, float velocityX, float velocityY,
+                                        float gravity) {
+        return bossProjectile(Kind.BOSS_POLLEN, x, y, width, height, velocityX, velocityY, gravity);
+    }
+
+    public static Projectile bossPetalBomb(float x, float y, float width, float height, float velocityX,
+                                           float velocityY, float gravity) {
+        return bossProjectile(Kind.BOSS_PETAL_BOMB, x, y, width, height, velocityX, velocityY, gravity);
+    }
+
+    private static Projectile bossProjectile(Kind kind, float x, float y, float width, float height, float velocityX,
+                                             float velocityY, float gravity) {
+        return new Projectile(Owner.BOSS, kind, x, y, width, height,
+                velocityX, velocityY, Constants.BOSS_PROJECTILE_DAMAGE, -1f, gravity, true);
+    }
+
+    private Projectile(Owner owner, Kind kind, float x, float y, float width, float height, float velocityX,
+                       float velocityY, int damage, float lifetime, float gravity, boolean removeOnHit) {
         this.owner = owner;
         this.kind = kind;
         this.x = x;

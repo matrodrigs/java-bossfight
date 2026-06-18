@@ -13,8 +13,8 @@ public class IdleState implements BossState {
     }
 
     @Override
-    public String getName() {
-        return "Preparando";
+    public BossVisualState getVisualState() {
+        return BossVisualState.IDLE;
     }
 
     @Override

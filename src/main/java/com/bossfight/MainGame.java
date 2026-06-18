@@ -40,28 +40,15 @@ public class MainGame extends Game {
     }
 
     public void showMenuScreen() {
-        cancelIrisTransition();
-        changeScreen(new MenuScreen(this));
-        audioManager.playMusic(MENU_MUSIC_PATH, true, MENU_MUSIC_VOLUME);
+        showScreen(IrisTransition.Target.MENU, false);
     }
 
     public void showBattleScreen() {
-        cancelIrisTransition();
-        audioManager.stopMusic();
-        changeScreen(new BattleScreen(this));
-    }
-
-    public void showBattleScreenWithIrisTransition() {
-        startIrisTransition(IrisTransition.Target.BATTLE, true);
-    }
-
-    public void showEndScreenWithIrisTransition(boolean victory) {
-        startIrisTransition(victory ? IrisTransition.Target.END_VICTORY : IrisTransition.Target.END_DEFEAT, false);
+        showScreen(IrisTransition.Target.BATTLE, true);
     }
 
     public void showEndScreen(boolean victory) {
-        cancelIrisTransition();
-        changeScreen(new EndScreen(this, victory));
+        showScreen(victory ? IrisTransition.Target.END_VICTORY : IrisTransition.Target.END_DEFEAT, false);
     }
 
     @Override
@@ -124,14 +111,26 @@ public class MainGame extends Game {
 
         irisTransition.update(delta);
         if (irisTransition.isTargetScreenPending()) {
-            beforeIrisTargetScreenChange();
+            IrisTransition.Target target = irisTransition.getTarget();
+            beforeIrisTargetScreenChange(target);
             changeScreen(createIrisTargetScreen());
+            afterIrisTargetScreenChange(target);
             irisTransition.markTargetScreenShown();
         }
 
         if (irisTransition.isOpeningComplete()) {
             finishIrisTransition();
         }
+    }
+
+    private void showScreen(IrisTransition.Target target, boolean boostVinyl) {
+        if (getScreen() == null) {
+            changeScreen(createScreen(target, false));
+            afterIrisTargetScreenChange(target);
+            return;
+        }
+
+        startIrisTransition(target, boostVinyl);
     }
 
     private void startIrisTransition(IrisTransition.Target target, boolean boostVinyl) {
@@ -143,8 +142,13 @@ public class MainGame extends Game {
     }
 
     private Screen createIrisTargetScreen() {
-        return switch (irisTransition.getTarget()) {
-            case BATTLE -> new BattleScreen(this, true);
+        return createScreen(irisTransition.getTarget(), true);
+    }
+
+    private Screen createScreen(IrisTransition.Target target, boolean introPausedForTransition) {
+        return switch (target) {
+            case MENU -> new MenuScreen(this);
+            case BATTLE -> new BattleScreen(this, introPausedForTransition);
             case END_VICTORY -> new EndScreen(this, true);
             case END_DEFEAT -> new EndScreen(this, false);
         };
@@ -175,16 +179,15 @@ public class MainGame extends Game {
         }
     }
 
-    private void cancelIrisTransition() {
-        irisTransition.cancel();
-        if (audioManager != null) {
-            audioManager.setAmbienceVolume(VINYL_NOISE_BASE_VOLUME);
+    private void beforeIrisTargetScreenChange(IrisTransition.Target target) {
+        if (target == IrisTransition.Target.BATTLE) {
+            audioManager.stopMusic();
         }
     }
 
-    private void beforeIrisTargetScreenChange() {
-        if (irisTransition.getTarget() == IrisTransition.Target.BATTLE) {
-            audioManager.stopMusic();
+    private void afterIrisTargetScreenChange(IrisTransition.Target target) {
+        if (target == IrisTransition.Target.MENU) {
+            audioManager.playMusic(MENU_MUSIC_PATH, true, MENU_MUSIC_VOLUME);
         }
     }
 

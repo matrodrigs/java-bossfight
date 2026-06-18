@@ -6,8 +6,8 @@ import com.bossfight.systems.ProjectileSystem;
 
 public class DefeatedState implements BossState {
     @Override
-    public String getName() {
-        return "Derrotado";
+    public BossVisualState getVisualState() {
+        return BossVisualState.DEFEATED;
     }
 
     @Override

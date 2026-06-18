@@ -13,10 +13,6 @@ public class Hitbox {
         bounds.setPosition(x, y);
     }
 
-    public void setSize(float width, float height) {
-        bounds.setSize(width, height);
-    }
-
     public boolean overlaps(Hitbox other) {
         return bounds.overlaps(other.bounds);
     }
