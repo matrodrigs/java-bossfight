@@ -25,7 +25,7 @@ import com.bossfight.util.Constants;
 
 public class BattleScreen extends ScreenAdapter {
     private static final String BATTLE_MUSIC_PATH = "audio/music/boss_fight_theme.mp3";
-    private static final float BATTLE_MUSIC_VOLUME = 0.18f;
+    private static final float BATTLE_MUSIC_VOLUME = 0.12f;
     private static final float KNOCKOUT_DURATION = 3.2f;
     private static final float KNOCKOUT_TEXT_DELAY = 0.42f;
     private static final float KNOCKOUT_PARTICLE_DURATION = 2.35f;
