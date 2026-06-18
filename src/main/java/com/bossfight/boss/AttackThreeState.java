@@ -6,7 +6,7 @@ import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
 import com.bossfight.systems.ProjectileSystem;
-import com.bossfight.util.Constants;
+import com.bossfight.Constants;
 
 public class AttackThreeState implements BossState {
     private static final float COLUMN_WARNING_TIME = 0.36f;
@@ -19,7 +19,7 @@ public class AttackThreeState implements BossState {
 
     @Override
     public String getName() {
-        return "Chuva de polen";
+        return "Chuva de pólen";
     }
 
     @Override
@@ -28,6 +28,7 @@ public class AttackThreeState implements BossState {
         spawnTimer = 0.12f;
         pendingTimer = 0f;
         hasPendingColumn = false;
+        boss.emitSound(BossSoundEvent.POLLEN_CHARGE);
         boss.showTelegraph(new Color(0.76f, 0.28f, 1f, 1f), 0.42f);
         boss.playAttackMotion(0.5f, 0.5f);
     }
@@ -88,6 +89,7 @@ public class AttackThreeState implements BossState {
     }
 
     private void spawnFallingProjectile(Boss boss, ProjectileSystem projectileSystem, float x) {
+        boss.emitSound(BossSoundEvent.POLLEN_DROP);
         float y = Constants.WORLD_HEIGHT + 30f;
         float horizontalDrift = boss.isPhaseTwo() ? MathUtils.random(-65f, 65f) : MathUtils.random(-28f, 28f);
         float fallSpeed = boss.isPhaseTwo() ? -560f : -430f;

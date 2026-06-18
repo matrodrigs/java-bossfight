@@ -12,6 +12,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bossfight.MainGame;
+import com.bossfight.boss.BossSoundEvent;
 import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
@@ -21,20 +22,28 @@ import com.bossfight.systems.ParticleSystem;
 import com.bossfight.systems.ProjectileSystem;
 import com.bossfight.systems.RetroTextFactory;
 import com.bossfight.systems.VintageFloralBackground;
-import com.bossfight.util.Constants;
+import com.bossfight.Constants;
 
 public class BattleScreen extends ScreenAdapter {
     private static final String BATTLE_MUSIC_PATH = "audio/music/boss_fight_theme.mp3";
-    private static final float BATTLE_MUSIC_VOLUME = 0.12f;
+    private static final String KNOCKOUT_NARRATION_PATH = "audio/voice/narrator_knockout.wav";
+    private static final float BATTLE_MUSIC_VOLUME = 0.03f;
+    private static final float KNOCKOUT_NARRATION_VOLUME = 1f;
     private static final float KNOCKOUT_DURATION = 3.2f;
-    private static final float KNOCKOUT_TEXT_DELAY = 0.42f;
+    private static final float KNOCKOUT_TEXT_ONSET = 0.1f;
+    private static final float KNOCKOUT_TEXT_FADE_START = 1.2f;
+    private static final float KNOCKOUT_TEXT_FADE_DURATION = 0.35f;
     private static final float KNOCKOUT_PARTICLE_DURATION = 2.35f;
     private static final float KNOCKOUT_PARTICLE_INTERVAL = 0.11f;
 
     private enum PlayerPose {
         HURT,
         DASH,
+        SPECIAL,
+        AIR_SHOOT,
+        RUN_SHOOT,
         SHOOT,
+        JUMP,
         RUN,
         IDLE
     }
@@ -46,9 +55,13 @@ public class BattleScreen extends ScreenAdapter {
     private final TextureRegion[] bossFrames;
     private final Texture playerSpriteSheet;
     private final TextureRegion playerShootFrame;
+    private final TextureRegion playerJumpFrame;
     private final TextureRegion playerRunFrame;
-    private final TextureRegion playerDashFrame;
+    private final TextureRegion playerRunAltFrame;
     private final TextureRegion playerHurtFrame;
+    private final TextureRegion playerAirShootFrame;
+    private final TextureRegion playerRunShootFrame;
+    private final TextureRegion playerSpecialFrame;
     private final TextureRegion playerIdleFrame;
     private final RetroTextFactory textFactory;
     private final Texture readyText;
@@ -62,8 +75,6 @@ public class BattleScreen extends ScreenAdapter {
     private final Texture bossHandsText;
     private final Texture bossPollenText;
     private final Texture bossDefeatedText;
-    private final Texture introBossText;
-    private final Texture introCaptionText;
     private final Player player;
     private final Boss boss;
     private final VintageFloralBackground background;
@@ -90,11 +101,15 @@ public class BattleScreen extends ScreenAdapter {
         bossSpriteSheet = loadTexture("sprites/boss/flower_boss_sheet_clean.png");
         bossFrames = splitBossFrames(bossSpriteSheet);
         playerSpriteSheet = loadTexture("sprites/player/clock_player_sheet.png");
-        playerShootFrame = playerFrame(104, 33, 461, 442);
-        playerRunFrame = playerFrame(714, 27, 384, 424);
-        playerDashFrame = playerFrame(168, 474, 391, 373);
-        playerHurtFrame = playerFrame(679, 458, 453, 452);
-        playerIdleFrame = playerFrame(460, 782, 310, 403);
+        playerShootFrame = playerFrame(11, 272, 271, 271);
+        playerJumpFrame = playerFrame(379, 255, 234, 265);
+        playerRunFrame = playerFrame(695, 277, 225, 260);
+        playerRunAltFrame = playerFrame(58, 964, 225, 260);
+        playerHurtFrame = playerFrame(953, 289, 267, 291);
+        playerAirShootFrame = playerFrame(314, 659, 273, 245);
+        playerRunShootFrame = playerFrame(636, 690, 263, 250);
+        playerSpecialFrame = playerFrame(996, 682, 195, 260);
+        playerIdleFrame = playerFrame(58, 684, 191, 254);
         textFactory = new RetroTextFactory();
         readyText = textFactory.createFightCue("READY?", false);
         goText = textFactory.createFightCue("GO!", true);
@@ -103,12 +118,10 @@ public class BattleScreen extends ScreenAdapter {
         specialLabelText = textFactory.createHudLabel("ESPECIAL");
         bossNameText = textFactory.createHudLabel("FLOR-MAESTRO");
         bossPreparingText = textFactory.createHudValue("PREPARANDO");
-        bossVineText = textFactory.createHudValue("BOTE DE CIPO");
-        bossHandsText = textFactory.createHudValue("MAOS MAGICAS");
-        bossPollenText = textFactory.createHudValue("CHUVA DE POLEN");
+        bossVineText = textFactory.createHudValue("BOTE DE CIPÓ");
+        bossHandsText = textFactory.createHudValue("MÃOS MÁGICAS");
+        bossPollenText = textFactory.createHudValue("CHUVA DE PÓLEN");
         bossDefeatedText = textFactory.createHudValue("DERROTADO");
-        introBossText = textFactory.createBossIntroTitle("FLOR-MAESTRO ESPINHO");
-        introCaptionText = textFactory.createCaption("O JARDIM ACORDOU DE MAU HUMOR");
         player = new Player();
         boss = new Boss();
         background = new VintageFloralBackground();
@@ -141,6 +154,7 @@ public class BattleScreen extends ScreenAdapter {
     @Override
     public void dispose() {
         game.getAudioManager().stopMusic();
+        game.getAudioManager().stopVoice();
         bossSpriteSheet.dispose();
         playerSpriteSheet.dispose();
         background.dispose();
@@ -241,6 +255,8 @@ public class BattleScreen extends ScreenAdapter {
             return true;
         }
 
+        playBossSoundEvents();
+
         if (player.isDead()) {
             game.getAudioManager().playCue(AudioManager.Cue.DEFEAT);
             game.showEndScreen(false);
@@ -289,9 +305,9 @@ public class BattleScreen extends ScreenAdapter {
     private void renderBossSprite() {
         String state = boss.getStateName();
         boolean defeated = boss.isDefeated();
-        boolean vineStrike = "Bote de cipo".equals(state);
-        boolean magicHands = "Maos magicas".equals(state);
-        boolean pollenRain = "Chuva de polen".equals(state);
+        boolean vineStrike = "Bote de cipó".equals(state);
+        boolean magicHands = "Mãos mágicas".equals(state);
+        boolean pollenRain = "Chuva de pólen".equals(state);
         TextureRegion frame = bossFrames[selectBossFrame(state)];
 
         float breath = defeated ? 0f : MathUtils.sin(elapsed * 3.4f);
@@ -343,15 +359,22 @@ public class BattleScreen extends ScreenAdapter {
 
         float poseWidth = poseHeight * frame.getRegionWidth() / frame.getRegionHeight();
         float idleBreath = pose == PlayerPose.IDLE ? MathUtils.sin(player.getAnimationTime() * 3f) : 0f;
-        float runBob = pose == PlayerPose.RUN && player.isGrounded()
-                ? MathUtils.sin(player.getAnimationTime() * 14f) * 2.8f
+        boolean groundStepPose = isGroundStepPose(pose) && player.isGrounded();
+        float step = groundStepPose ? MathUtils.sin(player.getAnimationTime() * 13f) : 0f;
+        float stepBounce = groundStepPose ? Math.abs(step) : 0f;
+        float runBob = groundStepPose
+                ? stepBounce * 2.2f
                 : MathUtils.sin(player.getAnimationTime() * 3.4f) * (pose == PlayerPose.IDLE ? 1.8f : 1.2f);
-        float squashX = pose == PlayerPose.DASH ? 1.1f : 1f + idleBreath * 0.015f;
-        float squashY = pose == PlayerPose.DASH ? 0.92f : 1f - idleBreath * 0.01f;
+        float squashX = pose == PlayerPose.DASH
+                ? 1.06f
+                : (groundStepPose ? 1f + stepBounce * 0.014f : 1f + idleBreath * 0.015f);
+        float squashY = pose == PlayerPose.DASH
+                ? 0.96f
+                : (groundStepPose ? 1f - stepBounce * 0.01f : 1f - idleBreath * 0.01f);
         float rotation = pose == PlayerPose.HURT
                 ? -player.getFacingDirection() * 5f
-                : (pose == PlayerPose.RUN
-                ? MathUtils.sin(player.getAnimationTime() * 12f) * 1.2f
+                : (groundStepPose
+                ? step * 0.6f
                 : idleBreath * 0.6f);
 
         float drawX = player.getCenterX() - poseWidth * 0.5f;
@@ -387,13 +410,25 @@ public class BattleScreen extends ScreenAdapter {
         if (player.isHurtPoseActive()) {
             return PlayerPose.HURT;
         }
+        if (player.isSpecialPoseActive()) {
+            return PlayerPose.SPECIAL;
+        }
+        if (player.isShootPoseActive()) {
+            if (player.isAirborne()) {
+                return PlayerPose.AIR_SHOOT;
+            }
+            if (player.isMovingHorizontally()) {
+                return PlayerPose.RUN_SHOOT;
+            }
+            return PlayerPose.SHOOT;
+        }
         if (player.isDashing()) {
             return PlayerPose.DASH;
         }
-        if (player.isShootPoseActive()) {
-            return PlayerPose.SHOOT;
+        if (player.isAirborne()) {
+            return PlayerPose.JUMP;
         }
-        if (player.isMovingHorizontally() || player.isAirborne()) {
+        if (player.isMovingHorizontally()) {
             return PlayerPose.RUN;
         }
         return PlayerPose.IDLE;
@@ -402,9 +437,12 @@ public class BattleScreen extends ScreenAdapter {
     private TextureRegion frameForPlayerPose(PlayerPose pose) {
         return switch (pose) {
             case HURT -> playerHurtFrame;
-            case DASH -> playerDashFrame;
+            case DASH, RUN -> playerWalkFrame();
+            case SPECIAL -> playerSpecialFrame;
+            case AIR_SHOOT -> playerAirShootFrame;
+            case RUN_SHOOT -> playerRunShootFrame;
             case SHOOT -> playerShootFrame;
-            case RUN -> playerRunFrame;
+            case JUMP -> playerJumpFrame;
             case IDLE -> playerIdleFrame;
         };
     }
@@ -412,16 +450,33 @@ public class BattleScreen extends ScreenAdapter {
     private float heightForPlayerPose(PlayerPose pose) {
         return switch (pose) {
             case HURT -> 128f;
-            case DASH -> 118f;
+            case DASH -> 122f;
+            case SPECIAL -> 126f;
+            case AIR_SHOOT -> 128f;
+            case RUN_SHOOT -> 122f;
             case SHOOT -> 120f;
-            case RUN -> player.isAirborne() ? 132f : 122f;
+            case JUMP -> 132f;
+            case RUN -> 122f;
             case IDLE -> 126f;
         };
     }
 
     private boolean shouldFlipPlayerPose(PlayerPose pose) {
-        boolean flipX = player.getFacingDirection() > 0;
-        return pose == PlayerPose.DASH ? !flipX : flipX;
+        if (pose == PlayerPose.SHOOT
+                || pose == PlayerPose.AIR_SHOOT
+                || pose == PlayerPose.RUN_SHOOT
+                || pose == PlayerPose.JUMP) {
+            return player.getFacingDirection() > 0;
+        }
+        return player.getFacingDirection() < 0;
+    }
+
+    private TextureRegion playerWalkFrame() {
+        return ((int) (player.getAnimationTime() * 8f) & 1) == 0 ? playerRunFrame : playerRunAltFrame;
+    }
+
+    private boolean isGroundStepPose(PlayerPose pose) {
+        return pose == PlayerPose.RUN || pose == PlayerPose.DASH || pose == PlayerPose.RUN_SHOOT;
     }
 
     private TextureRegion[] splitBossFrames(Texture sheet) {
@@ -441,21 +496,15 @@ public class BattleScreen extends ScreenAdapter {
             return 0;
         }
         if (boss.isDefeated()) {
-            if (knockoutTimer < 0.42f) {
-                return 5;
-            }
-            if (knockoutTimer < 0.95f) {
-                return 6;
-            }
             return 7;
         }
-        if ("Bote de cipo".equals(state)) {
+        if ("Bote de cipó".equals(state)) {
             return 4;
         }
-        if ("Maos magicas".equals(state)) {
+        if ("Mãos mágicas".equals(state)) {
             return 3;
         }
-        if ("Chuva de polen".equals(state)) {
+        if ("Chuva de pólen".equals(state)) {
             return 6;
         }
         return ((int) (elapsed * 4f) & 1) == 0 ? 1 : 2;
@@ -556,22 +605,12 @@ public class BattleScreen extends ScreenAdapter {
             return;
         }
 
-        if (introTimer < Constants.INTRO_BOSS_DURATION) {
-            if (introTimer > 1.08f) {
-                float scale = 0.78f + MathUtils.sin(elapsed * 18f) * 0.018f;
-                drawCenteredTexture(introBossText, Constants.WORLD_HEIGHT - 122f, scale, 0f,
-                        MathUtils.sin(elapsed * 4f) * 0.8f, 1f);
-                drawCenteredTexture(introCaptionText, Constants.WORLD_HEIGHT - 176f, 0.66f, 0f, 0f, 1f);
-            }
-            return;
-        }
-
-        if (introTimer < Constants.INTRO_BOSS_DURATION + Constants.INTRO_READY_DURATION) {
-            float pop = MathUtils.clamp((introTimer - Constants.INTRO_BOSS_DURATION) / 0.18f, 0f, 1f);
+        if (introTimer < Constants.INTRO_READY_DURATION) {
+            float pop = MathUtils.clamp(introTimer / 0.18f, 0f, 1f);
             float wobble = MathUtils.sin(elapsed * 18f) * 2.2f;
             drawCenteredTexture(readyText, Constants.WORLD_HEIGHT * 0.58f, 0.9f + pop * 0.18f, wobble, 0f, 1f);
         } else {
-            float goElapsed = introTimer - Constants.INTRO_BOSS_DURATION - Constants.INTRO_READY_DURATION;
+            float goElapsed = introTimer - Constants.INTRO_READY_DURATION;
             float pop = MathUtils.clamp(goElapsed / 0.15f, 0f, 1f);
             float scale = 0.98f + pop * 0.28f + MathUtils.sin(elapsed * 24f) * 0.035f;
             drawCenteredTexture(goText, Constants.WORLD_HEIGHT * 0.58f, scale, -MathUtils.sin(elapsed * 20f) * 1.6f,
@@ -614,9 +653,9 @@ public class BattleScreen extends ScreenAdapter {
 
     private Texture getBossStateText() {
         return switch (boss.getStateName()) {
-            case "Bote de cipo" -> bossVineText;
-            case "Maos magicas" -> bossHandsText;
-            case "Chuva de polen" -> bossPollenText;
+            case "Bote de cipó" -> bossVineText;
+            case "Mãos mágicas" -> bossHandsText;
+            case "Chuva de pólen" -> bossPollenText;
             case "Derrotado" -> bossDefeatedText;
             default -> bossPreparingText;
         };
@@ -629,12 +668,12 @@ public class BattleScreen extends ScreenAdapter {
 
         introTimer = Math.min(Constants.INTRO_TOTAL_DURATION, introTimer + delta);
 
-        if (!readyCuePlayed && introTimer >= Constants.INTRO_BOSS_DURATION) {
+        if (!readyCuePlayed) {
             readyCuePlayed = true;
             game.getAudioManager().playCue(AudioManager.Cue.READY);
         }
 
-        if (!goCuePlayed && introTimer >= Constants.INTRO_BOSS_DURATION + Constants.INTRO_READY_DURATION) {
+        if (!goCuePlayed && introTimer >= Constants.INTRO_READY_DURATION) {
             goCuePlayed = true;
             game.getAudioManager().playCue(AudioManager.Cue.GO);
         }
@@ -651,9 +690,25 @@ public class BattleScreen extends ScreenAdapter {
         knockoutTimer = 0f;
         knockoutParticleTimer = 0f;
         projectileSystem.clear();
-        game.getAudioManager().playCue(AudioManager.Cue.VICTORY);
-        particleSystem.spawnBossDefeatBurst(boss.getCenterX() - 20f, Constants.FLOOR_Y + 265f);
+        game.getAudioManager().stopMusic();
+        game.getAudioManager().playVoice(KNOCKOUT_NARRATION_PATH, KNOCKOUT_NARRATION_VOLUME);
+        spawnKnockoutExplosion();
         requestShake(16f, 0.46f);
+    }
+
+    private void playBossSoundEvents() {
+        BossSoundEvent soundEvent;
+        while ((soundEvent = boss.pollSoundEvent()) != null) {
+            AudioManager.Cue cue = switch (soundEvent) {
+                case VINE_CHARGE -> AudioManager.Cue.BOSS_VINE_CHARGE;
+                case VINE_STRIKE -> AudioManager.Cue.BOSS_VINE_STRIKE;
+                case MAGIC_CHARGE -> AudioManager.Cue.BOSS_MAGIC_CHARGE;
+                case MAGIC_VOLLEY -> AudioManager.Cue.BOSS_MAGIC_VOLLEY;
+                case POLLEN_CHARGE -> AudioManager.Cue.BOSS_POLLEN_CHARGE;
+                case POLLEN_DROP -> AudioManager.Cue.BOSS_POLLEN_DROP;
+            };
+            game.getAudioManager().playCue(cue);
+        }
     }
 
     private boolean updateKnockoutSequence(float delta) {
@@ -664,7 +719,7 @@ public class BattleScreen extends ScreenAdapter {
         if (knockoutTimer < KNOCKOUT_PARTICLE_DURATION) {
             knockoutParticleTimer -= delta;
             while (knockoutParticleTimer <= 0f) {
-                particleSystem.spawnBossDefeatBurst(boss.getCenterX() - 20f, Constants.FLOOR_Y + 265f);
+                spawnKnockoutExplosion();
                 knockoutParticleTimer += KNOCKOUT_PARTICLE_INTERVAL;
             }
         }
@@ -677,13 +732,22 @@ public class BattleScreen extends ScreenAdapter {
         return true;
     }
 
+    private void spawnKnockoutExplosion() {
+        particleSystem.spawnBossDefeatBurst(boss.getCenterX() - 20f, Constants.FLOOR_Y + 265f);
+        game.getAudioManager().playCue(AudioManager.Cue.BOSS_DEFEAT_EXPLOSION);
+    }
+
     private void drawKnockoutOverlay() {
-        if (!knockoutSequenceActive || knockoutTimer < KNOCKOUT_TEXT_DELAY) {
+        if (!knockoutSequenceActive || knockoutTimer < KNOCKOUT_TEXT_ONSET) {
             return;
         }
 
-        float alpha = MathUtils.clamp((knockoutTimer - KNOCKOUT_TEXT_DELAY) / 0.28f, 0f, 1f);
-        float slam = MathUtils.clamp((knockoutTimer - KNOCKOUT_TEXT_DELAY) / 0.18f, 0f, 1f);
+        float textTimer = knockoutTimer - KNOCKOUT_TEXT_ONSET;
+        float alpha = 1f - MathUtils.clamp(
+                (knockoutTimer - KNOCKOUT_TEXT_FADE_START) / KNOCKOUT_TEXT_FADE_DURATION,
+                0f,
+                1f);
+        float slam = MathUtils.clamp(textTimer / 0.18f, 0f, 1f);
         float pulse = MathUtils.sin(elapsed * 11f) * 0.025f;
         float scale = 0.88f + slam * 0.14f + pulse;
         float rotation = MathUtils.sin(elapsed * 6.5f) * 1.1f * alpha;

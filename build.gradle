@@ -39,6 +39,7 @@ dependencies {
 tasks.withType(JavaCompile).configureEach {
     options.encoding = 'UTF-8'
     options.fork = true
+    options.compilerArgs.addAll(['-Xlint:all'])
 }
 
 tasks.withType(JavaExec).configureEach {

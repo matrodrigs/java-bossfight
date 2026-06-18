@@ -13,13 +13,15 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bossfight.MainGame;
 import com.bossfight.systems.AudioManager;
 import com.bossfight.systems.RetroTextFactory;
-import com.bossfight.util.Constants;
+import com.bossfight.Constants;
 
 public class MenuScreen extends ScreenAdapter {
     private static final float MENU_CENTER_X = 638.5f;
     private static final float START_CENTER_Y = 383.7f;
     private static final float EXIT_CENTER_Y = 287.7f;
     private static final float BUTTON_HALF_WIDTH = 221f;
+    private static final float OPTION_TEXT_X_OFFSET = -3f;
+    private static final float OPTION_TEXT_Y_OFFSET = -7f;
     private static final Color POINTER_SHADOW = new Color(0.03f, 0.02f, 0.01f, 0.45f);
     private static final Color POINTER_INK = new Color(0.05f, 0.035f, 0.02f, 0.96f);
     private static final Color POINTER_GOLD = new Color(0.96f, 0.61f, 0.06f, 1f);
@@ -45,8 +47,8 @@ public class MenuScreen extends ScreenAdapter {
         camera = new OrthographicCamera();
         viewport = new FitViewport(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT, camera);
         textFactory = new RetroTextFactory();
-        titleText = textFactory.createTitle("JAVA BOSSFIGHT");
-        subtitleText = textFactory.createSubtitle("O DUELO DO JARDIM");
+        titleText = textFactory.createTitle("Fúria Botânica");
+        subtitleText = textFactory.createSubtitle("O Jardim Maldito");
         startText = textFactory.createMenuOption("INICIAR DUELO", false);
         startSelectedText = textFactory.createMenuOption("INICIAR DUELO", true);
         exitText = textFactory.createMenuOption("SAIR", false);
@@ -207,8 +209,8 @@ public class MenuScreen extends ScreenAdapter {
         } else {
             texture = selected ? exitSelectedText : exitText;
         }
-        float xOffset = selected ? MathUtils.sin(elapsed * 10f) * 4f : 0f;
-        drawCenteredTexture(texture, centerY, 0.64f, xOffset, MENU_CENTER_X);
+        float xOffset = OPTION_TEXT_X_OFFSET + (selected ? MathUtils.sin(elapsed * 10f) * 4f : 0f);
+        drawCenteredTexture(texture, centerY + OPTION_TEXT_Y_OFFSET, 0.64f, xOffset, MENU_CENTER_X);
     }
 
     private void drawCenteredTexture(Texture texture, float centerY, float scale) {

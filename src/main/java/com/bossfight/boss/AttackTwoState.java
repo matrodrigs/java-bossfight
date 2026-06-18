@@ -7,7 +7,7 @@ import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
 import com.bossfight.systems.ProjectileSystem;
-import com.bossfight.util.Constants;
+import com.bossfight.Constants;
 
 public class AttackTwoState implements BossState {
     private float elapsed;
@@ -16,7 +16,7 @@ public class AttackTwoState implements BossState {
 
     @Override
     public String getName() {
-        return "Maos magicas";
+        return "Mãos mágicas";
     }
 
     @Override
@@ -24,6 +24,7 @@ public class AttackTwoState implements BossState {
         elapsed = 0f;
         burstTimer = 0.58f;
         volleys = 0;
+        boss.emitSound(BossSoundEvent.MAGIC_CHARGE);
         boss.showTelegraph(new Color(0.96f, 0.74f, 0.18f, 1f), 0.58f);
         boss.playAttackMotion(0.58f, 0.45f);
     }
@@ -34,6 +35,7 @@ public class AttackTwoState implements BossState {
         burstTimer -= delta;
 
         if (burstTimer <= 0f) {
+            boss.emitSound(BossSoundEvent.MAGIC_VOLLEY);
             boss.playAttackMotion(0.28f, 0.82f);
             fireVolley(boss, projectileSystem, player);
             volleys++;

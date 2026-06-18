@@ -3,7 +3,7 @@ package com.bossfight.entities;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
-import com.bossfight.util.Constants;
+import com.bossfight.Constants;
 
 public class Player {
     private static final float SHOOT_POSE_HOLD = Constants.PLAYER_SHOOT_COOLDOWN + 0.08f;
@@ -27,6 +27,7 @@ public class Player {
     private float knockbackTimer;
     private float knockbackVelocityX;
     private float shootPoseTimer;
+    private float specialPoseTimer;
     private float animationTime;
     private int dashDirection = 1;
     private boolean dashStartedThisFrame;
@@ -49,6 +50,7 @@ public class Player {
         invulnerabilityTimer = Math.max(0f, invulnerabilityTimer - delta);
         hurtFlashTimer = Math.max(0f, hurtFlashTimer - delta);
         shootPoseTimer = Math.max(0f, shootPoseTimer - delta);
+        specialPoseTimer = Math.max(0f, specialPoseTimer - delta);
         animationTime += delta;
         specialEnergy = Math.min(Constants.PLAYER_SPECIAL_MAX,
                 specialEnergy + Constants.PLAYER_SPECIAL_PASSIVE_CHARGE * delta);
@@ -104,7 +106,8 @@ public class Player {
 
         specialEnergy = 0f;
         specialCooldown = Constants.PLAYER_SPECIAL_COOLDOWN;
-        shootPoseTimer = SPECIAL_SHOOT_POSE_HOLD;
+        shootPoseTimer = 0f;
+        specialPoseTimer = SPECIAL_SHOOT_POSE_HOLD;
         float projectileX = facingDirection > 0
                 ? x + Constants.PLAYER_WIDTH
                 : x - Constants.PLAYER_SPECIAL_WIDTH;
@@ -157,8 +160,14 @@ public class Player {
     }
 
     public boolean takeDamage(int amount, float sourceX) {
-        if (invulnerabilityTimer > 0f || dashTimer > 0f || health <= 0) {
+        if (isInvulnerableAfterHit() || dashTimer > 0f || health <= 0) {
             return false;
+        }
+
+        if (sourceX < getCenterX()) {
+            facingDirection = -1;
+        } else if (sourceX > getCenterX()) {
+            facingDirection = 1;
         }
 
         health = Math.max(0, health - amount);
@@ -244,6 +253,10 @@ public class Player {
         return shootPoseTimer > 0f;
     }
 
+    public boolean isSpecialPoseActive() {
+        return specialPoseTimer > 0f;
+    }
+
     public boolean isHurtPoseActive() {
         return hurtFlashTimer > 0f || knockbackTimer > 0f;
     }
@@ -254,6 +267,10 @@ public class Player {
 
     public boolean isDashing() {
         return dashTimer > 0f;
+    }
+
+    public boolean isInvulnerableAfterHit() {
+        return invulnerabilityTimer > 0f;
     }
 
     private void updateHorizontalMovement(float delta, boolean moveLeft, boolean moveRight) {

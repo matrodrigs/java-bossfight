@@ -6,7 +6,7 @@ import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
 import com.bossfight.systems.ProjectileSystem;
-import com.bossfight.util.Constants;
+import com.bossfight.Constants;
 
 public class AttackOneState implements BossState {
     private static final float WARNING_TIME = 0.62f;
@@ -18,7 +18,7 @@ public class AttackOneState implements BossState {
 
     @Override
     public String getName() {
-        return "Bote de cipo";
+        return "Bote de cipó";
     }
 
     @Override
@@ -27,6 +27,7 @@ public class AttackOneState implements BossState {
         upperLane = MathUtils.randomBoolean();
         warningSpawned = false;
         fired = false;
+        boss.emitSound(BossSoundEvent.VINE_CHARGE);
         boss.showTelegraph(new Color(1f, 0.16f, 0.08f, 1f), WARNING_TIME);
         boss.playAttackMotion(WARNING_TIME, 0.55f);
     }
@@ -53,6 +54,7 @@ public class AttackOneState implements BossState {
 
         if (!fired && elapsed >= WARNING_TIME) {
             fired = true;
+            boss.emitSound(BossSoundEvent.VINE_STRIKE);
             boss.playAttackMotion(0.32f, 1.15f);
             projectileSystem.addProjectile(new Projectile(
                     Projectile.Owner.BOSS,
