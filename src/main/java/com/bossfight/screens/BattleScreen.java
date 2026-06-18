@@ -86,12 +86,6 @@ public class BattleScreen extends ScreenAdapter {
     private final Texture hpBoxTexture;
     private final Texture specialClockTexture;
     private final TextureRegion specialClockFillRegion;
-    private final Texture bossNameText;
-    private final Texture bossPreparingText;
-    private final Texture bossVineText;
-    private final Texture bossHandsText;
-    private final Texture bossPollenText;
-    private final Texture bossDefeatedText;
     private final Player player;
     private final Boss boss;
     private final VintageFloralBackground background;
@@ -140,12 +134,6 @@ public class BattleScreen extends ScreenAdapter {
         goText = textFactory.createFightCue("GO!", true);
         knockoutText = textFactory.createKnockout("A KNOCKOUT!");
         hpTexts = createHpTexts();
-        bossNameText = textFactory.createHudLabel("FLOR-MAESTRO");
-        bossPreparingText = textFactory.createHudValue("PREPARANDO");
-        bossVineText = textFactory.createHudValue("BOTE DE CIPÓ");
-        bossHandsText = textFactory.createHudValue("MÃOS MÁGICAS");
-        bossPollenText = textFactory.createHudValue("CHUVA DE PÓLEN");
-        bossDefeatedText = textFactory.createHudValue("DERROTADO");
         player = new Player();
         boss = new Boss();
         background = new VintageFloralBackground();
@@ -358,33 +346,42 @@ public class BattleScreen extends ScreenAdapter {
         boolean vineStrike = "Bote de cipó".equals(state);
         boolean magicHands = "Mãos mágicas".equals(state);
         boolean pollenRain = "Chuva de pólen".equals(state);
+        boolean pollenBreath = "Sopro de Polen".equals(state);
+        boolean phaseTransition = "Enraivecendo".equals(state);
         TextureRegion frame = bossFrames[selectBossFrame(state)];
 
         float breath = defeated ? 0f : MathUtils.sin(elapsed * 3.4f);
         float windup = boss.isTelegraphing() ? 1f - boss.getTelegraphAlpha() : 0f;
-        float attackPulse = !defeated && (vineStrike || magicHands || pollenRain) ? MathUtils.sin(elapsed * 9.5f) : 0f;
+        float attackPulse = !defeated && (vineStrike || magicHands || pollenRain || pollenBreath || phaseTransition)
+                ? MathUtils.sin(elapsed * 9.5f)
+                : 0f;
         float visualHeight = 506f + breath * 5f + (boss.isPhaseTwo() ? 18f : 0f);
         visualHeight += vineStrike ? windup * 18f : 0f;
+        visualHeight += phaseTransition ? windup * 24f : 0f;
         float visualWidth = visualHeight * frame.getRegionWidth() / frame.getRegionHeight();
 
         float x = boss.getCenterX() - visualWidth * 0.5f - 18f;
         x += vineStrike ? attackPulse * 8f - 18f - windup * 18f : 0f;
         x += magicHands ? MathUtils.sin(elapsed * 7f) * 5f - windup * 10f : 0f;
+        x += pollenBreath ? -windup * 18f + attackPulse * 4f : 0f;
 
         float y = Constants.FLOOR_Y - 30f;
         y += breath * 2.5f;
         y += pollenRain ? MathUtils.sin(elapsed * 8.5f) * 6f : 0f;
+        y += phaseTransition ? attackPulse * 6f : 0f;
 
         float scaleX = 1f + breath * 0.014f + (magicHands ? attackPulse * 0.02f : 0f);
         float scaleY = 1f - breath * 0.01f + (vineStrike ? attackPulse * 0.028f : 0f);
-        float rotation = MathUtils.sin(elapsed * 2.1f) * 0.8f + attackPulse * (pollenRain ? 1.4f : 0.45f);
+        float rotation = MathUtils.sin(elapsed * 2.1f) * 0.8f
+                + attackPulse * (pollenRain || phaseTransition ? 1.4f : 0.45f);
+        boolean flipX = pollenBreath && player.getCenterX() < boss.getCenterX();
 
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
         if (boss.isPhaseTwo()) {
             game.getBatch().setColor(1f, 0.92f, 0.92f, 1f);
         }
-        game.getBatch().draw(frame,
+        game.getBatch().draw(bossSpriteSheet,
                 x,
                 y,
                 visualWidth * 0.48f,
@@ -393,7 +390,13 @@ public class BattleScreen extends ScreenAdapter {
                 visualHeight,
                 scaleX,
                 scaleY,
-                rotation);
+                rotation,
+                frame.getRegionX(),
+                frame.getRegionY(),
+                frame.getRegionWidth(),
+                frame.getRegionHeight(),
+                flipX,
+                false);
         game.getBatch().setColor(Color.WHITE);
         game.getBatch().end();
     }
@@ -549,6 +552,9 @@ public class BattleScreen extends ScreenAdapter {
         if (boss.isDefeated()) {
             return 7;
         }
+        if ("Enraivecendo".equals(state)) {
+            return 3;
+        }
         if ("Bote de cipó".equals(state)) {
             return 4;
         }
@@ -557,6 +563,9 @@ public class BattleScreen extends ScreenAdapter {
         }
         if ("Chuva de pólen".equals(state)) {
             return 6;
+        }
+        if ("Sopro de Polen".equals(state)) {
+            return 5;
         }
         return ((int) (elapsed * 4f) & 1) == 0 ? 1 : 2;
     }
@@ -583,40 +592,14 @@ public class BattleScreen extends ScreenAdapter {
     }
 
     private void renderUi() {
-        ShapeRenderer shapeRenderer = game.getShapeRenderer();
-        shapeRenderer.setProjectionMatrix(camera.combined);
-        Gdx.gl.glEnable(GL20.GL_BLEND);
-        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        drawHealthBar(Constants.WORLD_WIDTH - 430f, Constants.WORLD_HEIGHT - 76f, 360f, 20f,
-                boss.getHealth(), boss.getMaxHealth(), new Color(0.96f, 0.35f, 0.14f, 1f));
-        shapeRenderer.end();
-        Gdx.gl.glDisable(GL20.GL_BLEND);
-
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
         drawPlayerHealthBox();
         drawPlayerHealthText();
         drawSpecialClock();
-        drawLeftTexture(bossNameText, Constants.WORLD_WIDTH - 430f, Constants.WORLD_HEIGHT - 30f, 0.48f);
-        drawLeftTexture(getBossStateText(), Constants.WORLD_WIDTH - 430f, Constants.WORLD_HEIGHT - 100f, 0.46f);
         drawIntroOverlay();
         drawKnockoutOverlay();
         game.getBatch().end();
-    }
-
-    private void drawHealthBar(float x, float y, float width, float height, int value, int maxValue, Color fillColor) {
-        ShapeRenderer shapeRenderer = game.getShapeRenderer();
-        float percent = maxValue == 0 ? 0f : (float) value / maxValue;
-
-        shapeRenderer.setColor(0.02f, 0.02f, 0.03f, 1f);
-        shapeRenderer.rect(x - 2f, y - 2f, width + 4f, height + 4f);
-
-        shapeRenderer.setColor(0.23f, 0.23f, 0.25f, 1f);
-        shapeRenderer.rect(x, y, width, height);
-
-        shapeRenderer.setColor(fillColor);
-        shapeRenderer.rect(x, y, width * percent, height);
     }
 
     private void drawPlayerHealthBox() {
@@ -755,23 +738,6 @@ public class BattleScreen extends ScreenAdapter {
                 false,
                 false);
         game.getBatch().setColor(Color.WHITE);
-    }
-
-    private void drawLeftTexture(Texture texture, float x, float centerY, float scale) {
-        float width = texture.getWidth() * scale;
-        float height = texture.getHeight() * scale;
-        float y = centerY - height * 0.5f;
-        game.getBatch().draw(texture, x, y, width, height);
-    }
-
-    private Texture getBossStateText() {
-        return switch (boss.getStateName()) {
-            case "Bote de cipó" -> bossVineText;
-            case "Mãos mágicas" -> bossHandsText;
-            case "Chuva de pólen" -> bossPollenText;
-            case "Derrotado" -> bossDefeatedText;
-            default -> bossPreparingText;
-        };
     }
 
     private void updateIntro(float delta) {

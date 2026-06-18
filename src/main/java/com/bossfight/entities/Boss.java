@@ -3,6 +3,7 @@ package com.bossfight.entities;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
+import com.bossfight.boss.AttackFourState;
 import com.bossfight.boss.AttackOneState;
 import com.bossfight.boss.AttackThreeState;
 import com.bossfight.boss.AttackTwoState;
@@ -10,6 +11,7 @@ import com.bossfight.boss.BossState;
 import com.bossfight.boss.BossSoundEvent;
 import com.bossfight.boss.DefeatedState;
 import com.bossfight.boss.IdleState;
+import com.bossfight.boss.PhaseTwoTransitionState;
 import com.bossfight.systems.ProjectileSystem;
 import com.bossfight.Constants;
 
@@ -21,7 +23,8 @@ public class Boss {
     private final int maxHealth;
     private BossState currentState;
     private int health;
-    private int nextAttackIndex;
+    private int lastAttackIndex = -1;
+    private int phaseTwoAttackCount;
     private float x;
     private float y;
     private float entranceTimer;
@@ -32,6 +35,7 @@ public class Boss {
     private float attackMotionStrength;
     private float telegraphTimer;
     private float telegraphDuration = 1f;
+    private boolean phaseTwoTransitionPlayed;
     private final Color telegraphColor = new Color(1f, 0.24f, 0.1f, 1f);
 
     public Boss() {
@@ -52,6 +56,14 @@ public class Boss {
 
         if (health <= 0 && !(currentState instanceof DefeatedState)) {
             setState(new DefeatedState());
+        }
+
+        if (isPhaseTwo()
+                && !phaseTwoTransitionPlayed
+                && !(currentState instanceof PhaseTwoTransitionState)
+                && !(currentState instanceof DefeatedState)) {
+            phaseTwoTransitionPlayed = true;
+            setState(new PhaseTwoTransitionState());
         }
 
         currentState.update(this, delta, projectileSystem, player);
@@ -110,17 +122,29 @@ public class Boss {
     }
 
     public BossState createNextAttackState() {
-        BossState nextState;
-        if (nextAttackIndex == 0) {
-            nextState = new AttackOneState();
-        } else if (nextAttackIndex == 1) {
-            nextState = new AttackTwoState();
+        int attackCount = isPhaseTwo() ? 4 : 3;
+        int nextAttackIndex;
+
+        if (isPhaseTwo() && phaseTwoAttackCount % 4 == 3 && lastAttackIndex != 3) {
+            nextAttackIndex = 3;
         } else {
-            nextState = new AttackThreeState();
+            do {
+                nextAttackIndex = MathUtils.random(attackCount - 1);
+            } while (attackCount > 1 && nextAttackIndex == lastAttackIndex);
         }
 
-        nextAttackIndex = (nextAttackIndex + 1) % 3;
-        return nextState;
+        lastAttackIndex = nextAttackIndex;
+        phaseTwoAttackCount++;
+
+        if (nextAttackIndex == 0) {
+            return new AttackOneState();
+        } else if (nextAttackIndex == 1) {
+            return new AttackTwoState();
+        } else if (nextAttackIndex == 2) {
+            return new AttackThreeState();
+        }
+
+        return new AttackFourState();
     }
 
     public void finishCurrentAttack() {
@@ -154,14 +178,6 @@ public class Boss {
 
     public Hitbox getHitbox() {
         return hitbox;
-    }
-
-    public int getHealth() {
-        return health;
-    }
-
-    public int getMaxHealth() {
-        return maxHealth;
     }
 
     public String getStateName() {
