@@ -24,6 +24,8 @@ import com.bossfight.systems.VintageFloralBackground;
 import com.bossfight.util.Constants;
 
 public class BattleScreen extends ScreenAdapter {
+    private static final String BATTLE_MUSIC_PATH = "audio/music/boss_fight_theme.mp3";
+    private static final float BATTLE_MUSIC_VOLUME = 0.32f;
     private static final float KNOCKOUT_DURATION = 3.2f;
     private static final float KNOCKOUT_TEXT_DELAY = 0.42f;
     private static final float KNOCKOUT_PARTICLE_DURATION = 2.35f;
@@ -138,6 +140,7 @@ public class BattleScreen extends ScreenAdapter {
 
     @Override
     public void dispose() {
+        game.getAudioManager().stopMusic();
         bossSpriteSheet.dispose();
         playerSpriteSheet.dispose();
         background.dispose();
@@ -638,6 +641,7 @@ public class BattleScreen extends ScreenAdapter {
 
         if (introTimer >= Constants.INTRO_TOTAL_DURATION) {
             fightStarted = true;
+            game.getAudioManager().playMusic(BATTLE_MUSIC_PATH, true, BATTLE_MUSIC_VOLUME);
             boss.showTelegraph(new Color(1f, 0.38f, 0.12f, 1f), 0.35f);
         }
     }
