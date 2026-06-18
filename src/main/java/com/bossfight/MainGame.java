@@ -12,7 +12,6 @@ import com.bossfight.screens.MenuScreen;
 import com.bossfight.systems.AudioManager;
 import com.bossfight.systems.IrisTransition;
 import com.bossfight.systems.OldFilmEffect;
-import com.bossfight.Constants;
 
 public class MainGame extends Game {
     private static final String MENU_MUSIC_PATH = "audio/music/menu_theme.mp3";
