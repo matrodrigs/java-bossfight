@@ -12,7 +12,7 @@ public final class DesktopLauncher {
     public static void main(String[] args) {
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
         config.setTitle(Constants.GAME_TITLE);
-        config.setWindowedMode(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+        config.setFullscreenMode(Lwjgl3ApplicationConfiguration.getDisplayMode());
         config.setForegroundFPS(Constants.TARGET_FPS);
         config.useVsync(true);
 
