@@ -1,6 +1,8 @@
 package com.bossfight;
 
 import com.badlogic.gdx.Game;
+import com.badlogic.gdx.Gdx;
+import com.badlogic.gdx.Input;
 import com.badlogic.gdx.Screen;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -9,6 +11,7 @@ import com.bossfight.screens.EndScreen;
 import com.bossfight.screens.MenuScreen;
 import com.bossfight.systems.AudioManager;
 import com.bossfight.util.AssetManagerWrapper;
+import com.bossfight.util.Constants;
 
 public class MainGame extends Game {
     private SpriteBatch batch;
@@ -38,6 +41,15 @@ public class MainGame extends Game {
         changeScreen(new EndScreen(this, victory));
     }
 
+    @Override
+    public void render() {
+        if (isFullscreenShortcutPressed()) {
+            toggleFullscreen();
+            return;
+        }
+        super.render();
+    }
+
     public SpriteBatch getBatch() {
         return batch;
     }
@@ -52,6 +64,20 @@ public class MainGame extends Game {
 
     public AudioManager getAudioManager() {
         return audioManager;
+    }
+
+    private boolean isFullscreenShortcutPressed() {
+        boolean altPressed = Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT)
+                || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT);
+        return altPressed && Gdx.input.isKeyJustPressed(Input.Keys.ENTER);
+    }
+
+    private void toggleFullscreen() {
+        if (Gdx.graphics.isFullscreen()) {
+            Gdx.graphics.setWindowedMode(Constants.WINDOW_WIDTH, Constants.WINDOW_HEIGHT);
+        } else {
+            Gdx.graphics.setFullscreenMode(Gdx.graphics.getDisplayMode());
+        }
     }
 
     private void changeScreen(Screen nextScreen) {
