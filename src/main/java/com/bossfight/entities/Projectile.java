@@ -3,7 +3,7 @@ package com.bossfight.entities;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
-import com.bossfight.util.Constants;
+import com.bossfight.Constants;
 
 public class Projectile {
     public enum Owner {

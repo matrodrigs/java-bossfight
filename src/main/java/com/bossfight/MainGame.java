@@ -10,21 +10,21 @@ import com.bossfight.screens.BattleScreen;
 import com.bossfight.screens.EndScreen;
 import com.bossfight.screens.MenuScreen;
 import com.bossfight.systems.AudioManager;
-import com.bossfight.util.AssetManagerWrapper;
-import com.bossfight.util.Constants;
+import com.bossfight.systems.OldFilmEffect;
+import com.bossfight.Constants;
 
 public class MainGame extends Game {
     private SpriteBatch batch;
     private ShapeRenderer shapeRenderer;
-    private AssetManagerWrapper assets;
     private AudioManager audioManager;
+    private OldFilmEffect oldFilmEffect;
 
     @Override
     public void create() {
         batch = new SpriteBatch();
         shapeRenderer = new ShapeRenderer();
-        assets = new AssetManagerWrapper();
-        audioManager = new AudioManager(assets);
+        audioManager = new AudioManager();
+        oldFilmEffect = new OldFilmEffect();
 
         showMenuScreen();
     }
@@ -47,7 +47,17 @@ public class MainGame extends Game {
             toggleFullscreen();
             return;
         }
+        oldFilmEffect.begin();
         super.render();
+        oldFilmEffect.renderToScreen(Gdx.graphics.getDeltaTime());
+    }
+
+    @Override
+    public void resize(int width, int height) {
+        super.resize(width, height);
+        if (oldFilmEffect != null) {
+            oldFilmEffect.resize();
+        }
     }
 
     public SpriteBatch getBatch() {
@@ -56,10 +66,6 @@ public class MainGame extends Game {
 
     public ShapeRenderer getShapeRenderer() {
         return shapeRenderer;
-    }
-
-    public AssetManagerWrapper getAssets() {
-        return assets;
     }
 
     public AudioManager getAudioManager() {
@@ -96,7 +102,9 @@ public class MainGame extends Game {
         }
         batch.dispose();
         shapeRenderer.dispose();
+        if (oldFilmEffect != null) {
+            oldFilmEffect.dispose();
+        }
         audioManager.dispose();
-        assets.dispose();
     }
 }

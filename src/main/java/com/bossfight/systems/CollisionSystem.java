@@ -43,8 +43,10 @@ public class CollisionSystem {
                 if (hit) {
                     boolean special = projectile.isSpecial();
                     particleSystem.spawnBossHit(projectile.getCenterX(), projectile.getCenterY(), special);
-                    player.addSpecialEnergy(special ? 0f : com.bossfight.util.Constants.PLAYER_SPECIAL_HIT_CHARGE);
-                    audioManager.playCue(special ? AudioManager.Cue.PLAYER_SPECIAL : AudioManager.Cue.BOSS_HIT);
+                    player.addSpecialEnergy(special ? 0f : com.bossfight.Constants.PLAYER_SPECIAL_HIT_CHARGE);
+                    if (!boss.isDefeated()) {
+                        audioManager.playCue(special ? AudioManager.Cue.PLAYER_SPECIAL : AudioManager.Cue.BOSS_HIT);
+                    }
                     requestedHitstop = Math.max(requestedHitstop, special ? 0.08f : 0.035f);
                     requestedShake = Math.max(requestedShake, special ? 10f : 4f);
                 }
@@ -56,6 +58,10 @@ public class CollisionSystem {
                                         AudioManager audioManager) {
         for (int i = projectiles.size - 1; i >= 0; i--) {
             Projectile projectile = projectiles.get(i);
+            if (player.isInvulnerableAfterHit()) {
+                continue;
+            }
+
             if (projectile.getDamage() > 0 && projectile.getHitbox().overlaps(player.getHitbox())) {
                 boolean damaged = player.takeDamage(projectile.getDamage(), projectile.getCenterX());
                 projectile.deactivate();

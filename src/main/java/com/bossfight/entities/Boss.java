@@ -7,13 +7,17 @@ import com.bossfight.boss.AttackOneState;
 import com.bossfight.boss.AttackThreeState;
 import com.bossfight.boss.AttackTwoState;
 import com.bossfight.boss.BossState;
+import com.bossfight.boss.BossSoundEvent;
 import com.bossfight.boss.DefeatedState;
 import com.bossfight.boss.IdleState;
 import com.bossfight.systems.ProjectileSystem;
-import com.bossfight.util.Constants;
+import com.bossfight.Constants;
+
+import java.util.ArrayDeque;
 
 public class Boss {
     private final Hitbox hitbox;
+    private final ArrayDeque<BossSoundEvent> soundEvents = new ArrayDeque<>();
     private final int maxHealth;
     private BossState currentState;
     private int health;
@@ -36,7 +40,7 @@ public class Boss {
         maxHealth = Constants.BOSS_MAX_HEALTH;
         health = maxHealth;
         hitbox = new Hitbox(x, y, Constants.BOSS_WIDTH, Constants.BOSS_HEIGHT);
-        setState(new IdleState(1.2f));
+        currentState = new IdleState(1.2f);
     }
 
     public void update(float delta, ProjectileSystem projectileSystem, Player player) {
@@ -76,9 +80,20 @@ public class Boss {
         hurtFlashTimer = 0.12f;
         attackSquashTimer = 0.08f;
         if (health == 0) {
+            soundEvents.clear();
             setState(new DefeatedState());
         }
         return true;
+    }
+
+    public void emitSound(BossSoundEvent soundEvent) {
+        if (soundEvent != null && !isDefeated()) {
+            soundEvents.offer(soundEvent);
+        }
+    }
+
+    public BossSoundEvent pollSoundEvent() {
+        return soundEvents.poll();
     }
 
     public void showTelegraph(Color color, float duration) {

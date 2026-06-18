@@ -3,7 +3,7 @@ package com.bossfight.desktop;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Application;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.bossfight.MainGame;
-import com.bossfight.util.Constants;
+import com.bossfight.Constants;
 
 public final class DesktopLauncher {
     private DesktopLauncher() {

@@ -9,7 +9,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bossfight.MainGame;
 import com.bossfight.systems.RetroTextFactory;
-import com.bossfight.util.Constants;
+import com.bossfight.Constants;
 
 public class EndScreen extends ScreenAdapter {
     private final MainGame game;
@@ -27,9 +27,9 @@ public class EndScreen extends ScreenAdapter {
         camera = new OrthographicCamera();
         viewport = new FitViewport(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT, camera);
         textFactory = new RetroTextFactory();
-        titleText = textFactory.createResultTitle(victory ? "VITORIA!" : "DERROTA!", victory);
-        retryText = textFactory.createInstruction("R  TENTA NOVAMENTE");
-        menuText = textFactory.createInstruction("ENTER  VOLTA AO MENU");
+        titleText = textFactory.createResultTitle(victory ? "VITÓRIA!" : "DERROTA!", victory);
+        retryText = textFactory.createInstruction("R  TENTAR DE NOVO");
+        menuText = textFactory.createInstruction("ENTER  VOLTAR AO MENU");
     }
 
     @Override
