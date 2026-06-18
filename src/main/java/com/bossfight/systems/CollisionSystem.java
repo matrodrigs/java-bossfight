@@ -7,44 +7,83 @@ import com.bossfight.entities.Projectile;
 
 public class CollisionSystem {
     private float bossContactCooldown;
+    private float requestedHitstop;
+    private float requestedShake;
 
-    public void resolve(Player player, Boss boss, ProjectileSystem projectileSystem, float delta) {
+    public void resolve(Player player, Boss boss, ProjectileSystem projectileSystem, ParticleSystem particleSystem,
+                        AudioManager audioManager, float delta) {
+        requestedHitstop = 0f;
+        requestedShake = 0f;
         bossContactCooldown = Math.max(0f, bossContactCooldown - delta);
-        resolvePlayerProjectiles(boss, projectileSystem.getPlayerProjectiles());
-        resolveBossProjectiles(player, projectileSystem.getBossProjectiles());
-        resolveBossContact(player, boss);
+        resolvePlayerProjectiles(player, boss, projectileSystem.getPlayerProjectiles(), particleSystem, audioManager);
+        resolveBossProjectiles(player, projectileSystem.getBossProjectiles(), particleSystem, audioManager);
+        resolveBossContact(player, boss, particleSystem, audioManager);
     }
 
-    private void resolvePlayerProjectiles(Boss boss, Array<Projectile> projectiles) {
+    public float consumeRequestedHitstop() {
+        float value = requestedHitstop;
+        requestedHitstop = 0f;
+        return value;
+    }
+
+    public float consumeRequestedShake() {
+        float value = requestedShake;
+        requestedShake = 0f;
+        return value;
+    }
+
+    private void resolvePlayerProjectiles(Player player, Boss boss, Array<Projectile> projectiles,
+                                          ParticleSystem particleSystem, AudioManager audioManager) {
         for (int i = projectiles.size - 1; i >= 0; i--) {
             Projectile projectile = projectiles.get(i);
             if (!boss.isDefeated() && projectile.getHitbox().overlaps(boss.getHitbox())) {
-                boss.takeDamage(projectile.getDamage());
+                boolean hit = boss.takeDamage(projectile.getDamage());
                 projectile.deactivate();
                 projectiles.removeIndex(i);
+                if (hit) {
+                    boolean special = projectile.isSpecial();
+                    particleSystem.spawnBossHit(projectile.getCenterX(), projectile.getCenterY(), special);
+                    player.addSpecialEnergy(special ? 0f : com.bossfight.util.Constants.PLAYER_SPECIAL_HIT_CHARGE);
+                    audioManager.playCue(special ? AudioManager.Cue.PLAYER_SPECIAL : AudioManager.Cue.BOSS_HIT);
+                    requestedHitstop = Math.max(requestedHitstop, special ? 0.08f : 0.035f);
+                    requestedShake = Math.max(requestedShake, special ? 10f : 4f);
+                }
             }
         }
     }
 
-    private void resolveBossProjectiles(Player player, Array<Projectile> projectiles) {
+    private void resolveBossProjectiles(Player player, Array<Projectile> projectiles, ParticleSystem particleSystem,
+                                        AudioManager audioManager) {
         for (int i = projectiles.size - 1; i >= 0; i--) {
             Projectile projectile = projectiles.get(i);
-            if (projectile.getHitbox().overlaps(player.getHitbox())) {
-                player.takeDamage(projectile.getDamage());
+            if (projectile.getDamage() > 0 && projectile.getHitbox().overlaps(player.getHitbox())) {
+                boolean damaged = player.takeDamage(projectile.getDamage(), projectile.getCenterX());
                 projectile.deactivate();
                 projectiles.removeIndex(i);
+                if (damaged) {
+                    particleSystem.spawnPlayerDamage(player.getCenterX(), player.getCenterY());
+                    audioManager.playCue(AudioManager.Cue.PLAYER_HIT);
+                    requestedHitstop = Math.max(requestedHitstop, 0.07f);
+                    requestedShake = Math.max(requestedShake, 8f);
+                }
             }
         }
     }
 
-    private void resolveBossContact(Player player, Boss boss) {
+    private void resolveBossContact(Player player, Boss boss, ParticleSystem particleSystem, AudioManager audioManager) {
         if (boss.isDefeated() || bossContactCooldown > 0f) {
             return;
         }
 
         if (player.getHitbox().overlaps(boss.getHitbox())) {
-            player.takeDamage(1);
-            bossContactCooldown = 0.8f;
+            boolean damaged = player.takeDamage(1, boss.getCenterX());
+            if (damaged) {
+                particleSystem.spawnPlayerDamage(player.getCenterX(), player.getCenterY());
+                audioManager.playCue(AudioManager.Cue.PLAYER_HIT);
+                requestedHitstop = Math.max(requestedHitstop, 0.07f);
+                requestedShake = Math.max(requestedShake, 8f);
+                bossContactCooldown = 0.8f;
+            }
         }
     }
 }

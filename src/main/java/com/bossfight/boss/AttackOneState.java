@@ -1,6 +1,7 @@
 package com.bossfight.boss;
 
-import com.badlogic.gdx.math.Vector2;
+import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.math.MathUtils;
 import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
@@ -8,32 +9,66 @@ import com.bossfight.systems.ProjectileSystem;
 import com.bossfight.util.Constants;
 
 public class AttackOneState implements BossState {
+    private static final float WARNING_TIME = 0.62f;
+
     private float elapsed;
-    private float shotTimer;
+    private boolean upperLane;
+    private boolean warningSpawned;
+    private boolean fired;
 
     @Override
     public String getName() {
-        return "Ataque direcionado";
+        return "Bote de cipo";
     }
 
     @Override
     public void enter(Boss boss) {
         elapsed = 0f;
-        shotTimer = 0.15f;
+        upperLane = MathUtils.randomBoolean();
+        warningSpawned = false;
+        fired = false;
+        boss.showTelegraph(new Color(1f, 0.16f, 0.08f, 1f), WARNING_TIME);
+        boss.playAttackMotion(WARNING_TIME, 0.55f);
     }
 
     @Override
     public void update(Boss boss, float delta, ProjectileSystem projectileSystem, Player player) {
         elapsed += delta;
-        shotTimer -= delta;
 
-        if (shotTimer <= 0f) {
-            fireAimedShot(boss, projectileSystem, player);
-            shotTimer = boss.isPhaseTwo() ? 0.24f : 0.38f;
+        if (!warningSpawned) {
+            warningSpawned = true;
+            projectileSystem.addProjectile(new Projectile(
+                    Projectile.Owner.BOSS,
+                    Constants.ARENA_LEFT,
+                    getLaneY(),
+                    Constants.BOSS_START_X - Constants.ARENA_LEFT + 42f,
+                    getLaneHeight(),
+                    0f,
+                    0f,
+                    0,
+                    Projectile.Kind.BOSS_WARNING,
+                    WARNING_TIME
+            ));
         }
 
-        float duration = boss.isPhaseTwo() ? 2.8f : 2.2f;
-        if (elapsed >= duration) {
+        if (!fired && elapsed >= WARNING_TIME) {
+            fired = true;
+            boss.playAttackMotion(0.32f, 1.15f);
+            projectileSystem.addProjectile(new Projectile(
+                    Projectile.Owner.BOSS,
+                    Constants.ARENA_LEFT,
+                    getLaneY(),
+                    Constants.BOSS_START_X - Constants.ARENA_LEFT + 62f,
+                    getLaneHeight(),
+                    0f,
+                    0f,
+                    Constants.BOSS_PROJECTILE_DAMAGE,
+                    Projectile.Kind.BOSS_THORN,
+                    boss.isPhaseTwo() ? 0.42f : 0.34f
+            ));
+        }
+
+        if (elapsed >= (boss.isPhaseTwo() ? 1.12f : 1.22f)) {
             boss.finishCurrentAttack();
         }
     }
@@ -42,22 +77,11 @@ public class AttackOneState implements BossState {
     public void exit(Boss boss) {
     }
 
-    private void fireAimedShot(Boss boss, ProjectileSystem projectileSystem, Player player) {
-        Vector2 direction = new Vector2(
-                player.getCenterX() - boss.getCenterX(),
-                player.getCenterY() - boss.getCenterY()
-        ).nor();
+    private float getLaneY() {
+        return upperLane ? Constants.FLOOR_Y + 142f : Constants.FLOOR_Y + 8f;
+    }
 
-        float speed = boss.isPhaseTwo() ? 440f : 350f;
-        projectileSystem.addProjectile(new Projectile(
-                Projectile.Owner.BOSS,
-                boss.getCenterX(),
-                boss.getCenterY(),
-                Constants.BOSS_PROJECTILE_WIDTH,
-                Constants.BOSS_PROJECTILE_HEIGHT,
-                direction.x * speed,
-                direction.y * speed,
-                Constants.BOSS_PROJECTILE_DAMAGE
-        ));
+    private float getLaneHeight() {
+        return upperLane ? 54f : 50f;
     }
 }

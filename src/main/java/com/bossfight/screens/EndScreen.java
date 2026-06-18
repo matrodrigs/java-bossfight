@@ -3,13 +3,12 @@ package com.bossfight.screens;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.ScreenAdapter;
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bossfight.MainGame;
+import com.bossfight.systems.RetroTextFactory;
 import com.bossfight.util.Constants;
 
 public class EndScreen extends ScreenAdapter {
@@ -17,16 +16,20 @@ public class EndScreen extends ScreenAdapter {
     private final boolean victory;
     private final OrthographicCamera camera;
     private final FitViewport viewport;
-    private final BitmapFont font;
-    private final GlyphLayout layout;
+    private final RetroTextFactory textFactory;
+    private final Texture titleText;
+    private final Texture retryText;
+    private final Texture menuText;
 
     public EndScreen(MainGame game, boolean victory) {
         this.game = game;
         this.victory = victory;
         camera = new OrthographicCamera();
         viewport = new FitViewport(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT, camera);
-        font = new BitmapFont();
-        layout = new GlyphLayout();
+        textFactory = new RetroTextFactory();
+        titleText = textFactory.createResultTitle(victory ? "VITORIA!" : "DERROTA!", victory);
+        retryText = textFactory.createInstruction("R  TENTA NOVAMENTE");
+        menuText = textFactory.createInstruction("ENTER  VOLTA AO MENU");
     }
 
     @Override
@@ -51,9 +54,9 @@ public class EndScreen extends ScreenAdapter {
         viewport.apply();
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
-        drawCentered(victory ? "VITORIA" : "DERROTA", Constants.WORLD_HEIGHT - 260f, 3f, Color.WHITE);
-        drawCentered("R tenta novamente", Constants.WORLD_HEIGHT - 340f, 1.2f, Color.LIGHT_GRAY);
-        drawCentered("ENTER volta ao menu", Constants.WORLD_HEIGHT - 390f, 1.2f, Color.LIGHT_GRAY);
+        drawCenteredTexture(titleText, Constants.WORLD_HEIGHT - 250f, 0.92f);
+        drawCenteredTexture(retryText, Constants.WORLD_HEIGHT - 340f, 0.7f);
+        drawCenteredTexture(menuText, Constants.WORLD_HEIGHT - 390f, 0.7f);
         game.getBatch().end();
     }
 
@@ -64,14 +67,14 @@ public class EndScreen extends ScreenAdapter {
 
     @Override
     public void dispose() {
-        font.dispose();
+        textFactory.dispose();
     }
 
-    private void drawCentered(String text, float y, float scale, Color color) {
-        font.getData().setScale(scale);
-        font.setColor(color);
-        layout.setText(font, text);
-        float x = (Constants.WORLD_WIDTH - layout.width) * 0.5f;
-        font.draw(game.getBatch(), layout, x, y);
+    private void drawCenteredTexture(Texture texture, float centerY, float scale) {
+        float width = texture.getWidth() * scale;
+        float height = texture.getHeight() * scale;
+        float x = (Constants.WORLD_WIDTH - width) * 0.5f;
+        float y = centerY - height * 0.5f;
+        game.getBatch().draw(texture, x, y, width, height);
     }
 }
