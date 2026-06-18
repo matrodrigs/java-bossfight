@@ -6,61 +6,88 @@ import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
-import com.badlogic.gdx.graphics.g2d.GlyphLayout;
+import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bossfight.MainGame;
-import com.bossfight.systems.AnimationSystem;
+import com.bossfight.systems.AudioManager;
+import com.bossfight.systems.RetroTextFactory;
 import com.bossfight.util.Constants;
 
 public class MenuScreen extends ScreenAdapter {
+    private static final float MENU_CENTER_X = 638.5f;
+    private static final float START_CENTER_Y = 383.7f;
+    private static final float EXIT_CENTER_Y = 287.7f;
+    private static final float BUTTON_HALF_WIDTH = 221f;
+    private static final Color POINTER_SHADOW = new Color(0.03f, 0.02f, 0.01f, 0.45f);
+    private static final Color POINTER_INK = new Color(0.05f, 0.035f, 0.02f, 0.96f);
+    private static final Color POINTER_GOLD = new Color(0.96f, 0.61f, 0.06f, 1f);
+    private static final Color POINTER_GOLD_DARK = new Color(0.58f, 0.27f, 0.03f, 1f);
+    private static final Color POINTER_HIGHLIGHT = new Color(1f, 0.84f, 0.33f, 0.92f);
+
     private final MainGame game;
     private final OrthographicCamera camera;
     private final FitViewport viewport;
-    private final BitmapFont font;
-    private final GlyphLayout layout;
-    private final AnimationSystem animationSystem;
+    private final RetroTextFactory textFactory;
+    private final Texture titleText;
+    private final Texture subtitleText;
+    private final Texture startText;
+    private final Texture startSelectedText;
+    private final Texture exitText;
+    private final Texture exitSelectedText;
+    private final Texture menuBackground;
     private float elapsed;
+    private int selectedIndex;
 
     public MenuScreen(MainGame game) {
         this.game = game;
         camera = new OrthographicCamera();
         viewport = new FitViewport(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT, camera);
-        font = new BitmapFont();
-        layout = new GlyphLayout();
-        animationSystem = new AnimationSystem();
+        textFactory = new RetroTextFactory();
+        titleText = textFactory.createTitle("JAVA BOSSFIGHT");
+        subtitleText = textFactory.createSubtitle("O DUELO DO JARDIM");
+        startText = textFactory.createMenuOption("INICIAR DUELO", false);
+        startSelectedText = textFactory.createMenuOption("INICIAR DUELO", true);
+        exitText = textFactory.createMenuOption("SAIR", false);
+        exitSelectedText = textFactory.createMenuOption("SAIR", true);
+        menuBackground = new Texture(Gdx.files.internal("sprites/ui/menu_background.png"));
+        menuBackground.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
     }
 
     @Override
     public void render(float delta) {
-        elapsed += delta;
+        float safeDelta = Math.min(delta, 1f / 30f);
+        elapsed += safeDelta;
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-            game.showBattleScreen();
+        if (!handleInput()) {
             return;
         }
 
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            Gdx.app.exit();
-            return;
-        }
-
-        Gdx.gl.glClearColor(0.07f, 0.08f, 0.1f, 1f);
+        Gdx.gl.glClearColor(0.11f, 0.3f, 0.35f, 1f);
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         viewport.apply();
-        game.getShapeRenderer().setProjectionMatrix(camera.combined);
-        game.getShapeRenderer().begin(com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType.Filled);
-        drawMenuBackground();
-        game.getShapeRenderer().end();
+        game.getBatch().setProjectionMatrix(camera.combined);
+        game.getBatch().begin();
+        game.getBatch().draw(menuBackground, 0f, 0f, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
+        game.getBatch().end();
+
+        ShapeRenderer shapeRenderer = game.getShapeRenderer();
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
+        shapeRenderer.setProjectionMatrix(camera.combined);
+        shapeRenderer.begin(com.badlogic.gdx.graphics.glutils.ShapeRenderer.ShapeType.Filled);
+        drawOptions();
+        shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
 
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
-        drawCentered("JAVA BOSSFIGHT", Constants.WORLD_HEIGHT - 210f, 3.2f, Color.WHITE);
-        drawCentered("Pressione ENTER para iniciar", Constants.WORLD_HEIGHT - 310f, 1.35f, Color.SKY);
-        drawCentered("A/D mover  |  W pular  |  J atirar  |  K dash", Constants.WORLD_HEIGHT - 365f, 1.1f, Color.LIGHT_GRAY);
-        drawCentered("Esc sai do jogo", Constants.WORLD_HEIGHT - 420f, 1f, Color.GRAY);
+        drawCenteredTexture(titleText, 525f + MathUtils.sin(elapsed * 2.2f) * 3f, 0.72f, 0f, MENU_CENTER_X);
+        drawCenteredTexture(subtitleText, 462f, 0.72f, 0f, MENU_CENTER_X);
+        drawOptionText(0, START_CENTER_Y);
+        drawOptionText(1, EXIT_CENTER_Y);
         game.getBatch().end();
     }
 
@@ -71,27 +98,128 @@ public class MenuScreen extends ScreenAdapter {
 
     @Override
     public void dispose() {
-        font.dispose();
+        textFactory.dispose();
+        menuBackground.dispose();
     }
 
-    private void drawMenuBackground() {
+    private boolean handleInput() {
+        if (Gdx.input.isKeyJustPressed(Input.Keys.UP) || Gdx.input.isKeyJustPressed(Input.Keys.W)
+                || Gdx.input.isKeyJustPressed(Input.Keys.DOWN) || Gdx.input.isKeyJustPressed(Input.Keys.S)) {
+            selectedIndex = 1 - selectedIndex;
+            game.getAudioManager().playCue(AudioManager.Cue.MENU_MOVE);
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER) || Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+            game.getAudioManager().playCue(AudioManager.Cue.MENU_CONFIRM);
+            if (selectedIndex == 0) {
+                game.showBattleScreen();
+            } else {
+                Gdx.app.exit();
+            }
+            return false;
+        }
+
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            game.getAudioManager().playCue(AudioManager.Cue.MENU_BACK);
+            Gdx.app.exit();
+            return false;
+        }
+
+        return true;
+    }
+
+    private void drawOptions() {
+        drawSelectionMarkers(selectedIndex == 0 ? START_CENTER_Y : EXIT_CENTER_Y);
+    }
+
+    private void drawSelectionMarkers(float centerY) {
         ShapeRenderer shapeRenderer = game.getShapeRenderer();
-        shapeRenderer.setColor(0.13f, 0.16f, 0.2f, 1f);
-        shapeRenderer.rect(0f, 0f, Constants.WORLD_WIDTH, Constants.FLOOR_Y);
+        float wobble = MathUtils.sin(elapsed * 10f) * 5f;
+        float leftX = MENU_CENTER_X - BUTTON_HALF_WIDTH - 38f - wobble;
+        float rightX = MENU_CENTER_X + BUTTON_HALF_WIDTH + 38f + wobble;
 
-        shapeRenderer.setColor(0.28f, 0.32f, 0.38f, 1f);
-        shapeRenderer.rect(Constants.ARENA_LEFT, Constants.FLOOR_Y, Constants.ARENA_RIGHT - Constants.ARENA_LEFT, 4f);
-
-        float pulseSize = animationSystem.pulse(elapsed, 34f, 46f, 4f);
-        shapeRenderer.setColor(Color.ORANGE);
-        shapeRenderer.circle(Constants.WORLD_WIDTH * 0.5f, Constants.WORLD_HEIGHT - 500f, pulseSize);
+        drawPointer(shapeRenderer, leftX, centerY, true);
+        drawPointer(shapeRenderer, rightX, centerY, false);
     }
 
-    private void drawCentered(String text, float y, float scale, Color color) {
-        font.getData().setScale(scale);
-        font.setColor(color);
-        layout.setText(font, text);
-        float x = (Constants.WORLD_WIDTH - layout.width) * 0.5f;
-        font.draw(game.getBatch(), layout, x, y);
+    private void drawPointer(ShapeRenderer shapeRenderer, float x, float y, boolean pointsRight) {
+        float direction = pointsRight ? 1f : -1f;
+        float scale = 1f + MathUtils.sin(elapsed * 15f) * 0.04f;
+
+        drawPointerSilhouette(shapeRenderer, x + direction * 3f, y - 3f, direction, scale, POINTER_SHADOW);
+        drawPointerSilhouette(shapeRenderer, x, y, direction, scale, POINTER_INK);
+        drawPointerFill(shapeRenderer, x, y, direction, scale);
+    }
+
+    private void drawPointerSilhouette(ShapeRenderer shapeRenderer, float x, float y, float direction, float scale,
+            Color color) {
+        float shoulderX = x - direction * 30f * scale;
+        float rootX = x - direction * 39f * scale;
+        float outerX = rootX - direction * 22f * scale;
+        float headHeight = 23f * scale;
+
+        shapeRenderer.setColor(color);
+        shapeRenderer.triangle(x + direction * 3f * scale, y,
+                shoulderX, y + headHeight,
+                shoulderX, y - headHeight);
+        shapeRenderer.rectLine(shoulderX, y, rootX, y, 16f * scale);
+        drawFleurPetal(shapeRenderer, rootX, y, outerX, y, 8f * scale);
+        drawFleurPetal(shapeRenderer, rootX, y + 3f * scale,
+                rootX - direction * 18f * scale, y + 17f * scale, 6f * scale);
+        drawFleurPetal(shapeRenderer, rootX, y - 3f * scale,
+                rootX - direction * 18f * scale, y - 17f * scale, 6f * scale);
+    }
+
+    private void drawFleurPetal(ShapeRenderer shapeRenderer, float rootX, float rootY, float tipX, float tipY,
+            float radius) {
+        shapeRenderer.triangle(rootX, rootY,
+                tipX, tipY + radius,
+                tipX, tipY - radius);
+        shapeRenderer.circle(tipX, tipY, radius * 0.72f);
+    }
+
+    private void drawPointerFill(ShapeRenderer shapeRenderer, float x, float y, float direction, float scale) {
+        float shoulderX = x - direction * 27f * scale;
+        float rootX = x - direction * 39f * scale;
+
+        shapeRenderer.setColor(POINTER_GOLD_DARK);
+        shapeRenderer.triangle(x - direction * 2f * scale, y - 2f * scale,
+                shoulderX, y - 16f * scale,
+                shoulderX, y - 4f * scale);
+
+        shapeRenderer.setColor(POINTER_GOLD);
+        shapeRenderer.triangle(x - direction * 2f * scale, y,
+                shoulderX, y + 16f * scale,
+                shoulderX, y - 16f * scale);
+        shapeRenderer.rectLine(shoulderX, y, rootX, y, 8f * scale);
+
+        shapeRenderer.setColor(POINTER_HIGHLIGHT);
+        shapeRenderer.triangle(x - direction * 8f * scale, y + 3f * scale,
+                x - direction * 23f * scale, y + 11f * scale,
+                x - direction * 24f * scale, y + 6f * scale);
+    }
+
+    private void drawOptionText(int index, float centerY) {
+        boolean selected = selectedIndex == index;
+        Texture texture;
+        if (index == 0) {
+            texture = selected ? startSelectedText : startText;
+        } else {
+            texture = selected ? exitSelectedText : exitText;
+        }
+        float xOffset = selected ? MathUtils.sin(elapsed * 10f) * 4f : 0f;
+        drawCenteredTexture(texture, centerY, 0.64f, xOffset, MENU_CENTER_X);
+    }
+
+    private void drawCenteredTexture(Texture texture, float centerY, float scale) {
+        drawCenteredTexture(texture, centerY, scale, 0f, Constants.WORLD_WIDTH * 0.5f);
+    }
+
+    private void drawCenteredTexture(Texture texture, float centerY, float scale, float xOffset, float centerX) {
+        float width = texture.getWidth() * scale;
+        float height = texture.getHeight() * scale;
+        float x = centerX - width * 0.5f + xOffset;
+        float y = centerY - height * 0.5f;
+        game.getBatch().draw(texture, x, y, width, height);
     }
 }

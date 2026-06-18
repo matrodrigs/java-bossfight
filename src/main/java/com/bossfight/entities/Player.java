@@ -6,6 +6,10 @@ import com.badlogic.gdx.math.MathUtils;
 import com.bossfight.util.Constants;
 
 public class Player {
+    private static final float SHOOT_POSE_HOLD = Constants.PLAYER_SHOOT_COOLDOWN + 0.08f;
+    private static final float SPECIAL_SHOOT_POSE_HOLD = 0.32f;
+    private static final float SHOT_MUZZLE_Y_FACTOR = 0.70f;
+
     private final Hitbox hitbox;
     private final int maxHealth;
     private int health;
@@ -14,25 +18,50 @@ public class Player {
     private float y;
     private float velocityY;
     private float shootCooldown;
+    private float specialCooldown;
+    private float specialEnergy;
     private float dashCooldown;
     private float dashTimer;
+    private float invulnerabilityTimer;
+    private float hurtFlashTimer;
+    private float knockbackTimer;
+    private float knockbackVelocityX;
+    private float shootPoseTimer;
+    private float animationTime;
     private int dashDirection = 1;
+    private boolean dashStartedThisFrame;
+    private boolean movingHorizontally;
 
     public Player() {
         x = Constants.PLAYER_START_X;
         y = Constants.PLAYER_START_Y;
         maxHealth = Constants.PLAYER_MAX_HEALTH;
         health = maxHealth;
+        specialEnergy = Constants.PLAYER_SPECIAL_MAX * 0.35f;
         hitbox = new Hitbox(x, y, Constants.PLAYER_WIDTH, Constants.PLAYER_HEIGHT);
     }
 
     public void update(float delta, boolean moveLeft, boolean moveRight, boolean jumpPressed, boolean dashPressed) {
+        dashStartedThisFrame = false;
         shootCooldown = Math.max(0f, shootCooldown - delta);
+        specialCooldown = Math.max(0f, specialCooldown - delta);
         dashCooldown = Math.max(0f, dashCooldown - delta);
+        invulnerabilityTimer = Math.max(0f, invulnerabilityTimer - delta);
+        hurtFlashTimer = Math.max(0f, hurtFlashTimer - delta);
+        shootPoseTimer = Math.max(0f, shootPoseTimer - delta);
+        animationTime += delta;
+        specialEnergy = Math.min(Constants.PLAYER_SPECIAL_MAX,
+                specialEnergy + Constants.PLAYER_SPECIAL_PASSIVE_CHARGE * delta);
+        movingHorizontally = dashTimer > 0f;
 
         if (dashTimer > 0f) {
             dashTimer -= delta;
             x += dashDirection * Constants.PLAYER_DASH_SPEED * delta;
+        } else if (knockbackTimer > 0f) {
+            knockbackTimer -= delta;
+            x += knockbackVelocityX * delta;
+            knockbackVelocityX *= 0.86f;
+            updateJumpAndGravity(delta, false);
         } else {
             updateHorizontalMovement(delta, moveLeft, moveRight);
             updateJumpAndGravity(delta, jumpPressed);
@@ -49,10 +78,11 @@ public class Player {
         }
 
         shootCooldown = Constants.PLAYER_SHOOT_COOLDOWN;
+        shootPoseTimer = SHOOT_POSE_HOLD;
         float projectileX = facingDirection > 0
                 ? x + Constants.PLAYER_WIDTH
                 : x - Constants.PLAYER_PROJECTILE_WIDTH;
-        float projectileY = y + Constants.PLAYER_HEIGHT * 0.55f;
+        float projectileY = getShotOriginY(Constants.PLAYER_PROJECTILE_HEIGHT);
         float velocityX = facingDirection * Constants.PLAYER_PROJECTILE_SPEED;
 
         return new Projectile(
@@ -67,17 +97,77 @@ public class Player {
         );
     }
 
-    public void render(ShapeRenderer shapeRenderer) {
-        shapeRenderer.setColor(Color.CYAN);
-        shapeRenderer.rect(x, y, Constants.PLAYER_WIDTH, Constants.PLAYER_HEIGHT);
+    public Projectile tryShootSpecial() {
+        if (specialCooldown > 0f || specialEnergy < Constants.PLAYER_SPECIAL_MAX) {
+            return null;
+        }
 
-        shapeRenderer.setColor(Color.WHITE);
-        float eyeX = facingDirection > 0 ? x + 30f : x + 10f;
-        shapeRenderer.circle(eyeX, y + 60f, 4f);
+        specialEnergy = 0f;
+        specialCooldown = Constants.PLAYER_SPECIAL_COOLDOWN;
+        shootPoseTimer = SPECIAL_SHOOT_POSE_HOLD;
+        float projectileX = facingDirection > 0
+                ? x + Constants.PLAYER_WIDTH
+                : x - Constants.PLAYER_SPECIAL_WIDTH;
+        float projectileY = getShotOriginY(Constants.PLAYER_SPECIAL_HEIGHT);
+        float velocityX = facingDirection * Constants.PLAYER_SPECIAL_SPEED;
+
+        return new Projectile(
+                Projectile.Owner.PLAYER,
+                projectileX,
+                projectileY,
+                Constants.PLAYER_SPECIAL_WIDTH,
+                Constants.PLAYER_SPECIAL_HEIGHT,
+                velocityX,
+                0f,
+                Constants.PLAYER_SPECIAL_DAMAGE,
+                Projectile.Kind.PLAYER_SPECIAL
+        );
     }
 
-    public void takeDamage(int amount) {
+    public void render(ShapeRenderer shapeRenderer) {
+        if (invulnerabilityTimer > 0f && ((int) (invulnerabilityTimer * 18f) % 2 == 0)) {
+            return;
+        }
+
+        float squash = dashTimer > 0f ? 1.18f : 1f;
+        float width = Constants.PLAYER_WIDTH * squash;
+        float drawX = x - (width - Constants.PLAYER_WIDTH) * 0.5f;
+
+        shapeRenderer.setColor(0.06f, 0.09f, 0.13f, 1f);
+        shapeRenderer.rect(drawX + 6f, y, 10f, 16f);
+        shapeRenderer.rect(drawX + width - 16f, y, 10f, 16f);
+
+        shapeRenderer.setColor(hurtFlashTimer > 0f ? Color.WHITE : new Color(0.08f, 0.64f, 0.78f, 1f));
+        shapeRenderer.rect(drawX + 4f, y + 16f, width - 8f, 42f);
+
+        shapeRenderer.setColor(0.95f, 0.89f, 0.76f, 1f);
+        shapeRenderer.ellipse(drawX + 2f, y + 48f, width - 4f, 32f);
+
+        shapeRenderer.setColor(0.12f, 0.08f, 0.06f, 1f);
+        float eyeX = facingDirection > 0 ? drawX + width * 0.67f : drawX + width * 0.28f;
+        shapeRenderer.circle(eyeX, y + 65f, 4f);
+        shapeRenderer.rect(drawX + width * 0.34f, y + 52f, width * 0.32f, 3f);
+
+        shapeRenderer.setColor(0.94f, 0.14f, 0.16f, 1f);
+        shapeRenderer.rect(drawX + width * 0.18f, y + 37f, width * 0.64f, 9f);
+    }
+
+    public boolean takeDamage(int amount) {
+        return takeDamage(amount, x + Constants.PLAYER_WIDTH * 0.5f - facingDirection * 80f);
+    }
+
+    public boolean takeDamage(int amount, float sourceX) {
+        if (invulnerabilityTimer > 0f || dashTimer > 0f || health <= 0) {
+            return false;
+        }
+
         health = Math.max(0, health - amount);
+        invulnerabilityTimer = Constants.PLAYER_INVULNERABILITY_DURATION;
+        hurtFlashTimer = 0.18f;
+        knockbackTimer = 0.16f;
+        knockbackVelocityX = sourceX < getCenterX() ? 360f : -360f;
+        velocityY = Math.max(velocityY, 240f);
+        return true;
     }
 
     public boolean isDead() {
@@ -104,6 +194,68 @@ public class Player {
         return maxHealth;
     }
 
+    public float getSpecialEnergyPercent() {
+        return specialEnergy / Constants.PLAYER_SPECIAL_MAX;
+    }
+
+    public boolean isSpecialReady() {
+        return specialEnergy >= Constants.PLAYER_SPECIAL_MAX && specialCooldown <= 0f;
+    }
+
+    public void addSpecialEnergy(float amount) {
+        specialEnergy = Math.min(Constants.PLAYER_SPECIAL_MAX, specialEnergy + amount);
+    }
+
+    public boolean consumeDashStarted() {
+        boolean started = dashStartedThisFrame;
+        dashStartedThisFrame = false;
+        return started;
+    }
+
+    public int getFacingDirection() {
+        return facingDirection;
+    }
+
+    public float getX() {
+        return x;
+    }
+
+    public float getY() {
+        return y;
+    }
+
+    public float getAnimationTime() {
+        return animationTime;
+    }
+
+    public boolean isMovingHorizontally() {
+        return movingHorizontally;
+    }
+
+    public boolean isGrounded() {
+        return isOnGround();
+    }
+
+    public boolean isAirborne() {
+        return !isOnGround();
+    }
+
+    public boolean isShootPoseActive() {
+        return shootPoseTimer > 0f;
+    }
+
+    public boolean isHurtPoseActive() {
+        return hurtFlashTimer > 0f || knockbackTimer > 0f;
+    }
+
+    public boolean shouldRenderSprite() {
+        return invulnerabilityTimer <= 0f || ((int) (invulnerabilityTimer * 18f) % 2 != 0);
+    }
+
+    public boolean isDashing() {
+        return dashTimer > 0f;
+    }
+
     private void updateHorizontalMovement(float delta, boolean moveLeft, boolean moveRight) {
         float velocityX = 0f;
 
@@ -117,6 +269,11 @@ public class Player {
         }
 
         x += velocityX * delta;
+        movingHorizontally = velocityX != 0f;
+    }
+
+    private float getShotOriginY(float projectileHeight) {
+        return y + Constants.PLAYER_HEIGHT * SHOT_MUZZLE_Y_FACTOR - projectileHeight * 0.5f;
     }
 
     private void updateJumpAndGravity(float delta, boolean jumpPressed) {
@@ -136,6 +293,8 @@ public class Player {
         dashTimer = Constants.PLAYER_DASH_DURATION;
         dashCooldown = Constants.PLAYER_DASH_COOLDOWN;
         dashDirection = facingDirection;
+        dashStartedThisFrame = true;
+        movingHorizontally = true;
     }
 
     private void keepInsideArena() {

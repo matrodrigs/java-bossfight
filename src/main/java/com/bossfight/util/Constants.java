@@ -24,6 +24,11 @@ public final class Constants {
     public static final float PLAYER_DASH_DURATION = 0.14f;
     public static final float PLAYER_DASH_COOLDOWN = 0.55f;
     public static final float PLAYER_SHOOT_COOLDOWN = 0.18f;
+    public static final float PLAYER_INVULNERABILITY_DURATION = 0.95f;
+    public static final float PLAYER_SPECIAL_MAX = 100f;
+    public static final float PLAYER_SPECIAL_PASSIVE_CHARGE = 8f;
+    public static final float PLAYER_SPECIAL_HIT_CHARGE = 9f;
+    public static final float PLAYER_SPECIAL_COOLDOWN = 0.45f;
     public static final int PLAYER_MAX_HEALTH = 5;
 
     public static final float BOSS_WIDTH = 170f;
@@ -36,10 +41,19 @@ public final class Constants {
     public static final float PLAYER_PROJECTILE_HEIGHT = 10f;
     public static final float PLAYER_PROJECTILE_SPEED = 760f;
     public static final int PLAYER_PROJECTILE_DAMAGE = 2;
+    public static final float PLAYER_SPECIAL_WIDTH = 58f;
+    public static final float PLAYER_SPECIAL_HEIGHT = 22f;
+    public static final float PLAYER_SPECIAL_SPEED = 920f;
+    public static final int PLAYER_SPECIAL_DAMAGE = 16;
 
     public static final float BOSS_PROJECTILE_WIDTH = 24f;
     public static final float BOSS_PROJECTILE_HEIGHT = 24f;
     public static final int BOSS_PROJECTILE_DAMAGE = 1;
+
+    public static final float INTRO_BOSS_DURATION = 2.05f;
+    public static final float INTRO_READY_DURATION = 1.05f;
+    public static final float INTRO_GO_DURATION = 0.7f;
+    public static final float INTRO_TOTAL_DURATION = INTRO_BOSS_DURATION + INTRO_READY_DURATION + INTRO_GO_DURATION;
 
     private Constants() {
     }

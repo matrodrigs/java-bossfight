@@ -6,35 +6,112 @@ import com.badlogic.gdx.ScreenAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.g2d.BitmapFont;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.TextureRegion;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bossfight.MainGame;
 import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
+import com.bossfight.systems.AudioManager;
 import com.bossfight.systems.CollisionSystem;
+import com.bossfight.systems.ParticleSystem;
 import com.bossfight.systems.ProjectileSystem;
+import com.bossfight.systems.RetroTextFactory;
+import com.bossfight.systems.VintageFloralBackground;
 import com.bossfight.util.Constants;
 
 public class BattleScreen extends ScreenAdapter {
+    private static final float KNOCKOUT_DURATION = 3.2f;
+    private static final float KNOCKOUT_TEXT_DELAY = 0.42f;
+    private static final float KNOCKOUT_PARTICLE_DURATION = 2.35f;
+    private static final float KNOCKOUT_PARTICLE_INTERVAL = 0.11f;
+
+    private enum PlayerPose {
+        HURT,
+        DASH,
+        SHOOT,
+        RUN,
+        IDLE
+    }
+
     private final MainGame game;
     private final OrthographicCamera camera;
     private final FitViewport viewport;
-    private final BitmapFont font;
+    private final Texture bossSpriteSheet;
+    private final TextureRegion[] bossFrames;
+    private final Texture playerSpriteSheet;
+    private final TextureRegion playerShootFrame;
+    private final TextureRegion playerRunFrame;
+    private final TextureRegion playerDashFrame;
+    private final TextureRegion playerHurtFrame;
+    private final TextureRegion playerIdleFrame;
+    private final RetroTextFactory textFactory;
+    private final Texture readyText;
+    private final Texture goText;
+    private final Texture knockoutText;
+    private final Texture hpLabelText;
+    private final Texture specialLabelText;
+    private final Texture bossNameText;
+    private final Texture bossPreparingText;
+    private final Texture bossVineText;
+    private final Texture bossHandsText;
+    private final Texture bossPollenText;
+    private final Texture bossDefeatedText;
+    private final Texture introBossText;
+    private final Texture introCaptionText;
     private final Player player;
     private final Boss boss;
+    private final VintageFloralBackground background;
     private final ProjectileSystem projectileSystem;
+    private final ParticleSystem particleSystem;
     private final CollisionSystem collisionSystem;
+    private float elapsed;
+    private float introTimer;
+    private float hitstopTimer;
+    private float shakeTimer;
+    private float shakeDuration;
+    private float shakeMagnitude;
+    private float knockoutTimer;
+    private float knockoutParticleTimer;
+    private boolean readyCuePlayed;
+    private boolean goCuePlayed;
+    private boolean fightStarted;
+    private boolean knockoutSequenceActive;
 
     public BattleScreen(MainGame game) {
         this.game = game;
         camera = new OrthographicCamera();
         viewport = new FitViewport(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT, camera);
-        font = new BitmapFont();
+        bossSpriteSheet = loadTexture("sprites/boss/flower_boss_sheet_clean.png");
+        bossFrames = splitBossFrames(bossSpriteSheet);
+        playerSpriteSheet = loadTexture("sprites/player/clock_player_sheet.png");
+        playerShootFrame = playerFrame(104, 33, 461, 442);
+        playerRunFrame = playerFrame(714, 27, 384, 424);
+        playerDashFrame = playerFrame(168, 474, 391, 373);
+        playerHurtFrame = playerFrame(679, 458, 453, 452);
+        playerIdleFrame = playerFrame(460, 782, 310, 403);
+        textFactory = new RetroTextFactory();
+        readyText = textFactory.createFightCue("READY?", false);
+        goText = textFactory.createFightCue("GO!", true);
+        knockoutText = textFactory.createKnockout("A KNOCKOUT!");
+        hpLabelText = textFactory.createHudLabel("HP.");
+        specialLabelText = textFactory.createHudLabel("ESPECIAL");
+        bossNameText = textFactory.createHudLabel("FLOR-MAESTRO");
+        bossPreparingText = textFactory.createHudValue("PREPARANDO");
+        bossVineText = textFactory.createHudValue("BOTE DE CIPO");
+        bossHandsText = textFactory.createHudValue("MAOS MAGICAS");
+        bossPollenText = textFactory.createHudValue("CHUVA DE POLEN");
+        bossDefeatedText = textFactory.createHudValue("DERROTADO");
+        introBossText = textFactory.createBossIntroTitle("FLOR-MAESTRO ESPINHO");
+        introCaptionText = textFactory.createCaption("O JARDIM ACORDOU DE MAU HUMOR");
         player = new Player();
         boss = new Boss();
+        background = new VintageFloralBackground();
         projectileSystem = new ProjectileSystem();
+        particleSystem = new ParticleSystem();
         collisionSystem = new CollisionSystem();
     }
 
@@ -49,6 +126,7 @@ public class BattleScreen extends ScreenAdapter {
         Gdx.gl.glClear(GL20.GL_COLOR_BUFFER_BIT);
 
         viewport.apply();
+        applyCameraShake();
         renderWorld();
         renderUi();
     }
@@ -60,14 +138,43 @@ public class BattleScreen extends ScreenAdapter {
 
     @Override
     public void dispose() {
-        font.dispose();
-        projectileSystem.clear();
+        bossSpriteSheet.dispose();
+        playerSpriteSheet.dispose();
+        background.dispose();
+        textFactory.dispose();
+        projectileSystem.dispose();
+        particleSystem.clear();
+    }
+
+    private Texture loadTexture(String path) {
+        Texture texture = new Texture(Gdx.files.internal(path));
+        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        return texture;
+    }
+
+    private TextureRegion playerFrame(int x, int y, int width, int height) {
+        return new TextureRegion(playerSpriteSheet, x, y, width, height);
     }
 
     private boolean update(float delta) {
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            game.getAudioManager().playCue(AudioManager.Cue.MENU_BACK);
             game.showMenuScreen();
             return false;
+        }
+
+        elapsed += delta;
+        shakeTimer = Math.max(0f, shakeTimer - delta);
+        particleSystem.update(delta);
+        updateIntro(delta);
+
+        if (knockoutSequenceActive) {
+            return updateKnockoutSequence(delta);
+        }
+
+        if (hitstopTimer > 0f) {
+            hitstopTimer = Math.max(0f, hitstopTimer - delta);
+            return true;
         }
 
         boolean moveLeft = Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT);
@@ -81,26 +188,58 @@ public class BattleScreen extends ScreenAdapter {
         boolean shoot = Gdx.input.isKeyPressed(Input.Keys.J)
                 || Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)
                 || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
+        boolean special = Gdx.input.isKeyJustPressed(Input.Keys.L)
+                || Gdx.input.isKeyJustPressed(Input.Keys.ALT_LEFT)
+                || Gdx.input.isKeyJustPressed(Input.Keys.ALT_RIGHT);
+
+        if (!fightStarted) {
+            player.update(delta, false, false, false, false);
+            boss.updateEntrance(delta);
+            return true;
+        }
 
         player.update(delta, moveLeft, moveRight, jump, dash);
+        if (player.consumeDashStarted()) {
+            particleSystem.spawnDash(player.getCenterX(), player.getCenterY(), player.getFacingDirection());
+            game.getAudioManager().playCue(AudioManager.Cue.DASH);
+        }
 
-        if (shoot) {
+        if (special) {
+            Projectile projectile = player.tryShootSpecial();
+            if (projectile != null) {
+                projectileSystem.addProjectile(projectile);
+                particleSystem.spawnMuzzle(projectile.getCenterX(), projectile.getCenterY(), player.getFacingDirection(), true);
+                game.getAudioManager().playCue(AudioManager.Cue.PLAYER_SPECIAL);
+                requestShake(6f, 0.16f);
+            }
+        } else if (shoot) {
             Projectile projectile = player.tryShoot();
             if (projectile != null) {
                 projectileSystem.addProjectile(projectile);
+                particleSystem.spawnMuzzle(projectile.getCenterX(), projectile.getCenterY(), player.getFacingDirection(), false);
+                game.getAudioManager().playCue(AudioManager.Cue.PLAYER_SHOOT);
             }
         }
 
         boss.update(delta, projectileSystem, player);
         projectileSystem.update(delta);
-        collisionSystem.resolve(player, boss, projectileSystem, delta);
+        collisionSystem.resolve(player, boss, projectileSystem, particleSystem, game.getAudioManager(), delta);
+        float requestedHitstop = collisionSystem.consumeRequestedHitstop();
+        if (requestedHitstop > 0f) {
+            hitstopTimer = Math.max(hitstopTimer, requestedHitstop);
+        }
+        float requestedShake = collisionSystem.consumeRequestedShake();
+        if (requestedShake > 0f) {
+            requestShake(requestedShake, 0.18f);
+        }
 
         if (boss.isDefeated()) {
-            game.showEndScreen(true);
-            return false;
+            beginKnockoutSequence();
+            return true;
         }
 
         if (player.isDead()) {
+            game.getAudioManager().playCue(AudioManager.Cue.DEFEAT);
             game.showEndScreen(false);
             return false;
         }
@@ -110,39 +249,258 @@ public class BattleScreen extends ScreenAdapter {
 
     private void renderWorld() {
         ShapeRenderer shapeRenderer = game.getShapeRenderer();
+        background.renderBack(game.getBatch(), camera, elapsed);
+
         shapeRenderer.setProjectionMatrix(camera.combined);
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
-        shapeRenderer.setColor(0.11f, 0.12f, 0.15f, 1f);
-        shapeRenderer.rect(0f, 0f, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
+        if (!fightStarted) {
+            drawIntroSpotlight(shapeRenderer);
+        }
 
-        shapeRenderer.setColor(0.18f, 0.2f, 0.23f, 1f);
-        shapeRenderer.rect(0f, 0f, Constants.WORLD_WIDTH, Constants.FLOOR_Y);
-
-        shapeRenderer.setColor(0.31f, 0.34f, 0.38f, 1f);
-        shapeRenderer.rect(Constants.ARENA_LEFT, Constants.FLOOR_Y, Constants.ARENA_RIGHT - Constants.ARENA_LEFT, 5f);
-
-        player.render(shapeRenderer);
-        boss.render(shapeRenderer);
-        projectileSystem.render(shapeRenderer);
+        drawBossShadow(shapeRenderer);
+        drawBossTelegraphGlow(shapeRenderer);
 
         shapeRenderer.end();
+
+        renderBossSprite();
+        renderPlayerSprite();
+
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        projectileSystem.renderWarnings(shapeRenderer);
+        particleSystem.render(shapeRenderer);
+        shapeRenderer.end();
+
+        game.getBatch().setProjectionMatrix(camera.combined);
+        game.getBatch().begin();
+        projectileSystem.renderSprites(game.getBatch());
+        game.getBatch().end();
+
+        background.renderForeground(game.getBatch(), camera, elapsed);
+
+        Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    private void renderBossSprite() {
+        String state = boss.getStateName();
+        boolean defeated = boss.isDefeated();
+        boolean vineStrike = "Bote de cipo".equals(state);
+        boolean magicHands = "Maos magicas".equals(state);
+        boolean pollenRain = "Chuva de polen".equals(state);
+        TextureRegion frame = bossFrames[selectBossFrame(state)];
+
+        float breath = defeated ? 0f : MathUtils.sin(elapsed * 3.4f);
+        float windup = boss.isTelegraphing() ? 1f - boss.getTelegraphAlpha() : 0f;
+        float attackPulse = !defeated && (vineStrike || magicHands || pollenRain) ? MathUtils.sin(elapsed * 9.5f) : 0f;
+        float visualHeight = 506f + breath * 5f + (boss.isPhaseTwo() ? 18f : 0f);
+        visualHeight += vineStrike ? windup * 18f : 0f;
+        float visualWidth = visualHeight * frame.getRegionWidth() / frame.getRegionHeight();
+
+        float x = boss.getCenterX() - visualWidth * 0.5f - 18f;
+        x += vineStrike ? attackPulse * 8f - 18f - windup * 18f : 0f;
+        x += magicHands ? MathUtils.sin(elapsed * 7f) * 5f - windup * 10f : 0f;
+
+        float y = Constants.FLOOR_Y - 30f;
+        y += breath * 2.5f;
+        y += pollenRain ? MathUtils.sin(elapsed * 8.5f) * 6f : 0f;
+
+        float scaleX = 1f + breath * 0.014f + (magicHands ? attackPulse * 0.02f : 0f);
+        float scaleY = 1f - breath * 0.01f + (vineStrike ? attackPulse * 0.028f : 0f);
+        float rotation = MathUtils.sin(elapsed * 2.1f) * 0.8f + attackPulse * (pollenRain ? 1.4f : 0.45f);
+
+        game.getBatch().setProjectionMatrix(camera.combined);
+        game.getBatch().begin();
+        if (boss.isPhaseTwo()) {
+            game.getBatch().setColor(1f, 0.92f, 0.92f, 1f);
+        }
+        game.getBatch().draw(frame,
+                x,
+                y,
+                visualWidth * 0.48f,
+                44f,
+                visualWidth,
+                visualHeight,
+                scaleX,
+                scaleY,
+                rotation);
+        game.getBatch().setColor(Color.WHITE);
+        game.getBatch().end();
+    }
+
+    private void renderPlayerSprite() {
+        if (!player.shouldRenderSprite()) {
+            return;
+        }
+
+        PlayerPose pose = selectPlayerPose();
+        TextureRegion frame = frameForPlayerPose(pose);
+        float poseHeight = heightForPlayerPose(pose);
+
+        float poseWidth = poseHeight * frame.getRegionWidth() / frame.getRegionHeight();
+        float idleBreath = pose == PlayerPose.IDLE ? MathUtils.sin(player.getAnimationTime() * 3f) : 0f;
+        float runBob = pose == PlayerPose.RUN && player.isGrounded()
+                ? MathUtils.sin(player.getAnimationTime() * 14f) * 2.8f
+                : MathUtils.sin(player.getAnimationTime() * 3.4f) * (pose == PlayerPose.IDLE ? 1.8f : 1.2f);
+        float squashX = pose == PlayerPose.DASH ? 1.1f : 1f + idleBreath * 0.015f;
+        float squashY = pose == PlayerPose.DASH ? 0.92f : 1f - idleBreath * 0.01f;
+        float rotation = pose == PlayerPose.HURT
+                ? -player.getFacingDirection() * 5f
+                : (pose == PlayerPose.RUN
+                ? MathUtils.sin(player.getAnimationTime() * 12f) * 1.2f
+                : idleBreath * 0.6f);
+
+        float drawX = player.getCenterX() - poseWidth * 0.5f;
+        float drawY = player.getY() - 11f + runBob;
+        boolean flipX = shouldFlipPlayerPose(pose);
+
+        game.getBatch().setProjectionMatrix(camera.combined);
+        game.getBatch().begin();
+        if (pose == PlayerPose.HURT) {
+            game.getBatch().setColor(1f, 0.88f, 0.86f, 1f);
+        }
+        game.getBatch().draw(playerSpriteSheet,
+                drawX,
+                drawY,
+                poseWidth * 0.5f,
+                18f,
+                poseWidth,
+                poseHeight,
+                squashX,
+                squashY,
+                rotation,
+                frame.getRegionX(),
+                frame.getRegionY(),
+                frame.getRegionWidth(),
+                frame.getRegionHeight(),
+                flipX,
+                false);
+        game.getBatch().setColor(Color.WHITE);
+        game.getBatch().end();
+    }
+
+    private PlayerPose selectPlayerPose() {
+        if (player.isHurtPoseActive()) {
+            return PlayerPose.HURT;
+        }
+        if (player.isDashing()) {
+            return PlayerPose.DASH;
+        }
+        if (player.isShootPoseActive()) {
+            return PlayerPose.SHOOT;
+        }
+        if (player.isMovingHorizontally() || player.isAirborne()) {
+            return PlayerPose.RUN;
+        }
+        return PlayerPose.IDLE;
+    }
+
+    private TextureRegion frameForPlayerPose(PlayerPose pose) {
+        return switch (pose) {
+            case HURT -> playerHurtFrame;
+            case DASH -> playerDashFrame;
+            case SHOOT -> playerShootFrame;
+            case RUN -> playerRunFrame;
+            case IDLE -> playerIdleFrame;
+        };
+    }
+
+    private float heightForPlayerPose(PlayerPose pose) {
+        return switch (pose) {
+            case HURT -> 128f;
+            case DASH -> 118f;
+            case SHOOT -> 120f;
+            case RUN -> player.isAirborne() ? 132f : 122f;
+            case IDLE -> 126f;
+        };
+    }
+
+    private boolean shouldFlipPlayerPose(PlayerPose pose) {
+        boolean flipX = player.getFacingDirection() > 0;
+        return pose == PlayerPose.DASH ? !flipX : flipX;
+    }
+
+    private TextureRegion[] splitBossFrames(Texture sheet) {
+        TextureRegion[][] split = TextureRegion.split(sheet, sheet.getWidth() / 4, sheet.getHeight() / 2);
+        TextureRegion[] frames = new TextureRegion[8];
+        int index = 0;
+        for (TextureRegion[] row : split) {
+            for (TextureRegion frame : row) {
+                frames[index++] = frame;
+            }
+        }
+        return frames;
+    }
+
+    private int selectBossFrame(String state) {
+        if (!fightStarted) {
+            return 0;
+        }
+        if (boss.isDefeated()) {
+            if (knockoutTimer < 0.42f) {
+                return 5;
+            }
+            if (knockoutTimer < 0.95f) {
+                return 6;
+            }
+            return 7;
+        }
+        if ("Bote de cipo".equals(state)) {
+            return 4;
+        }
+        if ("Maos magicas".equals(state)) {
+            return 3;
+        }
+        if ("Chuva de polen".equals(state)) {
+            return 6;
+        }
+        return ((int) (elapsed * 4f) & 1) == 0 ? 1 : 2;
+    }
+
+    private void drawBossShadow(ShapeRenderer shapeRenderer) {
+        float width = 330f;
+        shapeRenderer.setColor(0.04f, 0.02f, 0.02f, 0.38f);
+        shapeRenderer.ellipse(boss.getCenterX() - width * 0.5f - 16f, Constants.FLOOR_Y - 16f, width, 42f);
+    }
+
+    private void drawBossTelegraphGlow(ShapeRenderer shapeRenderer) {
+        if (!boss.isTelegraphing() || boss.isDefeated()) {
+            return;
+        }
+
+        float alpha = boss.getTelegraphAlpha();
+        float radius = 118f + (1f - alpha) * 55f;
+        float centerX = boss.getCenterX() - 30f;
+        float centerY = Constants.FLOOR_Y + 360f;
+        shapeRenderer.setColor(1f, 0.58f, 0.12f, 0.16f * alpha);
+        shapeRenderer.circle(centerX, centerY, radius);
+        shapeRenderer.setColor(1f, 0.94f, 0.38f, 0.16f * alpha);
+        shapeRenderer.circle(centerX, centerY, radius * 0.58f);
     }
 
     private void renderUi() {
         ShapeRenderer shapeRenderer = game.getShapeRenderer();
         shapeRenderer.setProjectionMatrix(camera.combined);
+        Gdx.gl.glEnable(GL20.GL_BLEND);
+        Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        drawHealthBar(70f, Constants.WORLD_HEIGHT - 56f, 260f, 20f, player.getHealth(), player.getMaxHealth(), Color.CYAN);
-        drawHealthBar(Constants.WORLD_WIDTH - 430f, Constants.WORLD_HEIGHT - 56f, 360f, 20f, boss.getHealth(), boss.getMaxHealth(), Color.ORANGE);
+        drawPlayerHealth(170f, Constants.WORLD_HEIGHT - 58f);
+        drawMeter(170f, Constants.WORLD_HEIGHT - 92f, 236f, 14f, player.getSpecialEnergyPercent(),
+                player.isSpecialReady() ? Color.GOLD : Color.SKY);
+        drawHealthBar(Constants.WORLD_WIDTH - 430f, Constants.WORLD_HEIGHT - 76f, 360f, 20f,
+                boss.getHealth(), boss.getMaxHealth(), new Color(0.96f, 0.35f, 0.14f, 1f));
         shapeRenderer.end();
+        Gdx.gl.glDisable(GL20.GL_BLEND);
 
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
-        font.getData().setScale(1f);
-        font.setColor(Color.WHITE);
-        font.draw(game.getBatch(), "Player", 70f, Constants.WORLD_HEIGHT - 64f);
-        font.draw(game.getBatch(), "Boss: " + boss.getStateName(), Constants.WORLD_WIDTH - 430f, Constants.WORLD_HEIGHT - 64f);
+        drawLeftTexture(hpLabelText, 70f, Constants.WORLD_HEIGHT - 58f, 0.48f);
+        drawLeftTexture(specialLabelText, 70f, Constants.WORLD_HEIGHT - 92f, 0.46f);
+        drawLeftTexture(bossNameText, Constants.WORLD_WIDTH - 430f, Constants.WORLD_HEIGHT - 30f, 0.48f);
+        drawLeftTexture(getBossStateText(), Constants.WORLD_WIDTH - 430f, Constants.WORLD_HEIGHT - 100f, 0.46f);
+        drawIntroOverlay();
+        drawKnockoutOverlay();
         game.getBatch().end();
     }
 
@@ -158,5 +516,190 @@ public class BattleScreen extends ScreenAdapter {
 
         shapeRenderer.setColor(fillColor);
         shapeRenderer.rect(x, y, width * percent, height);
+    }
+
+    private void drawMeter(float x, float y, float width, float height, float percent, Color fillColor) {
+        ShapeRenderer shapeRenderer = game.getShapeRenderer();
+        float clamped = MathUtils.clamp(percent, 0f, 1f);
+
+        shapeRenderer.setColor(0.04f, 0.04f, 0.05f, 1f);
+        shapeRenderer.rect(x - 2f, y - 2f, width + 4f, height + 4f);
+        shapeRenderer.setColor(0.18f, 0.18f, 0.2f, 1f);
+        shapeRenderer.rect(x, y, width, height);
+        shapeRenderer.setColor(fillColor);
+        shapeRenderer.rect(x, y, width * clamped, height);
+    }
+
+    private void drawPlayerHealth(float x, float y) {
+        ShapeRenderer shapeRenderer = game.getShapeRenderer();
+        for (int i = 0; i < player.getMaxHealth(); i++) {
+            float pipX = x + i * 34f;
+            shapeRenderer.setColor(0.04f, 0.04f, 0.05f, 1f);
+            shapeRenderer.circle(pipX, y, 13f);
+            shapeRenderer.setColor(i < player.getHealth() ? new Color(0.96f, 0.18f, 0.16f, 1f) : new Color(0.28f, 0.27f, 0.27f, 1f));
+            shapeRenderer.circle(pipX, y, 10f);
+        }
+    }
+
+    private void drawIntroSpotlight(ShapeRenderer shapeRenderer) {
+        float pulse = (MathUtils.sin(elapsed * 8f) + 1f) * 0.5f;
+        shapeRenderer.setColor(1f, 0.93f, 0.54f, 0.16f + pulse * 0.08f);
+        shapeRenderer.triangle(820f, Constants.WORLD_HEIGHT, 1160f, Constants.WORLD_HEIGHT,
+                boss.getCenterX(), Constants.FLOOR_Y + 4f);
+    }
+
+    private void drawIntroOverlay() {
+        if (fightStarted) {
+            return;
+        }
+
+        if (introTimer < Constants.INTRO_BOSS_DURATION) {
+            if (introTimer > 1.08f) {
+                float scale = 0.78f + MathUtils.sin(elapsed * 18f) * 0.018f;
+                drawCenteredTexture(introBossText, Constants.WORLD_HEIGHT - 122f, scale, 0f,
+                        MathUtils.sin(elapsed * 4f) * 0.8f, 1f);
+                drawCenteredTexture(introCaptionText, Constants.WORLD_HEIGHT - 176f, 0.66f, 0f, 0f, 1f);
+            }
+            return;
+        }
+
+        if (introTimer < Constants.INTRO_BOSS_DURATION + Constants.INTRO_READY_DURATION) {
+            float pop = MathUtils.clamp((introTimer - Constants.INTRO_BOSS_DURATION) / 0.18f, 0f, 1f);
+            float wobble = MathUtils.sin(elapsed * 18f) * 2.2f;
+            drawCenteredTexture(readyText, Constants.WORLD_HEIGHT * 0.58f, 0.9f + pop * 0.18f, wobble, 0f, 1f);
+        } else {
+            float goElapsed = introTimer - Constants.INTRO_BOSS_DURATION - Constants.INTRO_READY_DURATION;
+            float pop = MathUtils.clamp(goElapsed / 0.15f, 0f, 1f);
+            float scale = 0.98f + pop * 0.28f + MathUtils.sin(elapsed * 24f) * 0.035f;
+            drawCenteredTexture(goText, Constants.WORLD_HEIGHT * 0.58f, scale, -MathUtils.sin(elapsed * 20f) * 1.6f,
+                    MathUtils.sin(elapsed * 9f) * 1.8f, 1f);
+        }
+    }
+
+    private void drawCenteredTexture(Texture texture, float centerY, float scale, float xOffset, float rotation,
+                                     float alpha) {
+        float width = texture.getWidth() * scale;
+        float height = texture.getHeight() * scale;
+        float x = (Constants.WORLD_WIDTH - width) * 0.5f + xOffset;
+        float y = centerY - height * 0.5f;
+        game.getBatch().setColor(1f, 1f, 1f, alpha);
+        game.getBatch().draw(texture,
+                x,
+                y,
+                width * 0.5f,
+                height * 0.5f,
+                width,
+                height,
+                1f,
+                1f,
+                rotation,
+                0,
+                0,
+                texture.getWidth(),
+                texture.getHeight(),
+                false,
+                false);
+        game.getBatch().setColor(Color.WHITE);
+    }
+
+    private void drawLeftTexture(Texture texture, float x, float centerY, float scale) {
+        float width = texture.getWidth() * scale;
+        float height = texture.getHeight() * scale;
+        float y = centerY - height * 0.5f;
+        game.getBatch().draw(texture, x, y, width, height);
+    }
+
+    private Texture getBossStateText() {
+        return switch (boss.getStateName()) {
+            case "Bote de cipo" -> bossVineText;
+            case "Maos magicas" -> bossHandsText;
+            case "Chuva de polen" -> bossPollenText;
+            case "Derrotado" -> bossDefeatedText;
+            default -> bossPreparingText;
+        };
+    }
+
+    private void updateIntro(float delta) {
+        if (fightStarted) {
+            return;
+        }
+
+        introTimer = Math.min(Constants.INTRO_TOTAL_DURATION, introTimer + delta);
+
+        if (!readyCuePlayed && introTimer >= Constants.INTRO_BOSS_DURATION) {
+            readyCuePlayed = true;
+            game.getAudioManager().playCue(AudioManager.Cue.READY);
+        }
+
+        if (!goCuePlayed && introTimer >= Constants.INTRO_BOSS_DURATION + Constants.INTRO_READY_DURATION) {
+            goCuePlayed = true;
+            game.getAudioManager().playCue(AudioManager.Cue.GO);
+        }
+
+        if (introTimer >= Constants.INTRO_TOTAL_DURATION) {
+            fightStarted = true;
+            boss.showTelegraph(new Color(1f, 0.38f, 0.12f, 1f), 0.35f);
+        }
+    }
+
+    private void beginKnockoutSequence() {
+        knockoutSequenceActive = true;
+        knockoutTimer = 0f;
+        knockoutParticleTimer = 0f;
+        projectileSystem.clear();
+        game.getAudioManager().playCue(AudioManager.Cue.VICTORY);
+        particleSystem.spawnBossDefeatBurst(boss.getCenterX() - 20f, Constants.FLOOR_Y + 265f);
+        requestShake(16f, 0.46f);
+    }
+
+    private boolean updateKnockoutSequence(float delta) {
+        knockoutTimer += delta;
+        hitstopTimer = 0f;
+        player.update(delta, false, false, false, false);
+
+        if (knockoutTimer < KNOCKOUT_PARTICLE_DURATION) {
+            knockoutParticleTimer -= delta;
+            while (knockoutParticleTimer <= 0f) {
+                particleSystem.spawnBossDefeatBurst(boss.getCenterX() - 20f, Constants.FLOOR_Y + 265f);
+                knockoutParticleTimer += KNOCKOUT_PARTICLE_INTERVAL;
+            }
+        }
+
+        if (knockoutTimer >= KNOCKOUT_DURATION) {
+            game.showEndScreen(true);
+            return false;
+        }
+
+        return true;
+    }
+
+    private void drawKnockoutOverlay() {
+        if (!knockoutSequenceActive || knockoutTimer < KNOCKOUT_TEXT_DELAY) {
+            return;
+        }
+
+        float alpha = MathUtils.clamp((knockoutTimer - KNOCKOUT_TEXT_DELAY) / 0.28f, 0f, 1f);
+        float slam = MathUtils.clamp((knockoutTimer - KNOCKOUT_TEXT_DELAY) / 0.18f, 0f, 1f);
+        float pulse = MathUtils.sin(elapsed * 11f) * 0.025f;
+        float scale = 0.88f + slam * 0.14f + pulse;
+        float rotation = MathUtils.sin(elapsed * 6.5f) * 1.1f * alpha;
+        drawCenteredTexture(knockoutText, Constants.WORLD_HEIGHT * 0.6f, scale, 0f, rotation, alpha);
+    }
+
+    private void requestShake(float magnitude, float duration) {
+        shakeMagnitude = Math.max(shakeMagnitude, magnitude);
+        shakeDuration = Math.max(0.01f, duration);
+        shakeTimer = Math.max(shakeTimer, duration);
+    }
+
+    private void applyCameraShake() {
+        float shakeAlpha = shakeDuration <= 0f ? 0f : MathUtils.clamp(shakeTimer / shakeDuration, 0f, 1f);
+        float offsetX = shakeAlpha > 0f ? MathUtils.random(-shakeMagnitude, shakeMagnitude) * shakeAlpha : 0f;
+        float offsetY = shakeAlpha > 0f ? MathUtils.random(-shakeMagnitude, shakeMagnitude) * shakeAlpha : 0f;
+        camera.position.set(Constants.WORLD_WIDTH * 0.5f + offsetX, Constants.WORLD_HEIGHT * 0.5f + offsetY, 0f);
+        camera.update();
+        if (shakeTimer <= 0f) {
+            shakeMagnitude = 0f;
+        }
     }
 }
