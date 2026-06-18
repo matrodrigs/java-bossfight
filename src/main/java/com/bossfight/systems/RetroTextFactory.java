@@ -25,7 +25,7 @@ public class RetroTextFactory implements Disposable {
     }
 
     public Texture createSubtitle(String text) {
-        return createText(text, 34, 7, 0xf8eed2, 0x4b2018, 0x080707, 8, false);
+        return createText(text, 34, 7, 0xf8eed2, 0x4b2018, 0x080707, 8);
     }
 
     public Texture createMenuOption(String text, boolean selected) {
@@ -35,10 +35,6 @@ public class RetroTextFactory implements Disposable {
                 0x130d0a,
                 9,
                 selected ? 0.038f : 0.026f);
-    }
-
-    public Texture createSmallLabel(String text) {
-        return createText(text, 24, 5, 0xf8ead0, 0x3a2018, 0x100c0a, 4, false);
     }
 
     public Texture createFightCue(String text, boolean goCue) {
@@ -64,21 +60,17 @@ public class RetroTextFactory implements Disposable {
         return createCartoonText(text, 58, 8, 0xffd24a, 0x5b1f13, 0x050405, 13, 0.04f);
     }
 
-    public Texture createCaption(String text) {
-        return createText(text, 30, 5, 0xf9efd4, 0x2b1712, 0x050405, 8, false);
-    }
-
     public Texture createInstruction(String text) {
-        return createText(text, 28, 5, 0xf6e5b8, 0x312017, 0x050405, 8, false);
+        return createText(text, 28, 5, 0xf6e5b8, 0x312017, 0x050405, 8);
     }
 
     public Texture createInstructionKey(String text) {
-        return createText(text, 31, 6, 0xffd24a, 0x5b2014, 0x050405, 9, false);
+        return createText(text, 31, 6, 0xffd24a, 0x5b2014, 0x050405, 9);
     }
 
     private Texture createText(String text, int fontSize, int strokeWidth, int fillRgb, int strokeRgb,
-                               int shadowRgb, int padding, boolean title) {
-        Font font = pickFont(title ? "Cooper Black" : "Georgia", title ? "Georgia" : "Serif", fontSize);
+                               int shadowRgb, int padding) {
+        Font font = pickFont("Georgia", "Serif", fontSize);
         BufferedImage probe = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D probeGraphics = probe.createGraphics();
         applyHints(probeGraphics);
@@ -110,7 +102,7 @@ public class RetroTextFactory implements Disposable {
         graphics.fill(outline);
 
         Shape shine = AffineTransform.getTranslateInstance(0, -fontSize * 0.08f).createTransformedShape(outline);
-        graphics.setColor(new java.awt.Color(255, 255, 255, title ? 75 : 42));
+        graphics.setColor(new java.awt.Color(255, 255, 255, 42));
         graphics.draw(shine);
         graphics.dispose();
 
@@ -151,11 +143,11 @@ public class RetroTextFactory implements Disposable {
         float baseline = edge + Math.max(labelMetrics.getAscent(), valueMetrics.getAscent());
         float labelX = edge;
         Shape labelOutline = createTextOutline(graphics, labelFont, label, labelX, baseline);
-        drawOutlinedText(graphics, labelOutline, strokeWidth, fillRgb, strokeRgb, shadowRgb, fontSize, false);
+        drawOutlinedText(graphics, labelOutline, strokeWidth, fillRgb, strokeRgb, shadowRgb, fontSize);
 
         float valueX = labelX + labelMetrics.stringWidth(label) + gap;
         Shape valueOutline = createTextOutline(graphics, valueFont, value, valueX, baseline - 1f);
-        drawOutlinedText(graphics, valueOutline, strokeWidth, fillRgb, strokeRgb, shadowRgb, valueFontSize, false);
+        drawOutlinedText(graphics, valueOutline, strokeWidth, fillRgb, strokeRgb, shadowRgb, valueFontSize);
         graphics.dispose();
 
         Texture texture = toTexture(image);
@@ -170,7 +162,7 @@ public class RetroTextFactory implements Disposable {
     }
 
     private void drawOutlinedText(Graphics2D graphics, Shape outline, int strokeWidth, int fillRgb, int strokeRgb,
-                                  int shadowRgb, int fontSize, boolean title) {
+                                  int shadowRgb, int fontSize) {
         Shape shadow = AffineTransform.getTranslateInstance(strokeWidth * 1.3, strokeWidth * 1.5)
                 .createTransformedShape(outline);
         graphics.setColor(toAwtColor(shadowRgb, 180));
@@ -183,7 +175,7 @@ public class RetroTextFactory implements Disposable {
         graphics.fill(outline);
 
         Shape shine = AffineTransform.getTranslateInstance(0, -fontSize * 0.08f).createTransformedShape(outline);
-        graphics.setColor(new java.awt.Color(255, 255, 255, title ? 75 : 42));
+        graphics.setColor(new java.awt.Color(255, 255, 255, 42));
         graphics.draw(shine);
     }
 

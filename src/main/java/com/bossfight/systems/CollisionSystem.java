@@ -1,6 +1,5 @@
 package com.bossfight.systems;
 
-import com.badlogic.gdx.utils.Array;
 import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
@@ -15,8 +14,8 @@ public class CollisionSystem {
         requestedHitstop = 0f;
         requestedShake = 0f;
         bossContactCooldown = Math.max(0f, bossContactCooldown - delta);
-        resolvePlayerProjectiles(player, boss, projectileSystem.getPlayerProjectiles(), particleSystem, audioManager);
-        resolveBossProjectiles(player, projectileSystem.getBossProjectiles(), particleSystem, audioManager);
+        resolvePlayerProjectiles(player, boss, projectileSystem, particleSystem, audioManager);
+        resolveBossProjectiles(player, projectileSystem, particleSystem, audioManager);
         resolveBossContact(player, boss, particleSystem, audioManager);
     }
 
@@ -32,14 +31,11 @@ public class CollisionSystem {
         return value;
     }
 
-    private void resolvePlayerProjectiles(Player player, Boss boss, Array<Projectile> projectiles,
-                                          ParticleSystem particleSystem, AudioManager audioManager) {
-        for (int i = projectiles.size - 1; i >= 0; i--) {
-            Projectile projectile = projectiles.get(i);
+    private void resolvePlayerProjectiles(Player player, Boss boss, ProjectileSystem projectileSystem,
+                                           ParticleSystem particleSystem, AudioManager audioManager) {
+        projectileSystem.removePlayerProjectilesIf(projectile -> {
             if (!boss.isDefeated() && projectile.getHitbox().overlaps(boss.getHitbox())) {
                 boolean hit = boss.takeDamage(projectile.getDamage());
-                projectile.deactivate();
-                projectiles.removeIndex(i);
                 if (hit) {
                     boolean special = projectile.isSpecial();
                     particleSystem.spawnBossHit(projectile.getCenterX(), projectile.getCenterY(), special);
@@ -50,32 +46,31 @@ public class CollisionSystem {
                     requestedHitstop = Math.max(requestedHitstop, special ? 0.08f : 0.035f);
                     requestedShake = Math.max(requestedShake, special ? 10f : 4f);
                 }
+                return true;
             }
-        }
+            return false;
+        });
     }
 
-    private void resolveBossProjectiles(Player player, Array<Projectile> projectiles, ParticleSystem particleSystem,
+    private void resolveBossProjectiles(Player player, ProjectileSystem projectileSystem, ParticleSystem particleSystem,
                                         AudioManager audioManager) {
-        for (int i = projectiles.size - 1; i >= 0; i--) {
-            Projectile projectile = projectiles.get(i);
+        projectileSystem.removeBossProjectilesIf(projectile -> {
             if (player.isInvulnerableAfterHit()) {
-                continue;
+                return false;
             }
 
             if (projectile.getDamage() > 0 && projectile.getHitbox().overlaps(player.getHitbox())) {
                 boolean damaged = player.takeDamage(projectile.getDamage(), impactSourceX(player, projectile));
-                if (projectile.shouldRemoveOnHit()) {
-                    projectile.deactivate();
-                    projectiles.removeIndex(i);
-                }
                 if (damaged) {
                     particleSystem.spawnPlayerDamage(player.getCenterX(), player.getCenterY());
                     audioManager.playCue(AudioManager.Cue.PLAYER_HIT);
                     requestedHitstop = Math.max(requestedHitstop, 0.07f);
                     requestedShake = Math.max(requestedShake, 8f);
                 }
+                return projectile.shouldRemoveOnHit();
             }
-        }
+            return false;
+        });
     }
 
     private float impactSourceX(Player player, Projectile projectile) {

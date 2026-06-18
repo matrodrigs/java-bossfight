@@ -15,8 +15,8 @@ public class AttackTwoState implements BossState {
     private int volleys;
 
     @Override
-    public String getName() {
-        return "Mãos mágicas";
+    public BossVisualState getVisualState() {
+        return BossVisualState.MAGIC_HANDS;
     }
 
     @Override
@@ -26,7 +26,6 @@ public class AttackTwoState implements BossState {
         volleys = 0;
         boss.emitSound(BossSoundEvent.MAGIC_CHARGE);
         boss.showTelegraph(new Color(0.96f, 0.74f, 0.18f, 1f), 0.58f);
-        boss.playAttackMotion(0.58f, 0.45f);
     }
 
     @Override
@@ -36,7 +35,6 @@ public class AttackTwoState implements BossState {
 
         if (burstTimer <= 0f) {
             boss.emitSound(BossSoundEvent.MAGIC_VOLLEY);
-            boss.playAttackMotion(0.28f, 0.82f);
             fireVolley(boss, projectileSystem, player);
             volleys++;
             burstTimer = boss.isPhaseTwo() ? 0.38f : 0.52f;
@@ -70,19 +68,29 @@ public class AttackTwoState implements BossState {
             float sizeBonus = kind == Projectile.Kind.BOSS_ACORN ? 6f : 2f;
             float width = Constants.BOSS_PROJECTILE_WIDTH + sizeBonus;
             float height = Constants.BOSS_PROJECTILE_HEIGHT + sizeBonus * 0.45f;
-            projectileSystem.addProjectile(new Projectile(
-                    Projectile.Owner.BOSS,
-                    originX - width * 0.5f,
-                    originY - height * 0.5f,
-                    width,
-                    height,
-                    MathUtils.cos(angle) * speed,
-                    MathUtils.sin(angle) * speed,
-                    Constants.BOSS_PROJECTILE_DAMAGE,
-                    kind,
-                    -1f,
-                    -70f
-            ));
+            float velocityX = MathUtils.cos(angle) * speed;
+            float velocityY = MathUtils.sin(angle) * speed;
+            if (kind == Projectile.Kind.BOSS_ACORN) {
+                projectileSystem.addProjectile(Projectile.bossAcorn(
+                        originX - width * 0.5f,
+                        originY - height * 0.5f,
+                        width,
+                        height,
+                        velocityX,
+                        velocityY,
+                        -70f
+                ));
+            } else {
+                projectileSystem.addProjectile(Projectile.bossSeed(
+                        originX - width * 0.5f,
+                        originY - height * 0.5f,
+                        width,
+                        height,
+                        velocityX,
+                        velocityY,
+                        -70f
+                ));
+            }
         }
 
         if (boss.isPhaseTwo() && volleys % 2 == 1) {
@@ -99,17 +107,13 @@ public class AttackTwoState implements BossState {
         float velocityX = (player.getCenterX() - originX) / travelTime;
         float velocityY = 360f;
 
-        projectileSystem.addProjectile(new Projectile(
-                Projectile.Owner.BOSS,
+        projectileSystem.addProjectile(Projectile.bossAcorn(
                 originX - width * 0.5f,
                 originY - height * 0.5f,
                 width,
                 height,
                 velocityX,
                 velocityY,
-                Constants.BOSS_PROJECTILE_DAMAGE,
-                Projectile.Kind.BOSS_ACORN,
-                -1f,
                 Constants.GRAVITY * 0.42f
         ));
     }

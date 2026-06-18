@@ -6,6 +6,7 @@ public class IrisTransition {
     private static final float OPEN_DURATION = 0.68f;
 
     public enum Target {
+        MENU,
         BATTLE,
         END_VICTORY,
         END_DEFEAT

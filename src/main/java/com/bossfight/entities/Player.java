@@ -1,7 +1,5 @@
 package com.bossfight.entities;
 
-import com.badlogic.gdx.graphics.Color;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.bossfight.Constants;
 
@@ -85,16 +83,7 @@ public class Player {
         float projectileY = getShotOriginY(Constants.PLAYER_PROJECTILE_HEIGHT);
         float velocityX = facingDirection * Constants.PLAYER_PROJECTILE_SPEED;
 
-        return new Projectile(
-                Projectile.Owner.PLAYER,
-                projectileX,
-                projectileY,
-                Constants.PLAYER_PROJECTILE_WIDTH,
-                Constants.PLAYER_PROJECTILE_HEIGHT,
-                velocityX,
-                0f,
-                Constants.PLAYER_PROJECTILE_DAMAGE
-        );
+        return Projectile.playerBasic(projectileX, projectileY, velocityX);
     }
 
     public Projectile tryShootSpecial() {
@@ -112,49 +101,7 @@ public class Player {
         float projectileY = getShotOriginY(Constants.PLAYER_SPECIAL_HEIGHT);
         float velocityX = facingDirection * Constants.PLAYER_SPECIAL_SPEED;
 
-        return new Projectile(
-                Projectile.Owner.PLAYER,
-                projectileX,
-                projectileY,
-                Constants.PLAYER_SPECIAL_WIDTH,
-                Constants.PLAYER_SPECIAL_HEIGHT,
-                velocityX,
-                0f,
-                Constants.PLAYER_SPECIAL_DAMAGE,
-                Projectile.Kind.PLAYER_SPECIAL
-        );
-    }
-
-    public void render(ShapeRenderer shapeRenderer) {
-        if (invulnerabilityTimer > 0f && ((int) (invulnerabilityTimer * 18f) % 2 == 0)) {
-            return;
-        }
-
-        float squash = dashTimer > 0f ? 1.18f : 1f;
-        float width = Constants.PLAYER_WIDTH * squash;
-        float drawX = x - (width - Constants.PLAYER_WIDTH) * 0.5f;
-
-        shapeRenderer.setColor(0.06f, 0.09f, 0.13f, 1f);
-        shapeRenderer.rect(drawX + 6f, y, 10f, 16f);
-        shapeRenderer.rect(drawX + width - 16f, y, 10f, 16f);
-
-        shapeRenderer.setColor(hurtFlashTimer > 0f ? Color.WHITE : new Color(0.08f, 0.64f, 0.78f, 1f));
-        shapeRenderer.rect(drawX + 4f, y + 16f, width - 8f, 42f);
-
-        shapeRenderer.setColor(0.95f, 0.89f, 0.76f, 1f);
-        shapeRenderer.ellipse(drawX + 2f, y + 48f, width - 4f, 32f);
-
-        shapeRenderer.setColor(0.12f, 0.08f, 0.06f, 1f);
-        float eyeX = facingDirection > 0 ? drawX + width * 0.67f : drawX + width * 0.28f;
-        shapeRenderer.circle(eyeX, y + 65f, 4f);
-        shapeRenderer.rect(drawX + width * 0.34f, y + 52f, width * 0.32f, 3f);
-
-        shapeRenderer.setColor(0.94f, 0.14f, 0.16f, 1f);
-        shapeRenderer.rect(drawX + width * 0.18f, y + 37f, width * 0.64f, 9f);
-    }
-
-    public boolean takeDamage(int amount) {
-        return takeDamage(amount, x + Constants.PLAYER_WIDTH * 0.5f - facingDirection * 80f);
+        return Projectile.playerSpecial(projectileX, projectileY, velocityX);
     }
 
     public boolean takeDamage(int amount, float sourceX) {

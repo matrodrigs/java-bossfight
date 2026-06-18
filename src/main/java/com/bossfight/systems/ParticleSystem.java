@@ -142,36 +142,6 @@ public class ParticleSystem {
         }
     }
 
-    public void spawnBossRoar(float x, float y) {
-        for (int i = 0; i < 34; i++) {
-            float angle = MathUtils.random(0f, MathUtils.PI2);
-            float speed = MathUtils.random(120f, 540f);
-            add(x, y,
-                    MathUtils.cos(angle) * speed,
-                    MathUtils.sin(angle) * speed,
-                    MathUtils.random(5f, 12f),
-                    -14f,
-                    0.55f,
-                    new Color(1f, 0.49f, 0.12f, 0.9f),
-                    -180f);
-        }
-    }
-
-    public void spawnBossAttack(float x, float y, Color color) {
-        for (int i = 0; i < 14; i++) {
-            float angle = MathUtils.random(0f, MathUtils.PI2);
-            float speed = MathUtils.random(70f, 260f);
-            add(x, y,
-                    MathUtils.cos(angle) * speed,
-                    MathUtils.sin(angle) * speed,
-                    MathUtils.random(3f, 8f),
-                    -15f,
-                    0.32f,
-                    color,
-                    -150f);
-        }
-    }
-
     private void add(float x, float y, float velocityX, float velocityY, float radius, float radiusVelocity,
                      float life, Color color, float gravity) {
         particles.add(new Particle(x, y, velocityX, velocityY, radius, radiusVelocity, life, color, gravity));

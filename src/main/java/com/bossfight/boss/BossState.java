@@ -5,7 +5,7 @@ import com.bossfight.entities.Player;
 import com.bossfight.systems.ProjectileSystem;
 
 public interface BossState {
-    String getName();
+    BossVisualState getVisualState();
 
     void enter(Boss boss);
 

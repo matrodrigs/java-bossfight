@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bossfight.MainGame;
 import com.bossfight.systems.RetroTextFactory;
+import com.bossfight.systems.TextureDraw;
 import com.bossfight.Constants;
 
 public class EndScreen extends ScreenAdapter {
@@ -68,7 +69,7 @@ public class EndScreen extends ScreenAdapter {
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
         game.getBatch().draw(background, 0f, 0f, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
-        drawCenteredTexture(titleText, TEXT_CENTER_X, 506f, 0.92f, TEXT_MAX_WIDTH);
+        TextureDraw.centeredWithin(game.getBatch(), titleText, TEXT_CENTER_X, 506f, 0.92f, TEXT_MAX_WIDTH);
         drawPrompt(retryKeyText, retryActionText, 332f);
         drawPrompt(menuKeyText, menuActionText, 282f);
         game.getBatch().end();
@@ -83,22 +84,6 @@ public class EndScreen extends ScreenAdapter {
     public void dispose() {
         textFactory.dispose();
         background.dispose();
-    }
-
-    private void drawCenteredTexture(Texture texture, float centerY, float scale) {
-        drawCenteredTexture(texture, Constants.WORLD_WIDTH * 0.5f, centerY, scale, Constants.WORLD_WIDTH);
-    }
-
-    private void drawCenteredTexture(Texture texture, float centerX, float centerY, float scale, float maxWidth) {
-        float width = texture.getWidth() * scale;
-        if (width > maxWidth) {
-            scale *= maxWidth / width;
-            width = texture.getWidth() * scale;
-        }
-        float height = texture.getHeight() * scale;
-        float x = centerX - width * 0.5f;
-        float y = centerY - height * 0.5f;
-        game.getBatch().draw(texture, x, y, width, height);
     }
 
     private void drawPrompt(Texture keyTexture, Texture actionTexture, float centerY) {
@@ -121,14 +106,7 @@ public class EndScreen extends ScreenAdapter {
         float actionX = referenceX + retryKeyText.getWidth() * keyScale + gap;
         float keyRightX = actionX - gap;
         float keyWidth = keyTexture.getWidth() * keyScale;
-        drawTexture(keyTexture, keyRightX - keyWidth, centerY, keyScale);
-        drawTexture(actionTexture, actionX, centerY, actionScale);
-    }
-
-    private void drawTexture(Texture texture, float x, float centerY, float scale) {
-        float width = texture.getWidth() * scale;
-        float height = texture.getHeight() * scale;
-        float y = centerY - height * 0.5f;
-        game.getBatch().draw(texture, x, y, width, height);
+        TextureDraw.atCenterY(game.getBatch(), keyTexture, keyRightX - keyWidth, centerY, keyScale);
+        TextureDraw.atCenterY(game.getBatch(), actionTexture, actionX, centerY, actionScale);
     }
 }

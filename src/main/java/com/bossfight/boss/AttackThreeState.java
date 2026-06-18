@@ -19,8 +19,8 @@ public class AttackThreeState implements BossState {
     private int pendingCount;
 
     @Override
-    public String getName() {
-        return "Chuva de pólen";
+    public BossVisualState getVisualState() {
+        return BossVisualState.POLLEN_RAIN;
     }
 
     @Override
@@ -30,7 +30,6 @@ public class AttackThreeState implements BossState {
         pendingCount = 0;
         boss.emitSound(BossSoundEvent.POLLEN_CHARGE);
         boss.showTelegraph(new Color(0.76f, 0.28f, 1f, 1f), 0.42f);
-        boss.playAttackMotion(0.5f, 0.5f);
     }
 
     @Override
@@ -41,7 +40,6 @@ public class AttackThreeState implements BossState {
         updatePendingColumns(boss, delta, projectileSystem);
 
         if (spawnTimer <= 0f && pendingCount == 0) {
-            boss.playAttackMotion(0.3f, 0.62f);
             if (boss.isPhaseTwo() && elapsed > 0.7f && MathUtils.randomBoolean(0.34f)) {
                 spawnGardenPattern(projectileSystem);
                 spawnTimer = 0.86f;
@@ -106,16 +104,11 @@ public class AttackThreeState implements BossState {
         pendingXs[pendingCount] = x;
         pendingTimers[pendingCount] = COLUMN_WARNING_TIME;
         pendingCount++;
-        projectileSystem.addProjectile(new Projectile(
-                Projectile.Owner.BOSS,
+        projectileSystem.addProjectile(Projectile.bossWarning(
                 x - 12f,
                 Constants.FLOOR_Y,
                 34f,
                 Constants.WORLD_HEIGHT - Constants.FLOOR_Y,
-                0f,
-                0f,
-                0,
-                Projectile.Kind.BOSS_WARNING,
                 COLUMN_WARNING_TIME
         ));
     }
@@ -126,30 +119,26 @@ public class AttackThreeState implements BossState {
         float horizontalDrift = boss.isPhaseTwo() ? MathUtils.random(-65f, 65f) : MathUtils.random(-28f, 28f);
         float fallSpeed = boss.isPhaseTwo() ? -560f : -430f;
 
-        projectileSystem.addProjectile(new Projectile(
-                Projectile.Owner.BOSS,
+        projectileSystem.addProjectile(Projectile.bossPetalBomb(
                 x,
                 y,
                 Constants.BOSS_PROJECTILE_WIDTH + 4f,
                 Constants.BOSS_PROJECTILE_HEIGHT + 4f,
                 horizontalDrift,
                 fallSpeed,
-                Constants.BOSS_PROJECTILE_DAMAGE,
-                Projectile.Kind.BOSS_PETAL_BOMB
+                0f
         ));
     }
 
     private void spawnDriftingPollen(ProjectileSystem projectileSystem, float x) {
-        projectileSystem.addProjectile(new Projectile(
-                Projectile.Owner.BOSS,
+        projectileSystem.addProjectile(Projectile.bossPollen(
                 x,
                 Constants.WORLD_HEIGHT + 26f,
                 Constants.BOSS_PROJECTILE_WIDTH + 12f,
                 Constants.BOSS_PROJECTILE_HEIGHT + 12f,
                 MathUtils.random(-90f, 90f),
                 -330f,
-                Constants.BOSS_PROJECTILE_DAMAGE,
-                Projectile.Kind.BOSS_POLLEN
+                0f
         ));
     }
 }

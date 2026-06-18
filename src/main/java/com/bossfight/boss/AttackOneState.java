@@ -21,8 +21,8 @@ public class AttackOneState implements BossState {
     private int strikesTotal;
 
     @Override
-    public String getName() {
-        return "Bote de cipó";
+    public BossVisualState getVisualState() {
+        return BossVisualState.VINE_STRIKE;
     }
 
     @Override
@@ -36,16 +36,11 @@ public class AttackOneState implements BossState {
     public void update(Boss boss, float delta, ProjectileSystem projectileSystem, Player player) {
         if (!warningSpawned) {
             warningSpawned = true;
-            projectileSystem.addProjectile(new Projectile(
-                    Projectile.Owner.BOSS,
+            projectileSystem.addProjectile(Projectile.bossWarning(
                     Constants.ARENA_LEFT,
                     getLaneY(),
                     getThornHitboxWidth(),
                     getLaneHeight(),
-                    0f,
-                    0f,
-                    0,
-                    Projectile.Kind.BOSS_WARNING,
                     currentWarningTime
             ));
         }
@@ -59,20 +54,12 @@ public class AttackOneState implements BossState {
             strikesFired++;
             recoveryTimer = boss.isPhaseTwo() ? 0.28f : 0.42f;
             boss.emitSound(BossSoundEvent.VINE_STRIKE);
-            boss.playAttackMotion(0.32f, 1.15f);
-            projectileSystem.addProjectile(new Projectile(
-                    Projectile.Owner.BOSS,
+            projectileSystem.addProjectile(Projectile.bossThorn(
                     Constants.ARENA_LEFT,
                     getLaneY(),
                     getThornHitboxWidth(),
                     getLaneHeight(),
-                    0f,
-                    0f,
-                    Constants.BOSS_PROJECTILE_DAMAGE,
-                    Projectile.Kind.BOSS_THORN,
-                    boss.isPhaseTwo() ? 0.42f : 0.34f,
-                    0f,
-                    false
+                    boss.isPhaseTwo() ? 0.42f : 0.34f
             ));
         }
 
@@ -101,7 +88,6 @@ public class AttackOneState implements BossState {
         recoveryTimer = 0f;
         boss.emitSound(BossSoundEvent.VINE_CHARGE);
         boss.showTelegraph(new Color(1f, 0.16f, 0.08f, 1f), warningTimer);
-        boss.playAttackMotion(warningTimer, 0.55f);
     }
 
     private float getLaneY() {

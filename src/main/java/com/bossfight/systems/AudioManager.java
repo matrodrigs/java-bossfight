@@ -11,8 +11,6 @@ public class AudioManager {
         MENU_MOVE(520f, 0.045f, 0.12f, 1.25f),
         MENU_CONFIRM(390f, 0.08f, 0.16f, 1.85f),
         MENU_BACK(260f, 0.08f, 0.13f, 0.62f),
-        READY(330f, 0.16f, 0.18f, 1.55f),
-        GO(760f, 0.16f, 0.2f, 0.78f),
         PLAYER_SHOOT(860f, 0.035f, 0.09f, 1.18f),
         PLAYER_SPECIAL(280f, 0.18f, 0.18f, 2.35f),
         DASH(170f, 0.07f, 0.11f, 2.1f),
