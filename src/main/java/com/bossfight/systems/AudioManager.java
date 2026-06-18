@@ -55,6 +55,10 @@ public class AudioManager {
     }
 
     public void playMusic(String path, boolean looping) {
+        playMusic(path, looping, 1f);
+    }
+
+    public void playMusic(String path, boolean looping, float volume) {
         if (!assets.exists(path)) {
             return;
         }
@@ -62,6 +66,7 @@ public class AudioManager {
         stopMusic();
         currentMusic = Gdx.audio.newMusic(Gdx.files.internal(path));
         currentMusic.setLooping(looping);
+        currentMusic.setVolume(Math.max(0f, Math.min(1f, volume)));
         currentMusic.play();
     }
 
