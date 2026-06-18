@@ -16,20 +16,7 @@ public class ProjectileSystem {
         boolean shouldRemove(Projectile projectile);
     }
 
-    private static final String WARNING_BANNER_PATH = "sprites/ui/warning_banner.png";
     private static final float WARNING_VERTICAL_THRESHOLD = 2f;
-    private static final int WARNING_HEAD_SOURCE_X = 0;
-    private static final int WARNING_HEAD_SOURCE_Y = 0;
-    private static final int WARNING_HEAD_SOURCE_WIDTH = 325;
-    private static final int WARNING_HEAD_SOURCE_HEIGHT = 220;
-    private static final int WARNING_BODY_SOURCE_X = 50;
-    private static final int WARNING_BODY_SOURCE_Y = 260;
-    private static final int WARNING_BODY_SOURCE_WIDTH = 225;
-    private static final int WARNING_BODY_SOURCE_HEIGHT = 600;
-    private static final float WARNING_HEAD_LENGTH_FACTOR = 2.55f;
-    private static final float WARNING_HEAD_THICKNESS_FACTOR = 1.32f;
-    private static final float WARNING_BODY_THICKNESS_FACTOR = 0.84f;
-    private static final float WARNING_ALPHA = 0.72f;
     private static final float IMPACT_SHADOW_MIN_WIDTH = 50f;
     private static final float IMPACT_SHADOW_MAX_WIDTH = 82f;
     private static final float IMPACT_SHADOW_MIN_HEIGHT = 13f;
@@ -45,7 +32,6 @@ public class ProjectileSystem {
     private final Texture bossPollen;
     private final Texture bossThorn;
     private final Texture bossPetalBomb;
-    private final Texture warningBanner;
 
     public ProjectileSystem() {
         playerPea = load("sprites/projectiles/player_pea.png");
@@ -55,7 +41,6 @@ public class ProjectileSystem {
         bossPollen = load("sprites/projectiles/boss_pollen.png");
         bossThorn = load("sprites/projectiles/boss_thorn.png");
         bossPetalBomb = load("sprites/projectiles/boss_petal_bomb.png");
-        warningBanner = load(WARNING_BANNER_PATH);
     }
 
     public void addProjectile(Projectile projectile) {
@@ -95,7 +80,6 @@ public class ProjectileSystem {
         bossPollen.dispose();
         bossThorn.dispose();
         bossPetalBomb.dispose();
-        warningBanner.dispose();
     }
 
     public void removePlayerProjectilesIf(ProjectileRemovalRule removalRule) {
@@ -172,15 +156,16 @@ public class ProjectileSystem {
                         58f + MathUtils.cos(projectile.getAge() * 8f) * 4f,
                         projectile.getAge() * 80f);
                 }
-                case BOSS_THORN -> drawThornLane(batch, projectile);
+                case BOSS_THORN -> {
+                    if (isVerticalThorn(projectile)) {
+                        drawThornPillar(batch, projectile);
+                    } else {
+                        drawThornLane(batch, projectile);
+                    }
+                }
                 case BOSS_PETAL_BOMB -> drawTextureWithTrail(batch, bossPetalBomb, projectile, 54f, 70f,
                         MathUtils.sin(projectile.getAge() * 9f) * 12f, 2, 18f,
                         1f, 0.44f, 0.12f, 0.2f);
-                case BOSS_WARNING -> {
-                    if (!isVerticalWarning(projectile)) {
-                        drawWarningBanner(batch, projectile);
-                    }
-                }
             }
         }
         batch.setColor(Color.WHITE);
@@ -188,8 +173,12 @@ public class ProjectileSystem {
 
     private void renderWarnings(ShapeRenderer shapeRenderer, Array<Projectile> projectiles) {
         for (Projectile projectile : projectiles) {
-            if (projectile.getKind() == Projectile.Kind.BOSS_WARNING && isVerticalWarning(projectile)) {
-                drawPollenWarningShadow(shapeRenderer, projectile);
+            if (projectile.getKind() == Projectile.Kind.BOSS_WARNING) {
+                if (isVineWarning(projectile)) {
+                    drawVineWarning(shapeRenderer, projectile);
+                } else {
+                    drawPollenWarningShadow(shapeRenderer, projectile);
+                }
             } else if (isFallingImpactProjectile(projectile)) {
                 drawFallingImpactShadow(shapeRenderer, projectile);
             }
@@ -277,63 +266,23 @@ public class ProjectileSystem {
                 1f);
     }
 
-    private void drawWarningBanner(SpriteBatch batch, Projectile projectile) {
-        batch.setColor(1f, 1f, 1f, WARNING_ALPHA);
-        float hitboxThickness = projectile.getHeight();
-        float bodyThickness = hitboxThickness * WARNING_BODY_THICKNESS_FACTOR;
-        float headThickness = hitboxThickness * WARNING_HEAD_THICKNESS_FACTOR;
-        float bodyY = projectile.getY() + (hitboxThickness - bodyThickness) * 0.5f;
-        float headY = projectile.getY() + (hitboxThickness - headThickness) * 0.5f;
-        float headLength = Math.min(projectile.getWidth(), hitboxThickness * WARNING_HEAD_LENGTH_FACTOR);
-        float bodySegmentLength = bodyThickness * WARNING_BODY_SOURCE_HEIGHT / WARNING_BODY_SOURCE_WIDTH;
-        float drawX = projectile.getX() + headLength;
-        float bodyEndX = projectile.getX() + projectile.getWidth();
+    private void drawThornPillar(SpriteBatch batch, Projectile projectile) {
+        float pulse = MathUtils.sin(projectile.getAge() * 19f);
+        float drawWidth = Math.max(96f, projectile.getWidth() * 2.05f + pulse * 3f);
+        float drawHeight = projectile.getHeight() + 92f;
+        float centerY = projectile.getY() + drawHeight * 0.47f;
 
-        drawWarningRegion(batch,
-                WARNING_HEAD_SOURCE_X,
-                WARNING_HEAD_SOURCE_Y,
-                WARNING_HEAD_SOURCE_WIDTH,
-                WARNING_HEAD_SOURCE_HEIGHT,
-                projectile.getX(),
-                headY,
-                headLength,
-                headThickness);
-
-        while (drawX < bodyEndX - 0.1f) {
-            float drawLength = Math.min(bodySegmentLength, bodyEndX - drawX);
-            int sourceHeight = Math.max(1,
-                    Math.round(WARNING_BODY_SOURCE_HEIGHT * drawLength / bodySegmentLength));
-            drawWarningRegion(batch,
-                    WARNING_BODY_SOURCE_X,
-                    WARNING_BODY_SOURCE_Y,
-                    WARNING_BODY_SOURCE_WIDTH,
-                    sourceHeight,
-                    drawX,
-                    bodyY,
-                    drawLength,
-                    bodyThickness);
-            drawX += drawLength;
-        }
-    }
-
-    private void drawWarningRegion(SpriteBatch batch, int sourceX, int sourceY, int sourceWidth, int sourceHeight,
-                                   float x, float y, float length, float thickness) {
-        batch.draw(warningBanner,
-                x + length,
-                y,
-                0f,
-                0f,
-                thickness,
-                length,
-                1f,
-                1f,
+        drawTextureAt(batch, bossThorn,
+                projectile.getCenterX(),
+                centerY,
+                drawHeight,
+                drawWidth,
                 90f,
-                sourceX,
-                sourceY,
-                sourceWidth,
-                sourceHeight,
                 false,
-                false);
+                1f,
+                1f,
+                1f,
+                1f);
     }
 
     private void drawPollenWarningShadow(ShapeRenderer shapeRenderer, Projectile projectile) {
@@ -346,6 +295,32 @@ public class ProjectileSystem {
         float alpha = MathUtils.clamp(0.22f + progress * 0.34f + pulse * 0.08f, 0f, 0.72f);
 
         drawImpactShadow(shapeRenderer, centerX, y, width, height, alpha);
+    }
+
+    private void drawVineWarning(ShapeRenderer shapeRenderer, Projectile projectile) {
+        float progress = projectile.getWarningProgress();
+        float pulse = (MathUtils.sin(projectile.getAge() * 16f) + 1f) * 0.5f;
+        float alpha = MathUtils.clamp(0.16f + progress * 0.24f + pulse * 0.08f, 0f, 0.54f);
+        float x = projectile.getX();
+        float y = projectile.getY();
+        float width = projectile.getWidth();
+        float height = projectile.getHeight();
+        boolean vertical = height > width;
+
+        shapeRenderer.setColor(0.14f, 0.72f, 0.16f, alpha * 0.45f);
+        shapeRenderer.rect(x, y, width, height);
+        shapeRenderer.setColor(1f, 0.82f, 0.16f, alpha);
+        if (vertical) {
+            shapeRenderer.rect(x + width * 0.39f, y, width * 0.22f, height);
+        } else {
+            shapeRenderer.rect(x, y + height * 0.39f, width, height * 0.22f);
+        }
+        shapeRenderer.setColor(0.04f, 0.16f, 0.04f, alpha * 0.58f);
+        if (vertical) {
+            shapeRenderer.ellipse(x - width * 0.18f, Constants.FLOOR_Y - 9f, width * 1.36f, 24f);
+        } else {
+            shapeRenderer.rect(x, y - height * 0.18f, width, height * 0.28f);
+        }
     }
 
     private void drawFallingImpactShadow(ShapeRenderer shapeRenderer, Projectile projectile) {
@@ -384,6 +359,15 @@ public class ProjectileSystem {
 
     private boolean isVerticalWarning(Projectile projectile) {
         return projectile.getHeight() > projectile.getWidth() * WARNING_VERTICAL_THRESHOLD;
+    }
+
+    private boolean isVineWarning(Projectile projectile) {
+        return !isVerticalWarning(projectile)
+                || (projectile.getWidth() >= 60f && projectile.getHeight() <= 360f);
+    }
+
+    private boolean isVerticalThorn(Projectile projectile) {
+        return projectile.getHeight() > projectile.getWidth() * 2f;
     }
 
     private boolean isFallingImpactProjectile(Projectile projectile) {

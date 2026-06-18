@@ -2,6 +2,7 @@ package com.bossfight.entities;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
+import com.bossfight.boss.AttackFiveState;
 import com.bossfight.boss.AttackFourState;
 import com.bossfight.boss.AttackOneState;
 import com.bossfight.boss.AttackThreeState;
@@ -61,7 +62,7 @@ public class Boss {
     }
 
     public boolean takeDamage(int amount) {
-        if (isDefeated()) {
+        if (isDefeated() || isInvulnerable()) {
             return false;
         }
 
@@ -90,10 +91,12 @@ public class Boss {
     }
 
     public BossState createNextAttackState() {
-        int attackCount = isPhaseTwo() ? 4 : 3;
+        int attackCount = isPhaseTwo() ? 5 : 3;
         int nextAttackIndex;
 
-        if (isPhaseTwo() && phaseTwoAttackCount % 4 == 3 && lastAttackIndex != 3) {
+        if (isPhaseTwo() && phaseTwoAttackCount % 5 == 4 && lastAttackIndex != 4) {
+            nextAttackIndex = 4;
+        } else if (isPhaseTwo() && phaseTwoAttackCount % 4 == 3 && lastAttackIndex != 3) {
             nextAttackIndex = 3;
         } else {
             do {
@@ -110,9 +113,11 @@ public class Boss {
             return new AttackTwoState();
         } else if (nextAttackIndex == 2) {
             return new AttackThreeState();
+        } else if (nextAttackIndex == 3) {
+            return new AttackFourState();
         }
 
-        return new AttackFourState();
+        return new AttackFiveState();
     }
 
     public void finishCurrentAttack() {
@@ -134,6 +139,10 @@ public class Boss {
 
     public boolean isDefeated() {
         return health <= 0;
+    }
+
+    public boolean isInvulnerable() {
+        return currentState instanceof PhaseTwoTransitionState;
     }
 
     public float getCenterX() {

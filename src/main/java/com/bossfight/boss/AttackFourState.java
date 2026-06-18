@@ -21,7 +21,7 @@ public class AttackFourState implements BossState {
     @Override
     public void enter(Boss boss) {
         elapsed = 0f;
-        puffTimer = 0.44f;
+        puffTimer = 0.34f;
         puffsSpawned = 0;
         boss.emitSound(BossSoundEvent.POLLEN_CHARGE);
         boss.showTelegraph(new Color(0.74f, 0.32f, 1f, 1f), 0.58f);
@@ -35,11 +35,11 @@ public class AttackFourState implements BossState {
         if (puffTimer <= 0f && puffsSpawned < getMaxPuffs(boss)) {
             spawnPollenPuff(boss, projectileSystem, player);
             puffsSpawned++;
-            puffTimer = boss.isPhaseTwo() ? 0.18f : 0.24f;
+            puffTimer = boss.isPhaseTwo() ? 0.16f : 0.22f;
             boss.emitSound(BossSoundEvent.POLLEN_DROP);
         }
 
-        if (elapsed >= (boss.isPhaseTwo() ? 2.05f : 1.72f)) {
+        if (elapsed >= (boss.isPhaseTwo() ? 2.12f : 1.76f)) {
             boss.finishCurrentAttack();
         }
     }
@@ -49,25 +49,25 @@ public class AttackFourState implements BossState {
     }
 
     private int getMaxPuffs(Boss boss) {
-        return boss.isPhaseTwo() ? 6 : 4;
+        return boss.isPhaseTwo() ? 7 : 5;
     }
 
     private void spawnPollenPuff(Boss boss, ProjectileSystem projectileSystem, Player player) {
-        float width = Constants.BOSS_PROJECTILE_WIDTH + 22f;
-        float height = Constants.BOSS_PROJECTILE_HEIGHT + 22f;
+        float width = Constants.BOSS_PROJECTILE_WIDTH + 26f;
+        float height = Constants.BOSS_PROJECTILE_HEIGHT + 26f;
         float originX = boss.getCenterX() - 138f;
         float originY = Constants.FLOOR_Y + 300f + MathUtils.sin(puffsSpawned * 1.35f) * 34f;
-        float speed = boss.isPhaseTwo() ? 285f : 245f;
-        float laneOffset = ((puffsSpawned % 3) - 1f) * 28f;
+        float speed = boss.isPhaseTwo() ? 330f : 275f;
+        float laneOffset = ((puffsSpawned % 3) - 1f) * 36f;
         float targetX = player.getCenterX();
-        float targetY = player.getCenterY() + laneOffset + MathUtils.random(-12f, 12f);
-        float angle = MathUtils.atan2(targetY - originY, targetX - originX) + MathUtils.random(-0.08f, 0.08f);
+        float targetY = player.getCenterY() + laneOffset + MathUtils.random(-10f, 10f);
+        float angle = MathUtils.atan2(targetY - originY, targetX - originX) + MathUtils.random(-0.06f, 0.06f);
         float velocityX = MathUtils.clamp(MathUtils.cos(angle) * speed,
-                boss.isPhaseTwo() ? -330f : -285f,
-                boss.isPhaseTwo() ? -215f : -190f);
+                boss.isPhaseTwo() ? -380f : -320f,
+                boss.isPhaseTwo() ? -245f : -215f);
         float velocityY = MathUtils.clamp(MathUtils.sin(angle) * speed,
-                boss.isPhaseTwo() ? -105f : -82f,
-                boss.isPhaseTwo() ? 95f : 76f);
+                boss.isPhaseTwo() ? -120f : -92f,
+                boss.isPhaseTwo() ? 115f : 88f);
 
         projectileSystem.addProjectile(Projectile.bossPollen(
                 originX - width * 0.5f,
