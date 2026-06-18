@@ -84,5 +84,33 @@ public class AttackTwoState implements BossState {
                     -70f
             ));
         }
+
+        if (boss.isPhaseTwo() && volleys % 2 == 1) {
+            fireArcingAcorn(boss, projectileSystem, player);
+        }
+    }
+
+    private void fireArcingAcorn(Boss boss, ProjectileSystem projectileSystem, Player player) {
+        float width = Constants.BOSS_PROJECTILE_WIDTH + 12f;
+        float height = Constants.BOSS_PROJECTILE_HEIGHT + 15f;
+        float originX = boss.getCenterX() - 112f;
+        float originY = Constants.FLOOR_Y + 346f;
+        float travelTime = 1.06f;
+        float velocityX = (player.getCenterX() - originX) / travelTime;
+        float velocityY = 360f;
+
+        projectileSystem.addProjectile(new Projectile(
+                Projectile.Owner.BOSS,
+                originX - width * 0.5f,
+                originY - height * 0.5f,
+                width,
+                height,
+                velocityX,
+                velocityY,
+                Constants.BOSS_PROJECTILE_DAMAGE,
+                Projectile.Kind.BOSS_ACORN,
+                -1f,
+                Constants.GRAVITY * 0.42f
+        ));
     }
 }

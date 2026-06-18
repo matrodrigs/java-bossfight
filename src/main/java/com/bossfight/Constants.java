@@ -26,8 +26,8 @@ public final class Constants {
     public static final float PLAYER_SHOOT_COOLDOWN = 0.18f;
     public static final float PLAYER_INVULNERABILITY_DURATION = 0.95f;
     public static final float PLAYER_SPECIAL_MAX = 100f;
-    public static final float PLAYER_SPECIAL_PASSIVE_CHARGE = 8f;
-    public static final float PLAYER_SPECIAL_HIT_CHARGE = 9f;
+    public static final float PLAYER_SPECIAL_PASSIVE_CHARGE = 4.5f;
+    public static final float PLAYER_SPECIAL_HIT_CHARGE = 4.5f;
     public static final float PLAYER_SPECIAL_COOLDOWN = 0.45f;
     public static final int PLAYER_MAX_HEALTH = 5;
 
@@ -35,7 +35,7 @@ public final class Constants {
     public static final float BOSS_HEIGHT = 230f;
     public static final float BOSS_START_X = 930f;
     public static final float BOSS_START_Y = FLOOR_Y;
-    public static final int BOSS_MAX_HEALTH = 120;
+    public static final int BOSS_MAX_HEALTH = 150;
 
     public static final float PLAYER_PROJECTILE_WIDTH = 22f;
     public static final float PLAYER_PROJECTILE_HEIGHT = 10f;

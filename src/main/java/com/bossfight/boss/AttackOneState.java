@@ -11,10 +11,14 @@ import com.bossfight.Constants;
 public class AttackOneState implements BossState {
     private static final float WARNING_TIME = 0.62f;
 
-    private float elapsed;
+    private float currentWarningTime;
+    private float warningTimer;
+    private float recoveryTimer;
     private boolean upperLane;
     private boolean warningSpawned;
     private boolean fired;
+    private int strikesFired;
+    private int strikesTotal;
 
     @Override
     public String getName() {
@@ -23,19 +27,13 @@ public class AttackOneState implements BossState {
 
     @Override
     public void enter(Boss boss) {
-        elapsed = 0f;
-        upperLane = MathUtils.randomBoolean();
-        warningSpawned = false;
-        fired = false;
-        boss.emitSound(BossSoundEvent.VINE_CHARGE);
-        boss.showTelegraph(new Color(1f, 0.16f, 0.08f, 1f), WARNING_TIME);
-        boss.playAttackMotion(WARNING_TIME, 0.55f);
+        strikesFired = 0;
+        strikesTotal = boss.isPhaseTwo() ? 2 : 1;
+        startStrike(boss, MathUtils.randomBoolean());
     }
 
     @Override
     public void update(Boss boss, float delta, ProjectileSystem projectileSystem, Player player) {
-        elapsed += delta;
-
         if (!warningSpawned) {
             warningSpawned = true;
             projectileSystem.addProjectile(new Projectile(
@@ -48,12 +46,18 @@ public class AttackOneState implements BossState {
                     0f,
                     0,
                     Projectile.Kind.BOSS_WARNING,
-                    WARNING_TIME
+                    currentWarningTime
             ));
         }
 
-        if (!fired && elapsed >= WARNING_TIME) {
+        if (!fired) {
+            warningTimer -= delta;
+        }
+
+        if (!fired && warningTimer <= 0f) {
             fired = true;
+            strikesFired++;
+            recoveryTimer = boss.isPhaseTwo() ? 0.28f : 0.42f;
             boss.emitSound(BossSoundEvent.VINE_STRIKE);
             boss.playAttackMotion(0.32f, 1.15f);
             projectileSystem.addProjectile(new Projectile(
@@ -72,13 +76,32 @@ public class AttackOneState implements BossState {
             ));
         }
 
-        if (elapsed >= (boss.isPhaseTwo() ? 1.12f : 1.22f)) {
-            boss.finishCurrentAttack();
+        if (fired) {
+            recoveryTimer -= delta;
+            if (recoveryTimer <= 0f) {
+                if (strikesFired < strikesTotal) {
+                    startStrike(boss, !upperLane);
+                } else {
+                    boss.finishCurrentAttack();
+                }
+            }
         }
     }
 
     @Override
     public void exit(Boss boss) {
+    }
+
+    private void startStrike(Boss boss, boolean useUpperLane) {
+        upperLane = useUpperLane;
+        warningSpawned = false;
+        fired = false;
+        currentWarningTime = boss.isPhaseTwo() ? 0.52f : WARNING_TIME;
+        warningTimer = currentWarningTime;
+        recoveryTimer = 0f;
+        boss.emitSound(BossSoundEvent.VINE_CHARGE);
+        boss.showTelegraph(new Color(1f, 0.16f, 0.08f, 1f), warningTimer);
+        boss.playAttackMotion(warningTimer, 0.55f);
     }
 
     private float getLaneY() {

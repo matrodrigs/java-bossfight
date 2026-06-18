@@ -13,12 +13,23 @@ import com.bossfight.entities.Projectile;
 public class ProjectileSystem {
     private static final String WARNING_BANNER_PATH = "sprites/ui/warning_banner.png";
     private static final float WARNING_VERTICAL_THRESHOLD = 2f;
-    private static final float WARNING_BANNER_ALPHA = 0.24f;
-    private static final float WARNING_BANNER_PULSE_ALPHA = 0.06f;
+    private static final int WARNING_HEAD_SOURCE_X = 0;
+    private static final int WARNING_HEAD_SOURCE_Y = 0;
+    private static final int WARNING_HEAD_SOURCE_WIDTH = 325;
+    private static final int WARNING_HEAD_SOURCE_HEIGHT = 220;
+    private static final int WARNING_BODY_SOURCE_X = 50;
+    private static final int WARNING_BODY_SOURCE_Y = 260;
+    private static final int WARNING_BODY_SOURCE_WIDTH = 225;
+    private static final int WARNING_BODY_SOURCE_HEIGHT = 600;
+    private static final float WARNING_HEAD_LENGTH_FACTOR = 2.55f;
+    private static final float WARNING_HEAD_THICKNESS_FACTOR = 1.32f;
+    private static final float WARNING_BODY_THICKNESS_FACTOR = 0.84f;
+    private static final float WARNING_ALPHA = 0.72f;
     private static final float IMPACT_SHADOW_MIN_WIDTH = 50f;
     private static final float IMPACT_SHADOW_MAX_WIDTH = 82f;
     private static final float IMPACT_SHADOW_MIN_HEIGHT = 13f;
     private static final float IMPACT_SHADOW_MAX_HEIGHT = 23f;
+    private static final float POLLEN_IMPACT_SHADOW_MIN_FALL_SPEED = -160f;
 
     private final Array<Projectile> playerProjectiles = new Array<>();
     private final Array<Projectile> bossProjectiles = new Array<>();
@@ -244,7 +255,7 @@ public class ProjectileSystem {
                 drawWidth,
                 drawHeight,
                 0f,
-                false,
+                true,
                 1f,
                 1f,
                 1f,
@@ -252,18 +263,62 @@ public class ProjectileSystem {
     }
 
     private void drawWarningBanner(SpriteBatch batch, Projectile projectile) {
-        float progress = projectile.getWarningProgress();
-        float pulse = (MathUtils.sin(projectile.getAge() * 12f) + 1f) * 0.5f;
-        float alpha = MathUtils.clamp(WARNING_BANNER_ALPHA + progress * 0.06f + pulse * WARNING_BANNER_PULSE_ALPHA,
-                0f,
-                0.36f);
+        batch.setColor(1f, 1f, 1f, WARNING_ALPHA);
+        float hitboxThickness = projectile.getHeight();
+        float bodyThickness = hitboxThickness * WARNING_BODY_THICKNESS_FACTOR;
+        float headThickness = hitboxThickness * WARNING_HEAD_THICKNESS_FACTOR;
+        float bodyY = projectile.getY() + (hitboxThickness - bodyThickness) * 0.5f;
+        float headY = projectile.getY() + (hitboxThickness - headThickness) * 0.5f;
+        float headLength = Math.min(projectile.getWidth(), hitboxThickness * WARNING_HEAD_LENGTH_FACTOR);
+        float bodySegmentLength = bodyThickness * WARNING_BODY_SOURCE_HEIGHT / WARNING_BODY_SOURCE_WIDTH;
+        float drawX = projectile.getX() + headLength;
+        float bodyEndX = projectile.getX() + projectile.getWidth();
 
-        batch.setColor(1f, 0.12f, 0.1f, alpha);
-        batch.draw(warningBanner,
+        drawWarningRegion(batch,
+                WARNING_HEAD_SOURCE_X,
+                WARNING_HEAD_SOURCE_Y,
+                WARNING_HEAD_SOURCE_WIDTH,
+                WARNING_HEAD_SOURCE_HEIGHT,
                 projectile.getX(),
-                projectile.getY(),
-                projectile.getWidth(),
-                projectile.getHeight());
+                headY,
+                headLength,
+                headThickness);
+
+        while (drawX < bodyEndX - 0.1f) {
+            float drawLength = Math.min(bodySegmentLength, bodyEndX - drawX);
+            int sourceHeight = Math.max(1,
+                    Math.round(WARNING_BODY_SOURCE_HEIGHT * drawLength / bodySegmentLength));
+            drawWarningRegion(batch,
+                    WARNING_BODY_SOURCE_X,
+                    WARNING_BODY_SOURCE_Y,
+                    WARNING_BODY_SOURCE_WIDTH,
+                    sourceHeight,
+                    drawX,
+                    bodyY,
+                    drawLength,
+                    bodyThickness);
+            drawX += drawLength;
+        }
+    }
+
+    private void drawWarningRegion(SpriteBatch batch, int sourceX, int sourceY, int sourceWidth, int sourceHeight,
+                                   float x, float y, float length, float thickness) {
+        batch.draw(warningBanner,
+                x + length,
+                y,
+                0f,
+                0f,
+                thickness,
+                length,
+                1f,
+                1f,
+                90f,
+                sourceX,
+                sourceY,
+                sourceWidth,
+                sourceHeight,
+                false,
+                false);
     }
 
     private void drawPollenWarningShadow(ShapeRenderer shapeRenderer, Projectile projectile) {
@@ -322,7 +377,8 @@ public class ProjectileSystem {
         }
 
         return projectile.getKind() == Projectile.Kind.BOSS_PETAL_BOMB
-                || projectile.getKind() == Projectile.Kind.BOSS_POLLEN;
+                || (projectile.getKind() == Projectile.Kind.BOSS_POLLEN
+                && projectile.getVelocityY() <= POLLEN_IMPACT_SHADOW_MIN_FALL_SPEED);
     }
 
     private float rotationFor(Projectile projectile) {

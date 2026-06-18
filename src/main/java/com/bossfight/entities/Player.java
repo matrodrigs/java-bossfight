@@ -11,7 +11,6 @@ public class Player {
     private static final float SHOT_MUZZLE_Y_FACTOR = 0.70f;
 
     private final Hitbox hitbox;
-    private final int maxHealth;
     private int health;
     private int facingDirection = 1;
     private float x;
@@ -36,8 +35,7 @@ public class Player {
     public Player() {
         x = Constants.PLAYER_START_X;
         y = Constants.PLAYER_START_Y;
-        maxHealth = Constants.PLAYER_MAX_HEALTH;
-        health = maxHealth;
+        health = Constants.PLAYER_MAX_HEALTH;
         specialEnergy = Constants.PLAYER_SPECIAL_MAX * 0.35f;
         hitbox = new Hitbox(x, y, Constants.PLAYER_WIDTH, Constants.PLAYER_HEIGHT);
     }
@@ -197,10 +195,6 @@ public class Player {
 
     public int getHealth() {
         return health;
-    }
-
-    public int getMaxHealth() {
-        return maxHealth;
     }
 
     public float getSpecialEnergyPercent() {

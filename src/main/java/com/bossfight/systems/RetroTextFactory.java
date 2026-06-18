@@ -56,18 +56,6 @@ public class RetroTextFactory implements Disposable {
         return createCartoonText(text, 92, 12, fill, stroke, 0x050405, 18, 0.055f);
     }
 
-    public Texture createHudLabel(String text) {
-        return createText(text, 27, 5, 0xf8ecd0, 0x301914, 0x050405, 7, false);
-    }
-
-    public Texture createHudValue(String text) {
-        return createText(text, 25, 5, 0xffdc52, 0x301914, 0x050405, 7, false);
-    }
-
-    public Texture createHudHealth(String text) {
-        return createText(text, 31, 5, 0xffdf55, 0x5a2118, 0x050405, 7, false);
-    }
-
     public Texture createPlayerHealthHud(int health) {
         return createPlayerHealthHudText("HP.", String.valueOf(health));
     }
