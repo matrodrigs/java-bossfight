@@ -12,14 +12,23 @@ import com.bossfight.systems.RetroTextFactory;
 import com.bossfight.Constants;
 
 public class EndScreen extends ScreenAdapter {
+    private static final String VICTORY_BACKGROUND_PATH = "sprites/ui/end_victory_background.png";
+    private static final String DEFEAT_BACKGROUND_PATH = "sprites/ui/end_defeat_background.png";
+    private static final float TEXT_CENTER_X = 380f;
+    private static final float TEXT_MAX_WIDTH = 690f;
+    private static final float PROMPT_GAP = 14f;
+
     private final MainGame game;
     private final boolean victory;
     private final OrthographicCamera camera;
     private final FitViewport viewport;
     private final RetroTextFactory textFactory;
+    private final Texture background;
     private final Texture titleText;
-    private final Texture retryText;
-    private final Texture menuText;
+    private final Texture retryKeyText;
+    private final Texture retryActionText;
+    private final Texture menuKeyText;
+    private final Texture menuActionText;
 
     public EndScreen(MainGame game, boolean victory) {
         this.game = game;
@@ -28,8 +37,12 @@ public class EndScreen extends ScreenAdapter {
         viewport = new FitViewport(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT, camera);
         textFactory = new RetroTextFactory();
         titleText = textFactory.createResultTitle(victory ? "VITÓRIA!" : "DERROTA!", victory);
-        retryText = textFactory.createInstruction("R  TENTAR DE NOVO");
-        menuText = textFactory.createInstruction("ENTER  VOLTAR AO MENU");
+        retryKeyText = textFactory.createInstructionKey("R");
+        retryActionText = textFactory.createInstruction(victory ? "LUTAR OUTRA VEZ" : "REBOBINAR DUELO");
+        menuKeyText = textFactory.createInstructionKey("ESC");
+        menuActionText = textFactory.createInstruction("VOLTAR AO MENU");
+        background = new Texture(Gdx.files.internal(victory ? VICTORY_BACKGROUND_PATH : DEFEAT_BACKGROUND_PATH));
+        background.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
     }
 
     @Override
@@ -54,9 +67,10 @@ public class EndScreen extends ScreenAdapter {
         viewport.apply();
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
-        drawCenteredTexture(titleText, Constants.WORLD_HEIGHT - 250f, 0.92f);
-        drawCenteredTexture(retryText, Constants.WORLD_HEIGHT - 340f, 0.7f);
-        drawCenteredTexture(menuText, Constants.WORLD_HEIGHT - 390f, 0.7f);
+        game.getBatch().draw(background, 0f, 0f, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
+        drawCenteredTexture(titleText, TEXT_CENTER_X, 506f, 0.92f, TEXT_MAX_WIDTH);
+        drawPrompt(retryKeyText, retryActionText, 332f);
+        drawPrompt(menuKeyText, menuActionText, 282f);
         game.getBatch().end();
     }
 
@@ -68,12 +82,52 @@ public class EndScreen extends ScreenAdapter {
     @Override
     public void dispose() {
         textFactory.dispose();
+        background.dispose();
     }
 
     private void drawCenteredTexture(Texture texture, float centerY, float scale) {
+        drawCenteredTexture(texture, Constants.WORLD_WIDTH * 0.5f, centerY, scale, Constants.WORLD_WIDTH);
+    }
+
+    private void drawCenteredTexture(Texture texture, float centerX, float centerY, float scale, float maxWidth) {
+        float width = texture.getWidth() * scale;
+        if (width > maxWidth) {
+            scale *= maxWidth / width;
+            width = texture.getWidth() * scale;
+        }
+        float height = texture.getHeight() * scale;
+        float x = centerX - width * 0.5f;
+        float y = centerY - height * 0.5f;
+        game.getBatch().draw(texture, x, y, width, height);
+    }
+
+    private void drawPrompt(Texture keyTexture, Texture actionTexture, float centerY) {
+        float keyScale = 0.72f;
+        float actionScale = 0.68f;
+        float referenceTotalWidth = retryKeyText.getWidth() * keyScale
+                + PROMPT_GAP
+                + retryActionText.getWidth() * actionScale;
+        if (referenceTotalWidth > TEXT_MAX_WIDTH) {
+            float shrink = TEXT_MAX_WIDTH / referenceTotalWidth;
+            keyScale *= shrink;
+            actionScale *= shrink;
+            referenceTotalWidth = retryKeyText.getWidth() * keyScale
+                    + PROMPT_GAP * shrink
+                    + retryActionText.getWidth() * actionScale;
+        }
+
+        float gap = PROMPT_GAP * (keyScale / 0.72f);
+        float referenceX = TEXT_CENTER_X - referenceTotalWidth * 0.5f;
+        float actionX = referenceX + retryKeyText.getWidth() * keyScale + gap;
+        float keyRightX = actionX - gap;
+        float keyWidth = keyTexture.getWidth() * keyScale;
+        drawTexture(keyTexture, keyRightX - keyWidth, centerY, keyScale);
+        drawTexture(actionTexture, actionX, centerY, actionScale);
+    }
+
+    private void drawTexture(Texture texture, float x, float centerY, float scale) {
         float width = texture.getWidth() * scale;
         float height = texture.getHeight() * scale;
-        float x = (Constants.WORLD_WIDTH - width) * 0.5f;
         float y = centerY - height * 0.5f;
         game.getBatch().draw(texture, x, y, width, height);
     }

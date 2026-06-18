@@ -1,6 +1,5 @@
 package com.bossfight.entities;
 
-import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.bossfight.Constants;
@@ -73,24 +72,6 @@ public class Projectile {
 
         if (lifetime > 0f && age >= lifetime) {
             active = false;
-        }
-    }
-
-    public void render(ShapeRenderer shapeRenderer) {
-        float width = hitbox.getBounds().width;
-        float height = hitbox.getBounds().height;
-        float centerX = x + width * 0.5f;
-        float centerY = y + height * 0.5f;
-
-        switch (kind) {
-            case PLAYER_BASIC -> renderPlayerShot(shapeRenderer, width, height);
-            case PLAYER_SPECIAL -> renderSpecialShot(shapeRenderer, width, height);
-            case BOSS_ACORN -> renderAcorn(shapeRenderer, centerX, centerY, width, height);
-            case BOSS_POLLEN -> renderPollen(shapeRenderer, centerX, centerY, width, height);
-            case BOSS_THORN -> renderThorn(shapeRenderer, width, height);
-            case BOSS_PETAL_BOMB -> renderPetalBomb(shapeRenderer, centerX, centerY, width, height);
-            case BOSS_WARNING -> renderWarning(shapeRenderer, width, height);
-            case BOSS_SEED -> renderSeed(shapeRenderer, centerX, centerY, width, height);
         }
     }
 
@@ -173,103 +154,54 @@ public class Projectile {
         return age;
     }
 
-    private void renderPlayerShot(ShapeRenderer shapeRenderer, float width, float height) {
-        shapeRenderer.setColor(0.04f, 0.1f, 0.14f, 1f);
-        shapeRenderer.ellipse(x - 3f, y - 3f, width + 6f, height + 6f);
-        shapeRenderer.setColor(0.35f, 0.92f, 1f, 1f);
-        shapeRenderer.ellipse(x, y, width, height);
-        shapeRenderer.setColor(Color.WHITE);
-        shapeRenderer.ellipse(x + width * 0.18f, y + height * 0.25f, width * 0.5f, height * 0.45f);
-    }
-
-    private void renderSpecialShot(ShapeRenderer shapeRenderer, float width, float height) {
-        shapeRenderer.setColor(0.2f, 0.08f, 0.02f, 1f);
-        shapeRenderer.ellipse(x - 10f, y - 7f, width + 20f, height + 14f);
-        shapeRenderer.setColor(1f, 0.62f, 0.12f, 1f);
-        shapeRenderer.ellipse(x - 6f, y - 4f, width + 12f, height + 8f);
-        shapeRenderer.setColor(1f, 0.95f, 0.38f, 1f);
-        shapeRenderer.ellipse(x, y, width, height);
-        shapeRenderer.setColor(Color.WHITE);
-        shapeRenderer.ellipse(x + width * 0.18f, y + height * 0.27f, width * 0.48f, height * 0.36f);
-    }
-
-    private void renderSeed(ShapeRenderer shapeRenderer, float centerX, float centerY, float width, float height) {
-        float radius = Math.max(width, height) * 0.5f;
-        shapeRenderer.setColor(0.22f, 0.04f, 0.04f, 1f);
-        shapeRenderer.circle(centerX, centerY, radius + 4f);
-        shapeRenderer.setColor(0.92f, 0.16f, 0.18f, 1f);
-        shapeRenderer.circle(centerX, centerY, radius);
-        shapeRenderer.setColor(1f, 0.74f, 0.24f, 1f);
-        shapeRenderer.circle(centerX - radius * 0.18f, centerY + radius * 0.18f, radius * 0.32f);
-    }
-
-    private void renderAcorn(ShapeRenderer shapeRenderer, float centerX, float centerY, float width, float height) {
-        shapeRenderer.setColor(0.12f, 0.06f, 0.03f, 1f);
-        shapeRenderer.triangle(centerX, y - 5f, x - 5f, y + height * 0.68f, x + width + 5f, y + height * 0.68f);
-        shapeRenderer.setColor(0.45f, 0.25f, 0.1f, 1f);
-        shapeRenderer.triangle(centerX, y, x, y + height * 0.65f, x + width, y + height * 0.65f);
-        shapeRenderer.setColor(0.22f, 0.11f, 0.05f, 1f);
-        shapeRenderer.rect(x + width * 0.12f, y + height * 0.54f, width * 0.76f, height * 0.28f);
-        shapeRenderer.setColor(0.82f, 0.5f, 0.16f, 1f);
-        shapeRenderer.circle(centerX, centerY - height * 0.06f, Math.min(width, height) * 0.24f);
-    }
-
-    private void renderPollen(ShapeRenderer shapeRenderer, float centerX, float centerY, float width, float height) {
-        float radius = Math.max(width, height) * 0.5f;
-        shapeRenderer.setColor(0.22f, 0.06f, 0.28f, 0.44f);
-        shapeRenderer.circle(centerX - velocityX * 0.02f, centerY - velocityY * 0.02f, radius * 1.4f);
-        shapeRenderer.setColor(0.18f, 0.05f, 0.22f, 1f);
-        shapeRenderer.circle(centerX, centerY, radius + 4f);
-        shapeRenderer.setColor(0.8f, 0.32f, 0.96f, 1f);
-        shapeRenderer.circle(centerX, centerY, radius);
-        shapeRenderer.setColor(1f, 0.84f, 0.38f, 1f);
-        for (int i = 0; i < 5; i++) {
-            float angle = age * 9f + MathUtils.PI2 * i / 5f;
-            shapeRenderer.circle(centerX + MathUtils.cos(angle) * radius * 0.58f,
-                    centerY + MathUtils.sin(angle) * radius * 0.58f, radius * 0.16f);
-        }
-    }
-
-    private void renderThorn(ShapeRenderer shapeRenderer, float width, float height) {
-        float centerY = y + height * 0.5f;
-        shapeRenderer.setColor(0.04f, 0.16f, 0.07f, 1f);
-        shapeRenderer.rectLine(x, centerY, x + width, centerY + MathUtils.sin(age * 24f) * 5f, 28f);
-        shapeRenderer.setColor(0.1f, 0.42f, 0.17f, 1f);
-        shapeRenderer.rectLine(x, centerY, x + width, centerY + MathUtils.sin(age * 24f) * 5f, 18f);
-        shapeRenderer.setColor(0.68f, 0.92f, 0.35f, 1f);
-        float step = 58f;
-        for (float spikeX = x + 16f; spikeX < x + width; spikeX += step) {
-            float wave = MathUtils.sin(age * 18f + spikeX * 0.03f) * 3f;
-            shapeRenderer.triangle(spikeX, centerY + 8f + wave, spikeX + 22f, centerY + 8f + wave, spikeX + 11f, centerY + 36f + wave);
-            shapeRenderer.triangle(spikeX + 28f, centerY - 8f - wave, spikeX + 50f, centerY - 8f - wave, spikeX + 39f, centerY - 34f - wave);
-        }
-    }
-
-    private void renderPetalBomb(ShapeRenderer shapeRenderer, float centerX, float centerY, float width, float height) {
-        float radius = Math.max(width, height) * 0.5f;
-        shapeRenderer.setColor(0.22f, 0.06f, 0.02f, 1f);
-        shapeRenderer.circle(centerX, centerY, radius + 4f);
-        shapeRenderer.setColor(0.94f, 0.34f, 0.08f, 1f);
-        shapeRenderer.circle(centerX, centerY, radius);
-        shapeRenderer.setColor(1f, 0.68f, 0.18f, 1f);
-        shapeRenderer.ellipse(centerX - radius * 0.35f, centerY + radius * 0.1f, radius * 0.7f, radius * 0.42f);
-    }
-
     private void renderWarning(ShapeRenderer shapeRenderer, float width, float height) {
-        float pulse = (MathUtils.sin(age * 28f) + 1f) * 0.5f;
-        shapeRenderer.setColor(1f, 0.18f + pulse * 0.18f, 0.09f, 0.26f);
-        shapeRenderer.rect(x, y, width, height);
-        shapeRenderer.setColor(1f, 0.86f, 0.32f, 0.9f);
+        float progress = warningProgress();
+        float pulse = (MathUtils.sin(age * 10f) + 1f) * 0.5f;
+        float alpha = 0.08f + progress * 0.05f + pulse * 0.025f;
         if (height > width * 2f) {
-            for (float markerY = y + 18f; markerY < y + height; markerY += 56f) {
-                shapeRenderer.rect(x + width * 0.32f, markerY, width * 0.36f, 30f);
-            }
+            renderColumnWarning(shapeRenderer, width, height, alpha);
         } else {
-            for (float markerX = x + 18f; markerX < x + width; markerX += 70f) {
-                shapeRenderer.triangle(markerX, y + height * 0.5f,
-                        markerX + 24f, y + height - 5f,
-                        markerX + 24f, y + 5f);
-            }
+            renderLaneWarning(shapeRenderer, width, height, alpha);
         }
+    }
+
+    private void renderLaneWarning(ShapeRenderer shapeRenderer, float width, float height, float alpha) {
+        float centerY = y + height * 0.5f;
+
+        shapeRenderer.setColor(0.18f, 0.04f, 0.02f, alpha);
+        shapeRenderer.rect(x, y, width, height);
+
+        shapeRenderer.setColor(1f, 0.72f, 0.18f, 0.34f);
+        shapeRenderer.rectLine(x + 8f, y + 4f, x + width - 8f, y + 4f, 2.5f);
+        shapeRenderer.rectLine(x + 8f, y + height - 4f, x + width - 8f, y + height - 4f, 2.5f);
+
+        shapeRenderer.setColor(1f, 0.82f, 0.28f, 0.28f);
+        for (float markerX = x + 34f; markerX < x + width - 24f; markerX += 120f) {
+            shapeRenderer.triangle(markerX, centerY - 11f,
+                    markerX + 22f, centerY,
+                    markerX, centerY + 11f);
+        }
+    }
+
+    private void renderColumnWarning(ShapeRenderer shapeRenderer, float width, float height, float alpha) {
+        float centerX = x + width * 0.5f;
+        float beamWidth = Math.max(width * 1.25f, 38f);
+
+        shapeRenderer.setColor(0.16f, 0.04f, 0.22f, alpha);
+        shapeRenderer.rect(centerX - beamWidth * 0.5f, y, beamWidth, height);
+
+        shapeRenderer.setColor(1f, 0.74f, 0.2f, 0.30f);
+        shapeRenderer.rectLine(centerX - beamWidth * 0.5f, y + 8f, centerX - beamWidth * 0.5f, y + height - 8f, 2.5f);
+        shapeRenderer.rectLine(centerX + beamWidth * 0.5f, y + 8f, centerX + beamWidth * 0.5f, y + height - 8f, 2.5f);
+
+        shapeRenderer.setColor(1f, 0.82f, 0.26f, 0.28f);
+        shapeRenderer.ellipse(centerX - 30f, y + 14f, 60f, 18f);
+    }
+
+    private float warningProgress() {
+        if (lifetime <= 0f) {
+            return 0f;
+        }
+        return MathUtils.clamp(age / lifetime, 0f, 1f);
     }
 }
