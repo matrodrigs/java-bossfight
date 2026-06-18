@@ -34,6 +34,7 @@ public class MainGame extends Game {
         audioManager = new AudioManager();
         oldFilmEffect = new OldFilmEffect();
         audioManager.playAmbience(VINYL_NOISE_PATH, VINYL_NOISE_BASE_VOLUME);
+        ensureCursorHidden();
 
         showMenuScreen();
     }
@@ -66,8 +67,10 @@ public class MainGame extends Game {
     @Override
     public void render() {
         float delta = Gdx.graphics.getDeltaTime();
+        ensureCursorHidden();
         if (isFullscreenShortcutPressed()) {
             toggleFullscreen();
+            ensureCursorHidden();
             return;
         }
         oldFilmEffect.begin();
@@ -190,6 +193,12 @@ public class MainGame extends Game {
         setScreen(nextScreen);
         if (previousScreen != null) {
             previousScreen.dispose();
+        }
+    }
+
+    private void ensureCursorHidden() {
+        if (!Gdx.input.isCursorCatched()) {
+            Gdx.input.setCursorCatched(true);
         }
     }
 

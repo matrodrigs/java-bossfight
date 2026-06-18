@@ -42,7 +42,7 @@ public class AttackOneState implements BossState {
                     Projectile.Owner.BOSS,
                     Constants.ARENA_LEFT,
                     getLaneY(),
-                    Constants.BOSS_START_X - Constants.ARENA_LEFT + 42f,
+                    getThornHitboxWidth(),
                     getLaneHeight(),
                     0f,
                     0f,
@@ -60,13 +60,15 @@ public class AttackOneState implements BossState {
                     Projectile.Owner.BOSS,
                     Constants.ARENA_LEFT,
                     getLaneY(),
-                    Constants.BOSS_START_X - Constants.ARENA_LEFT + 62f,
+                    getThornHitboxWidth(),
                     getLaneHeight(),
                     0f,
                     0f,
                     Constants.BOSS_PROJECTILE_DAMAGE,
                     Projectile.Kind.BOSS_THORN,
-                    boss.isPhaseTwo() ? 0.42f : 0.34f
+                    boss.isPhaseTwo() ? 0.42f : 0.34f,
+                    0f,
+                    false
             ));
         }
 
@@ -85,5 +87,9 @@ public class AttackOneState implements BossState {
 
     private float getLaneHeight() {
         return upperLane ? 54f : 50f;
+    }
+
+    private float getThornHitboxWidth() {
+        return Constants.BOSS_START_X - Constants.ARENA_LEFT + 62f;
     }
 }

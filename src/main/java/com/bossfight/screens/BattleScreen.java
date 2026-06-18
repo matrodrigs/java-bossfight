@@ -38,6 +38,18 @@ public class BattleScreen extends ScreenAdapter {
     private static final float KNOCKOUT_TEXT_FADE_DURATION = 0.35f;
     private static final float KNOCKOUT_PARTICLE_DURATION = 2.35f;
     private static final float KNOCKOUT_PARTICLE_INTERVAL = 0.11f;
+    private static final String HP_BOX_PATH = "sprites/ui/player_hp_box.png";
+    private static final String SPECIAL_CLOCK_PATH = "sprites/ui/special_clock.png";
+    private static final float PLAYER_HUD_X = 34f;
+    private static final float PLAYER_HUD_Y = 24f;
+    private static final float HP_BOX_WIDTH = 106f;
+    private static final float HP_BOX_HEIGHT = 58f;
+    private static final float HP_TEXT_PADDING_X = 11f;
+    private static final float HP_TEXT_PADDING_Y = 8f;
+    private static final float PLAYER_HUD_GAP = 3f;
+    private static final float SPECIAL_CLOCK_SIZE = 70f;
+    private static final float SPECIAL_CLOCK_X = PLAYER_HUD_X + HP_BOX_WIDTH + PLAYER_HUD_GAP;
+    private static final float SPECIAL_CLOCK_Y = PLAYER_HUD_Y + (HP_BOX_HEIGHT - SPECIAL_CLOCK_SIZE) * 0.5f;
 
     private enum PlayerPose {
         HURT,
@@ -70,8 +82,10 @@ public class BattleScreen extends ScreenAdapter {
     private final Texture readyText;
     private final Texture goText;
     private final Texture knockoutText;
-    private final Texture hpLabelText;
-    private final Texture specialLabelText;
+    private final Texture[] hpTexts;
+    private final Texture hpBoxTexture;
+    private final Texture specialClockTexture;
+    private final TextureRegion specialClockFillRegion;
     private final Texture bossNameText;
     private final Texture bossPreparingText;
     private final Texture bossVineText;
@@ -109,6 +123,9 @@ public class BattleScreen extends ScreenAdapter {
         bossSpriteSheet = loadTexture("sprites/boss/flower_boss_sheet.png");
         bossFrames = splitBossFrames(bossSpriteSheet);
         playerSpriteSheet = loadTexture("sprites/player/clock_player_sheet.png");
+        hpBoxTexture = loadTexture(HP_BOX_PATH);
+        specialClockTexture = loadTexture(SPECIAL_CLOCK_PATH);
+        specialClockFillRegion = new TextureRegion(specialClockTexture);
         playerShootFrame = playerFrame(11, 272, 271, 271);
         playerJumpFrame = playerFrame(379, 255, 234, 265);
         playerRunFrame = playerFrame(695, 277, 225, 260);
@@ -122,8 +139,7 @@ public class BattleScreen extends ScreenAdapter {
         readyText = textFactory.createFightCue("READY?", false);
         goText = textFactory.createFightCue("GO!", true);
         knockoutText = textFactory.createKnockout("A KNOCKOUT!");
-        hpLabelText = textFactory.createHudLabel("HP.");
-        specialLabelText = textFactory.createHudLabel("ESPECIAL");
+        hpTexts = createHpTexts();
         bossNameText = textFactory.createHudLabel("FLOR-MAESTRO");
         bossPreparingText = textFactory.createHudValue("PREPARANDO");
         bossVineText = textFactory.createHudValue("BOTE DE CIPÓ");
@@ -166,6 +182,8 @@ public class BattleScreen extends ScreenAdapter {
         game.getAudioManager().stopVoice();
         bossSpriteSheet.dispose();
         playerSpriteSheet.dispose();
+        hpBoxTexture.dispose();
+        specialClockTexture.dispose();
         background.dispose();
         textFactory.dispose();
         projectileSystem.dispose();
@@ -187,6 +205,14 @@ public class BattleScreen extends ScreenAdapter {
         Texture texture = new Texture(Gdx.files.internal(path));
         texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         return texture;
+    }
+
+    private Texture[] createHpTexts() {
+        Texture[] valueTexts = new Texture[Constants.PLAYER_MAX_HEALTH + 1];
+        for (int i = 0; i < valueTexts.length; i++) {
+            valueTexts[i] = textFactory.createPlayerHealthHud(i);
+        }
+        return valueTexts;
     }
 
     private TextureRegion playerFrame(int x, int y, int width, int height) {
@@ -305,6 +331,7 @@ public class BattleScreen extends ScreenAdapter {
 
         drawBossShadow(shapeRenderer);
         drawBossTelegraphGlow(shapeRenderer);
+        projectileSystem.renderWarnings(shapeRenderer);
 
         shapeRenderer.end();
 
@@ -312,7 +339,6 @@ public class BattleScreen extends ScreenAdapter {
         renderPlayerSprite();
 
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        projectileSystem.renderWarnings(shapeRenderer);
         particleSystem.render(shapeRenderer);
         shapeRenderer.end();
 
@@ -562,9 +588,6 @@ public class BattleScreen extends ScreenAdapter {
         Gdx.gl.glEnable(GL20.GL_BLEND);
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        drawPlayerHealth(170f, Constants.WORLD_HEIGHT - 58f);
-        drawMeter(170f, Constants.WORLD_HEIGHT - 92f, 236f, 14f, player.getSpecialEnergyPercent(),
-                player.isSpecialReady() ? Color.GOLD : Color.SKY);
         drawHealthBar(Constants.WORLD_WIDTH - 430f, Constants.WORLD_HEIGHT - 76f, 360f, 20f,
                 boss.getHealth(), boss.getMaxHealth(), new Color(0.96f, 0.35f, 0.14f, 1f));
         shapeRenderer.end();
@@ -572,8 +595,9 @@ public class BattleScreen extends ScreenAdapter {
 
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
-        drawLeftTexture(hpLabelText, 70f, Constants.WORLD_HEIGHT - 58f, 0.48f);
-        drawLeftTexture(specialLabelText, 70f, Constants.WORLD_HEIGHT - 92f, 0.46f);
+        drawPlayerHealthBox();
+        drawPlayerHealthText();
+        drawSpecialClock();
         drawLeftTexture(bossNameText, Constants.WORLD_WIDTH - 430f, Constants.WORLD_HEIGHT - 30f, 0.48f);
         drawLeftTexture(getBossStateText(), Constants.WORLD_WIDTH - 430f, Constants.WORLD_HEIGHT - 100f, 0.46f);
         drawIntroOverlay();
@@ -595,27 +619,86 @@ public class BattleScreen extends ScreenAdapter {
         shapeRenderer.rect(x, y, width * percent, height);
     }
 
-    private void drawMeter(float x, float y, float width, float height, float percent, Color fillColor) {
-        ShapeRenderer shapeRenderer = game.getShapeRenderer();
-        float clamped = MathUtils.clamp(percent, 0f, 1f);
-
-        shapeRenderer.setColor(0.04f, 0.04f, 0.05f, 1f);
-        shapeRenderer.rect(x - 2f, y - 2f, width + 4f, height + 4f);
-        shapeRenderer.setColor(0.18f, 0.18f, 0.2f, 1f);
-        shapeRenderer.rect(x, y, width, height);
-        shapeRenderer.setColor(fillColor);
-        shapeRenderer.rect(x, y, width * clamped, height);
+    private void drawPlayerHealthBox() {
+        game.getBatch().draw(hpBoxTexture, PLAYER_HUD_X, PLAYER_HUD_Y, HP_BOX_WIDTH, HP_BOX_HEIGHT);
     }
 
-    private void drawPlayerHealth(float x, float y) {
-        ShapeRenderer shapeRenderer = game.getShapeRenderer();
-        for (int i = 0; i < player.getMaxHealth(); i++) {
-            float pipX = x + i * 34f;
-            shapeRenderer.setColor(0.04f, 0.04f, 0.05f, 1f);
-            shapeRenderer.circle(pipX, y, 13f);
-            shapeRenderer.setColor(i < player.getHealth() ? new Color(0.96f, 0.18f, 0.16f, 1f) : new Color(0.28f, 0.27f, 0.27f, 1f));
-            shapeRenderer.circle(pipX, y, 10f);
+    private void drawPlayerHealthText() {
+        int healthIndex = MathUtils.clamp(player.getHealth(), 0, hpTexts.length - 1);
+        drawTextureInBox(hpTexts[healthIndex],
+                PLAYER_HUD_X + HP_TEXT_PADDING_X,
+                PLAYER_HUD_Y + HP_TEXT_PADDING_Y,
+                HP_BOX_WIDTH - HP_TEXT_PADDING_X * 2f,
+                HP_BOX_HEIGHT - HP_TEXT_PADDING_Y * 2f);
+    }
+
+    private void drawSpecialClock() {
+        if (player.isSpecialReady()) {
+            drawReadySpecialClock();
+            return;
         }
+
+        float percent = MathUtils.clamp(player.getSpecialEnergyPercent(), 0f, 1f);
+
+        game.getBatch().setColor(0.28f, 0.25f, 0.2f, 0.48f);
+        game.getBatch().draw(specialClockTexture, SPECIAL_CLOCK_X, SPECIAL_CLOCK_Y,
+                SPECIAL_CLOCK_SIZE, SPECIAL_CLOCK_SIZE);
+
+        if (percent > 0.01f) {
+            int sourceHeight = Math.max(1, Math.round(specialClockTexture.getHeight() * percent));
+            int sourceY = specialClockTexture.getHeight() - sourceHeight;
+            float fillHeight = SPECIAL_CLOCK_SIZE * sourceHeight / specialClockTexture.getHeight();
+            specialClockFillRegion.setRegion(0, sourceY, specialClockTexture.getWidth(), sourceHeight);
+            game.getBatch().setColor(1f, 1f, 1f, 0.96f);
+            game.getBatch().draw(specialClockFillRegion, SPECIAL_CLOCK_X, SPECIAL_CLOCK_Y,
+                    SPECIAL_CLOCK_SIZE, fillHeight);
+        }
+
+        game.getBatch().setColor(Color.WHITE);
+    }
+
+    private void drawReadySpecialClock() {
+        float bob = MathUtils.sin(elapsed * 10f) * 3.4f;
+        float rotation = MathUtils.sin(elapsed * 13f) * 6.5f;
+        float scale = 1f + MathUtils.sin(elapsed * 16f) * 0.045f;
+        float size = SPECIAL_CLOCK_SIZE * scale;
+        float x = SPECIAL_CLOCK_X + (SPECIAL_CLOCK_SIZE - size) * 0.5f;
+        float y = SPECIAL_CLOCK_Y + (SPECIAL_CLOCK_SIZE - size) * 0.5f + bob;
+
+        game.getBatch().setColor(0.02f, 0.015f, 0.01f, 0.32f);
+        drawClockTexture(x + 3f, y - 4f, size, rotation);
+        game.getBatch().setColor(Color.WHITE);
+        drawClockTexture(x, y, size, rotation);
+    }
+
+    private void drawClockTexture(float x, float y, float size, float rotation) {
+        game.getBatch().draw(specialClockTexture,
+                x,
+                y,
+                size * 0.5f,
+                size * 0.5f,
+                size,
+                size,
+                1f,
+                1f,
+                rotation,
+                0,
+                0,
+                specialClockTexture.getWidth(),
+                specialClockTexture.getHeight(),
+                false,
+                false);
+    }
+
+    private void drawTextureInBox(Texture texture, float x, float y, float width, float height) {
+        float scale = Math.min(width / texture.getWidth(), height / texture.getHeight());
+        float drawWidth = texture.getWidth() * scale;
+        float drawHeight = texture.getHeight() * scale;
+        game.getBatch().draw(texture,
+                x + (width - drawWidth) * 0.5f,
+                y + (height - drawHeight) * 0.5f,
+                drawWidth,
+                drawHeight);
     }
 
     private void drawIntroSpotlight(ShapeRenderer shapeRenderer) {

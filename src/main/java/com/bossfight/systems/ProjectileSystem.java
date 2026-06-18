@@ -7,9 +7,19 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
+import com.bossfight.Constants;
 import com.bossfight.entities.Projectile;
 
 public class ProjectileSystem {
+    private static final String WARNING_BANNER_PATH = "sprites/ui/warning_banner.png";
+    private static final float WARNING_VERTICAL_THRESHOLD = 2f;
+    private static final float WARNING_BANNER_ALPHA = 0.24f;
+    private static final float WARNING_BANNER_PULSE_ALPHA = 0.06f;
+    private static final float IMPACT_SHADOW_MIN_WIDTH = 50f;
+    private static final float IMPACT_SHADOW_MAX_WIDTH = 82f;
+    private static final float IMPACT_SHADOW_MIN_HEIGHT = 13f;
+    private static final float IMPACT_SHADOW_MAX_HEIGHT = 23f;
+
     private final Array<Projectile> playerProjectiles = new Array<>();
     private final Array<Projectile> bossProjectiles = new Array<>();
     private final Texture playerPea;
@@ -19,6 +29,7 @@ public class ProjectileSystem {
     private final Texture bossPollen;
     private final Texture bossThorn;
     private final Texture bossPetalBomb;
+    private final Texture warningBanner;
 
     public ProjectileSystem() {
         playerPea = load("sprites/projectiles/player_pea.png");
@@ -28,6 +39,7 @@ public class ProjectileSystem {
         bossPollen = load("sprites/projectiles/boss_pollen.png");
         bossThorn = load("sprites/projectiles/boss_thorn.png");
         bossPetalBomb = load("sprites/projectiles/boss_petal_bomb.png");
+        warningBanner = load(WARNING_BANNER_PATH);
     }
 
     public void addProjectile(Projectile projectile) {
@@ -44,12 +56,8 @@ public class ProjectileSystem {
     }
 
     public void renderWarnings(ShapeRenderer shapeRenderer) {
-        for (Projectile projectile : playerProjectiles) {
-            projectile.renderWarning(shapeRenderer);
-        }
-        for (Projectile projectile : bossProjectiles) {
-            projectile.renderWarning(shapeRenderer);
-        }
+        renderWarnings(shapeRenderer, playerProjectiles);
+        renderWarnings(shapeRenderer, bossProjectiles);
     }
 
     public void renderSprites(SpriteBatch batch) {
@@ -71,6 +79,7 @@ public class ProjectileSystem {
         bossPollen.dispose();
         bossThorn.dispose();
         bossPetalBomb.dispose();
+        warningBanner.dispose();
     }
 
     public Array<Projectile> getPlayerProjectiles() {
@@ -142,10 +151,23 @@ public class ProjectileSystem {
                         MathUtils.sin(projectile.getAge() * 9f) * 12f, 2, 18f,
                         1f, 0.44f, 0.12f, 0.2f);
                 case BOSS_WARNING -> {
+                    if (!isVerticalWarning(projectile)) {
+                        drawWarningBanner(batch, projectile);
+                    }
                 }
             }
         }
         batch.setColor(Color.WHITE);
+    }
+
+    private void renderWarnings(ShapeRenderer shapeRenderer, Array<Projectile> projectiles) {
+        for (Projectile projectile : projectiles) {
+            if (projectile.getKind() == Projectile.Kind.BOSS_WARNING && isVerticalWarning(projectile)) {
+                drawPollenWarningShadow(shapeRenderer, projectile);
+            } else if (isFallingImpactProjectile(projectile)) {
+                drawFallingImpactShadow(shapeRenderer, projectile);
+            }
+        }
     }
 
     private void drawTexture(SpriteBatch batch, Texture texture, Projectile projectile,
@@ -227,6 +249,80 @@ public class ProjectileSystem {
                 1f,
                 1f,
                 1f);
+    }
+
+    private void drawWarningBanner(SpriteBatch batch, Projectile projectile) {
+        float progress = projectile.getWarningProgress();
+        float pulse = (MathUtils.sin(projectile.getAge() * 12f) + 1f) * 0.5f;
+        float alpha = MathUtils.clamp(WARNING_BANNER_ALPHA + progress * 0.06f + pulse * WARNING_BANNER_PULSE_ALPHA,
+                0f,
+                0.36f);
+
+        batch.setColor(1f, 0.12f, 0.1f, alpha);
+        batch.draw(warningBanner,
+                projectile.getX(),
+                projectile.getY(),
+                projectile.getWidth(),
+                projectile.getHeight());
+    }
+
+    private void drawPollenWarningShadow(ShapeRenderer shapeRenderer, Projectile projectile) {
+        float progress = projectile.getWarningProgress();
+        float pulse = (MathUtils.sin(projectile.getAge() * 13f) + 1f) * 0.5f;
+        float width = 56f + progress * 25f + pulse * 5f;
+        float height = 15f + progress * 7f + pulse * 2f;
+        float centerX = projectile.getCenterX();
+        float y = Constants.FLOOR_Y - 7f;
+        float alpha = MathUtils.clamp(0.22f + progress * 0.34f + pulse * 0.08f, 0f, 0.72f);
+
+        drawImpactShadow(shapeRenderer, centerX, y, width, height, alpha);
+    }
+
+    private void drawFallingImpactShadow(ShapeRenderer shapeRenderer, Projectile projectile) {
+        float centerX = projectedImpactCenterX(projectile);
+        float y = Constants.FLOOR_Y - 7f;
+        float floorDistance = Math.max(0f, projectile.getY() - Constants.FLOOR_Y);
+        float fallAreaHeight = Constants.WORLD_HEIGHT - Constants.FLOOR_Y;
+        float proximity = 1f - MathUtils.clamp(floorDistance / fallAreaHeight, 0f, 1f);
+        float pulse = (MathUtils.sin(projectile.getAge() * 14f) + 1f) * 0.5f;
+        float width = MathUtils.lerp(IMPACT_SHADOW_MIN_WIDTH, IMPACT_SHADOW_MAX_WIDTH, proximity) + pulse * 4f;
+        float height = MathUtils.lerp(IMPACT_SHADOW_MIN_HEIGHT, IMPACT_SHADOW_MAX_HEIGHT, proximity) + pulse * 1.5f;
+        float alpha = MathUtils.clamp(0.16f + proximity * 0.36f + pulse * 0.06f, 0f, 0.64f);
+
+        drawImpactShadow(shapeRenderer, centerX, y, width, height, alpha);
+    }
+
+    private void drawImpactShadow(ShapeRenderer shapeRenderer, float centerX, float y, float width, float height,
+                                  float alpha) {
+        shapeRenderer.setColor(0.04f, 0.018f, 0.01f, alpha * 0.62f);
+        shapeRenderer.ellipse(centerX - width * 0.5f, y - 2f, width, height);
+        shapeRenderer.setColor(0.82f, 0.28f, 0.08f, alpha * 0.22f);
+        shapeRenderer.ellipse(centerX - width * 0.42f, y + 2f, width * 0.84f, height * 0.64f);
+        shapeRenderer.setColor(1f, 0.78f, 0.22f, alpha * 0.16f);
+        shapeRenderer.ellipse(centerX - width * 0.34f, y + 5f, width * 0.68f, height * 0.34f);
+    }
+
+    private float projectedImpactCenterX(Projectile projectile) {
+        if (projectile.getVelocityY() >= -1f) {
+            return projectile.getCenterX();
+        }
+
+        float timeToFloor = Math.max(0f, (projectile.getY() - Constants.FLOOR_Y) / -projectile.getVelocityY());
+        float projectedX = projectile.getCenterX() + projectile.getVelocityX() * timeToFloor;
+        return MathUtils.clamp(projectedX, Constants.ARENA_LEFT, Constants.ARENA_RIGHT);
+    }
+
+    private boolean isVerticalWarning(Projectile projectile) {
+        return projectile.getHeight() > projectile.getWidth() * WARNING_VERTICAL_THRESHOLD;
+    }
+
+    private boolean isFallingImpactProjectile(Projectile projectile) {
+        if (projectile.getVelocityY() >= -1f) {
+            return false;
+        }
+
+        return projectile.getKind() == Projectile.Kind.BOSS_PETAL_BOMB
+                || projectile.getKind() == Projectile.Kind.BOSS_POLLEN;
     }
 
     private float rotationFor(Projectile projectile) {
