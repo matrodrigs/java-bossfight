@@ -108,10 +108,6 @@ public class BattleScreen extends ScreenAdapter {
     private boolean knockoutSequenceActive;
     private boolean endTransitionRequested;
 
-    public BattleScreen(MainGame game) {
-        this(game, false);
-    }
-
     public BattleScreen(MainGame game, boolean introPausedForTransition) {
         this.game = game;
         camera = new OrthographicCamera();
