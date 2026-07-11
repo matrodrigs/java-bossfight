@@ -39,7 +39,8 @@ public class AttackThreeState implements BossState {
 
         float duration = boss.isPhaseTwo() ? 3.2f : 2.65f;
         if (elapsed < duration && spawnTimer <= 0f && pendingCount == 0) {
-            if (boss.isPhaseTwo() && elapsed > 0.7f && MathUtils.randomBoolean(0.34f)) {
+            boolean gardenPattern = boss.isPhaseTwo() && elapsed > 0.7f && MathUtils.randomBoolean(0.45f);
+            if (gardenPattern) {
                 spawnGardenPattern(projectileSpawner);
                 spawnTimer = 0.86f;
             } else {
@@ -47,7 +48,7 @@ public class AttackThreeState implements BossState {
                 spawnTimer = boss.isPhaseTwo() ? 0.42f : 0.56f;
             }
 
-            if (boss.isPhaseTwo() && MathUtils.randomBoolean(0.45f)) {
+            if (boss.isPhaseTwo() && !gardenPattern && MathUtils.randomBoolean(0.45f)) {
                 spawnDriftingPollen(projectileSpawner,
                         MathUtils.random(Constants.ARENA_LEFT + 26f, Constants.ARENA_RIGHT - 46f));
             }

@@ -26,7 +26,7 @@ public class AttackOneState implements BossState {
     @Override
     public void enter(Boss boss) {
         strikesFired = 0;
-        strikesTotal = boss.isPhaseTwo() ? 2 : 1;
+        strikesTotal = boss.isPhaseTwo() ? 3 : 1;
         startStrike(boss, MathUtils.randomBoolean());
     }
 

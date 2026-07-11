@@ -11,6 +11,10 @@ import java.util.ArrayDeque;
 public class Boss {
     private static final float ACTION_IMPULSE_DURATION = 0.30f;
     private static final float HIT_REACTION_DURATION = 0.22f;
+    private static final float PHASE_ONE_RECOVERY_DURATION = 0.90f;
+    private static final float PHASE_TWO_RECOVERY_DURATION = 0.42f;
+    private static final float FINAL_RAGE_RECOVERY_DURATION = 0.34f;
+    private static final float FINAL_RAGE_HEALTH_RATIO = 0.20f;
 
     private final Hitbox hitbox;
     private final ArrayDeque<BossSoundEvent> soundEvents = new ArrayDeque<>();
@@ -124,7 +128,15 @@ public class Boss {
     }
 
     public void finishCurrentAttack() {
-        setState(new IdleState(isPhaseTwo() ? 0.55f : 0.9f));
+        float recoveryDuration;
+        if (isFinalRage()) {
+            recoveryDuration = FINAL_RAGE_RECOVERY_DURATION;
+        } else if (isPhaseTwo()) {
+            recoveryDuration = PHASE_TWO_RECOVERY_DURATION;
+        } else {
+            recoveryDuration = PHASE_ONE_RECOVERY_DURATION;
+        }
+        setState(new IdleState(recoveryDuration));
     }
 
     public void setState(BossState nextState) {
@@ -140,6 +152,10 @@ public class Boss {
 
     public boolean isPhaseTwo() {
         return health <= maxHealth * 0.5f && health > 0;
+    }
+
+    public boolean isFinalRage() {
+        return health <= maxHealth * FINAL_RAGE_HEALTH_RATIO && health > 0;
     }
 
     public boolean isDefeated() {

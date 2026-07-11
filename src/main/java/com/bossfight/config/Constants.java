@@ -35,7 +35,7 @@ public final class Constants {
     public static final float BOSS_HEIGHT = 230f;
     public static final float BOSS_START_X = 930f;
     public static final float BOSS_START_Y = FLOOR_Y;
-    public static final int BOSS_MAX_HEALTH = 230;
+    public static final int BOSS_MAX_HEALTH = 300;
 
     public static final float PLAYER_PROJECTILE_WIDTH = 22f;
     public static final float PLAYER_PROJECTILE_HEIGHT = 10f;

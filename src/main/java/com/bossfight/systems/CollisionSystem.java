@@ -49,7 +49,9 @@ public class CollisionSystem {
                     if (!boss.isDefeated()) {
                         audioManager.playCue(special ? AudioManager.Cue.PLAYER_SPECIAL : AudioManager.Cue.BOSS_HIT);
                     }
-                    requestedHitstop = Math.max(requestedHitstop, special ? 0.08f : 0.035f);
+                    if (special) {
+                        requestedHitstop = Math.max(requestedHitstop, 0.08f);
+                    }
                     requestedShake = Math.max(requestedShake, special ? 5f : 2f);
                 }
                 return true;
