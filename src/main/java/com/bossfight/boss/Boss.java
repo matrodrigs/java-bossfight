@@ -9,6 +9,9 @@ import com.bossfight.entities.Player;
 import java.util.ArrayDeque;
 
 public class Boss {
+    private static final float ACTION_IMPULSE_DURATION = 0.30f;
+    private static final float HIT_REACTION_DURATION = 0.22f;
+
     private final Hitbox hitbox;
     private final ArrayDeque<BossSoundEvent> soundEvents = new ArrayDeque<>();
     private final int maxHealth;
@@ -21,6 +24,9 @@ public class Boss {
     private float y;
     private float telegraphTimer;
     private float telegraphDuration = 1f;
+    private float visualStateTime;
+    private float actionImpulseTimer;
+    private float hitReactionTimer;
     private boolean phaseTwoTransitionPlayed;
 
     public Boss() {
@@ -34,6 +40,9 @@ public class Boss {
 
     public void update(float delta, ProjectileSpawner projectileSpawner, Player player) {
         telegraphTimer = Math.max(0f, telegraphTimer - delta);
+        visualStateTime += delta;
+        actionImpulseTimer = Math.max(0f, actionImpulseTimer - delta);
+        hitReactionTimer = Math.max(0f, hitReactionTimer - delta);
 
         if (health <= 0 && !(currentState instanceof DefeatedState)) {
             setState(new DefeatedState());
@@ -57,6 +66,7 @@ public class Boss {
         }
 
         health = MathUtils.clamp(health - amount, 0, maxHealth);
+        hitReactionTimer = HIT_REACTION_DURATION;
         if (health == 0) {
             soundEvents.clear();
             setState(new DefeatedState());
@@ -67,6 +77,13 @@ public class Boss {
     public void emitSound(BossSoundEvent soundEvent) {
         if (soundEvent != null && !isDefeated()) {
             soundEvents.offer(soundEvent);
+            if (soundEvent == BossSoundEvent.VINE_STRIKE
+                    || soundEvent == BossSoundEvent.MAGIC_VOLLEY
+                    || soundEvent == BossSoundEvent.POLLEN_DROP
+                    || soundEvent == BossSoundEvent.PHASE_ROAR
+                    || soundEvent == BossSoundEvent.PHASE_SHOCKWAVE) {
+                actionImpulseTimer = ACTION_IMPULSE_DURATION;
+            }
         }
     }
 
@@ -116,6 +133,8 @@ public class Boss {
         }
 
         currentState = nextState;
+        visualStateTime = 0f;
+        actionImpulseTimer = 0f;
         currentState.enter(this);
     }
 
@@ -156,5 +175,17 @@ public class Boss {
             return 0f;
         }
         return MathUtils.clamp(telegraphTimer / telegraphDuration, 0f, 1f);
+    }
+
+    public float getVisualStateTime() {
+        return visualStateTime;
+    }
+
+    public float getActionImpulse() {
+        return MathUtils.clamp(actionImpulseTimer / ACTION_IMPULSE_DURATION, 0f, 1f);
+    }
+
+    public float getHitReaction() {
+        return MathUtils.clamp(hitReactionTimer / HIT_REACTION_DURATION, 0f, 1f);
     }
 }

@@ -15,6 +15,7 @@ public final class DesktopLauncher {
         Lwjgl3ApplicationConfiguration config = new Lwjgl3ApplicationConfiguration();
         config.setTitle(Constants.GAME_TITLE);
         config.setFullscreenMode(Lwjgl3ApplicationConfiguration.getDisplayMode());
+        config.setInitialVisible(false);
         config.setForegroundFPS(Constants.TARGET_FPS);
         config.useVsync(true);
         config.setWindowListener(new Lwjgl3WindowAdapter() {
@@ -29,8 +30,8 @@ public final class DesktopLauncher {
 
     private static void requestInitialFocus(Lwjgl3Window window) {
         window.postRunnable(() -> {
+            window.setVisible(true);
             window.focusWindow();
-            window.postRunnable(window::focusWindow);
         });
     }
 }

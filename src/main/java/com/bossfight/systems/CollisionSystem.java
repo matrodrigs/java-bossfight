@@ -49,7 +49,7 @@ public class CollisionSystem {
                         audioManager.playCue(special ? AudioManager.Cue.PLAYER_SPECIAL : AudioManager.Cue.BOSS_HIT);
                     }
                     requestedHitstop = Math.max(requestedHitstop, special ? 0.08f : 0.035f);
-                    requestedShake = Math.max(requestedShake, special ? 10f : 4f);
+                    requestedShake = Math.max(requestedShake, special ? 5f : 2f);
                 }
                 return true;
             }

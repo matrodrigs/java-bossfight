@@ -74,6 +74,8 @@ public class BattleScreen extends ScreenAdapter {
     private final FitViewport viewport;
     private final Texture bossSpriteSheet;
     private final TextureRegion[] bossFrames;
+    private final Texture bossInbetweenSheet;
+    private final TextureRegion[] bossInbetweenFrames;
     private final Texture playerSpriteSheet;
     private final TextureRegion playerShootFrame;
     private final TextureRegion playerJumpFrame;
@@ -119,6 +121,8 @@ public class BattleScreen extends ScreenAdapter {
         viewport = new FitViewport(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT, camera);
         bossSpriteSheet = loadTexture("sprites/boss/flower_boss_sheet.png");
         bossFrames = splitBossFrames(bossSpriteSheet);
+        bossInbetweenSheet = loadTexture("sprites/boss/flower_boss_inbetweens.png");
+        bossInbetweenFrames = splitBossFrames(bossInbetweenSheet);
         playerSpriteSheet = loadTexture("sprites/player/clock_player_sheet.png");
         hpBoxTexture = loadTexture(HP_BOX_PATH);
         specialClockTexture = loadTexture(SPECIAL_CLOCK_PATH);
@@ -176,6 +180,7 @@ public class BattleScreen extends ScreenAdapter {
         game.getAudioManager().stopMusic();
         game.getAudioManager().stopVoice();
         bossSpriteSheet.dispose();
+        bossInbetweenSheet.dispose();
         playerSpriteSheet.dispose();
         hpBoxTexture.dispose();
         specialClockTexture.dispose();
@@ -260,7 +265,7 @@ public class BattleScreen extends ScreenAdapter {
             cameraShake.request(2.4f, 0.09f);
         }
         if (player.consumeLanded()) {
-            particleSystem.spawnLandingDust(player.getCenterX(), Constants.FLOOR_Y + 5f);
+            particleSystem.spawnLandingDust(player.getCenterX(), Constants.FLOOR_Y  );
             cameraShake.request(1.35f, 0.08f);
         }
 
@@ -361,40 +366,75 @@ public class BattleScreen extends ScreenAdapter {
         boolean pollenRain = state == BossVisualState.POLLEN_RAIN;
         boolean pollenBreath = state == BossVisualState.POLLEN_BREATH;
         boolean phaseTransition = state == BossVisualState.ENRAGING;
-        TextureRegion frame = bossFrames[selectBossFrame(state)];
+        TextureRegion frame = selectBossFrame(state);
 
-        float breath = defeated ? 0f : MathUtils.sin(elapsed * 3.4f);
-        float windup = boss.isTelegraphing() ? 1f - boss.getTelegraphAlpha() : 0f;
+        float stateTime = boss.getVisualStateTime();
+        float breath = defeated ? 0f : MathUtils.sin(stateTime * 3.4f);
+        float windup = boss.isTelegraphing()
+                ? smoothStep(1f - boss.getTelegraphAlpha())
+                : 0f;
+        float actionTime = 1f - boss.getActionImpulse();
+        float actionKick = boss.getActionImpulse() > 0f
+                ? MathUtils.sin(actionTime * MathUtils.PI)
+                : 0f;
+        float actionFollowThrough = boss.getActionImpulse() > 0f
+                ? MathUtils.sin(actionTime * MathUtils.PI2) * (1f - actionTime)
+                : 0f;
+        float hitTime = 1f - boss.getHitReaction();
+        float hitKick = boss.getHitReaction() > 0f
+                ? MathUtils.sin(hitTime * MathUtils.PI)
+                : 0f;
         float attackPulse = !defeated && (vineStrike || magicHands || pollenRain || pollenBreath || phaseTransition)
-                ? MathUtils.sin(elapsed * 9.5f)
+                ? MathUtils.sin(stateTime * 9.5f)
                 : 0f;
         float visualHeight = 506f + breath * 5f + (boss.isPhaseTwo() ? 18f : 0f);
         visualHeight += vineStrike ? windup * 18f : 0f;
-        visualHeight += phaseTransition ? windup * 24f : 0f;
+        visualHeight += phaseTransition ? windup * 24f + actionKick * 12f : 0f;
+        visualHeight -= defeated ? smoothStep(MathUtils.clamp(stateTime / 0.42f, 0f, 1f)) * 24f : 0f;
         float visualWidth = visualHeight * frame.getRegionWidth() / frame.getRegionHeight();
 
         float x = boss.getCenterX() - visualWidth * 0.5f - 18f;
-        x += vineStrike ? attackPulse * 8f - 18f - windup * 18f : 0f;
-        x += magicHands ? MathUtils.sin(elapsed * 7f) * 5f - windup * 10f : 0f;
-        x += pollenBreath ? -windup * 18f + attackPulse * 4f : 0f;
+        x += vineStrike
+                ? attackPulse * 5f - 18f - windup * 18f - actionKick * 26f + actionFollowThrough * 11f
+                : 0f;
+        x += magicHands
+                ? MathUtils.sin(stateTime * 7f) * 5f - windup * 10f - actionKick * 8f
+                        + actionFollowThrough * 5f
+                : 0f;
+        x += pollenBreath
+                ? -windup * 18f + attackPulse * 4f - actionKick * 18f + actionFollowThrough * 8f
+                : 0f;
+        x += hitKick * 14f;
 
         float y = Constants.FLOOR_Y - 30f;
         y += breath * 2.5f;
-        y += pollenRain ? MathUtils.sin(elapsed * 8.5f) * 6f : 0f;
+        y += pollenRain ? MathUtils.sin(stateTime * 8.5f) * 6f + actionKick * 5f : 0f;
         y += phaseTransition ? attackPulse * 6f : 0f;
+        y -= defeated ? smoothStep(MathUtils.clamp(stateTime / 0.42f, 0f, 1f)) * 16f : 0f;
 
-        float scaleX = 1f + breath * 0.014f + (magicHands ? attackPulse * 0.02f : 0f);
-        float scaleY = 1f - breath * 0.01f + (vineStrike ? attackPulse * 0.028f : 0f);
-        float rotation = MathUtils.sin(elapsed * 2.1f) * 0.8f
-                + attackPulse * (pollenRain || phaseTransition ? 1.4f : 0.45f);
+        float scaleX = 1f + breath * 0.014f + (magicHands ? attackPulse * 0.02f : 0f)
+                + actionKick * (vineStrike || pollenBreath ? 0.035f : 0.018f)
+                + actionFollowThrough * 0.012f
+                - hitKick * 0.025f;
+        float scaleY = 1f - breath * 0.01f + (vineStrike ? attackPulse * 0.028f : 0f)
+                - actionKick * (vineStrike || pollenBreath ? 0.045f : 0.018f)
+                - actionFollowThrough * 0.01f
+                + hitKick * 0.035f;
+        float rotation = MathUtils.sin(stateTime * 2.1f) * 0.8f
+                + attackPulse * (pollenRain || phaseTransition ? 1.4f : 0.45f)
+                + actionKick * (vineStrike ? -2.4f : 1.2f)
+                + actionFollowThrough * (vineStrike ? 2.2f : -1.4f)
+                + hitKick * 2.8f;
         boolean flipX = pollenBreath && player.getCenterX() < boss.getCenterX();
 
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
-        if (boss.isPhaseTwo()) {
+        if (hitKick > 0.05f) {
+            game.getBatch().setColor(1f, 0.66f + hitKick * 0.26f, 0.66f + hitKick * 0.26f, 1f);
+        } else if (boss.isPhaseTwo()) {
             game.getBatch().setColor(1f, 0.92f, 0.92f, 1f);
         }
-        game.getBatch().draw(bossSpriteSheet,
+        game.getBatch().draw(frame.getTexture(),
                 x,
                 y,
                 visualWidth * 0.48f,
@@ -566,21 +606,45 @@ public class BattleScreen extends ScreenAdapter {
         return frames;
     }
 
-    private int selectBossFrame(BossVisualState state) {
+    private TextureRegion selectBossFrame(BossVisualState state) {
         if (!fightStarted) {
-            return 0;
+            return ((int) (elapsed * 2.2f) & 1) == 0 ? bossFrames[0] : bossInbetweenFrames[0];
         }
         if (boss.isDefeated()) {
-            return 7;
+            return boss.getVisualStateTime() < 0.18f ? bossFrames[7] : bossInbetweenFrames[7];
         }
         return switch (state) {
-            case ENRAGING, MAGIC_HANDS -> 3;
-            case VINE_STRIKE -> 4;
-            case POLLEN_BREATH -> 5;
-            case POLLEN_RAIN -> 6;
-            case DEFEATED -> 7;
-            case IDLE -> ((int) (elapsed * 4f) & 1) == 0 ? 1 : 2;
+            case ENRAGING, MAGIC_HANDS -> attackAnimationFrame(3, 11f);
+            case VINE_STRIKE -> attackAnimationFrame(4, 14f);
+            case POLLEN_BREATH -> attackAnimationFrame(5, 13f);
+            case POLLEN_RAIN -> attackAnimationFrame(6, 12f);
+            case DEFEATED -> bossInbetweenFrames[7];
+            case IDLE -> idleAnimationFrame();
         };
+    }
+
+    private TextureRegion idleAnimationFrame() {
+        int frame = (int) (boss.getVisualStateTime() * 7.5f) % 4;
+        return switch (frame) {
+            case 0 -> bossFrames[1];
+            case 1 -> bossInbetweenFrames[1];
+            case 2 -> bossFrames[2];
+            default -> bossInbetweenFrames[2];
+        };
+    }
+
+    private TextureRegion attackAnimationFrame(int index, float framesPerSecond) {
+        if (boss.isTelegraphing() && boss.getActionImpulse() <= 0f) {
+            return bossInbetweenFrames[index];
+        }
+        return ((int) (boss.getVisualStateTime() * framesPerSecond) & 1) == 0
+                ? bossFrames[index]
+                : bossInbetweenFrames[index];
+    }
+
+    private float smoothStep(float value) {
+        float t = MathUtils.clamp(value, 0f, 1f);
+        return t * t * (3f - 2f * t);
     }
 
     private void drawBossShadow(ShapeRenderer shapeRenderer) {
