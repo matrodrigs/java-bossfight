@@ -172,7 +172,7 @@ public class OldFilmEffect {
         screenProjection = new Matrix4();
         shader = new ShaderProgram(VERTEX_SHADER, FRAGMENT_SHADER);
         if (!shader.isCompiled()) {
-            throw new IllegalStateException("Old film shader compilation failed: " + shader.getLog());
+            throw new IllegalStateException("Falha ao compilar o shader de filme antigo: " + shader.getLog());
         }
     }
 

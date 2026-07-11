@@ -356,7 +356,8 @@ public class BattleScreen extends ScreenAdapter {
                 case POLLEN_CHARGE -> AudioManager.Cue.BOSS_POLLEN_CHARGE;
                 case POLLEN_DROP -> AudioManager.Cue.BOSS_POLLEN_DROP;
                 case PHASE_SHOCKWAVE -> AudioManager.Cue.BOSS_PHASE_SHOCKWAVE;
-                case PHASE_ROAR -> throw new IllegalStateException("Phase roar must use the sampled sound effect");
+                case PHASE_ROAR -> throw new IllegalStateException(
+                        "O rugido da fase deve usar o efeito sonoro gravado");
             };
             game.getAudioManager().playCue(cue);
             if (soundEvent == BossSoundEvent.PHASE_SHOCKWAVE) {

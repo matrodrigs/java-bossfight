@@ -26,7 +26,7 @@ public class CollisionSystem {
         requestedShake = 0f;
         bossContactCooldown = Math.max(0f, bossContactCooldown - delta);
         resolvePlayerProjectiles(player, boss, projectileSystem);
-        resolveBossProjectiles(player, projectileSystem);
+        resolveBossProjectiles(player, boss, projectileSystem);
         resolveBossContact(player, boss);
     }
 
@@ -61,14 +61,14 @@ public class CollisionSystem {
         });
     }
 
-    private void resolveBossProjectiles(Player player, ProjectileSystem projectileSystem) {
+    private void resolveBossProjectiles(Player player, Boss boss, ProjectileSystem projectileSystem) {
         projectileSystem.removeBossProjectilesIf(projectile -> {
             if (player.isInvulnerableAfterHit()) {
                 return false;
             }
 
             if (projectile.getDamage() > 0 && projectile.getHitbox().overlaps(player.getHitbox())) {
-                boolean damaged = player.takeDamage(projectile.getDamage(), impactSourceX(player, projectile));
+                boolean damaged = player.takeDamage(projectile.getDamage(), boss.getCenterX());
                 if (damaged) {
                     feedback.onPlayerHit(player.getCenterX(), player.getCenterY());
                     requestedHitstop = Math.max(requestedHitstop, 0.07f);
@@ -78,19 +78,6 @@ public class CollisionSystem {
             }
             return false;
         });
-    }
-
-    private float impactSourceX(Player player, Projectile projectile) {
-        float velocityX = projectile.getVelocityX();
-        if (Math.abs(velocityX) > 1f) {
-            return player.getCenterX() - Math.signum(velocityX);
-        }
-
-        if (projectile.getKind() == Projectile.Kind.BOSS_THORN) {
-            return projectile.getX();
-        }
-
-        return projectile.getCenterX();
     }
 
     private void resolveBossContact(Player player, Boss boss) {

@@ -303,12 +303,12 @@ public class RetroTextFactory implements Disposable {
     private Font loadFont(String path) {
         InputStream resource = RetroTextFactory.class.getClassLoader().getResourceAsStream(path);
         if (resource == null) {
-            throw new IllegalStateException("Bundled font not found: " + path);
+            throw new IllegalStateException("Fonte incluída não encontrada: " + path);
         }
         try (InputStream input = resource) {
             return Font.createFont(Font.TRUETYPE_FONT, input);
         } catch (FontFormatException | IOException exception) {
-            throw new IllegalStateException("Unable to load bundled font: " + path, exception);
+            throw new IllegalStateException("Não foi possível carregar a fonte incluída: " + path, exception);
         }
     }
 
