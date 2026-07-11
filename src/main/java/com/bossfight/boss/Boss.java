@@ -116,7 +116,9 @@ public class Boss {
         }
 
         lastAttackIndex = nextAttackIndex;
-        phaseTwoAttackCount++;
+        if (isPhaseTwo()) {
+            phaseTwoAttackCount++;
+        }
 
         return switch (nextAttackIndex) {
             case 0 -> new AttackOneState();
