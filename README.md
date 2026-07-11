@@ -72,14 +72,16 @@ Se o Gradle reclamar de JVM antiga, confira se `JAVA_HOME` aponta para um JDK 21
 src/main/java/com/bossfight
 |-- desktop/   # Launcher LWJGL3
 |-- screens/   # Menu, batalha e telas finais
+|-- rendering/ # Renderização do jogador, boss e HUD da batalha
 |-- boss/      # Boss, estados e eventos da máquina de estados
 |-- entities/  # Jogador, projéteis e hitboxes
 |-- input/     # Leitura e buffer dos controles da batalha
 |-- systems/   # Áudio, colisão, partículas, projéteis, texto, fundo e efeitos
-`-- Constants.java
+`-- config/    # Configuração estável do mundo e regras de gameplay
 
 assets/
 |-- audio/     # Música, ambiência e locuções
+|-- fonts/     # Fonte empacotada e sua licença
 `-- sprites/   # UI, boss, jogador, projéteis e cenário
 ```
 

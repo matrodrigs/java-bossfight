@@ -57,7 +57,13 @@ public class AudioManager {
     private final MusicChannel ambienceChannel = new MusicChannel();
 
     public AudioManager() {
-        startProceduralAudio();
+        this(true);
+    }
+
+    AudioManager(boolean proceduralAudioEnabled) {
+        if (proceduralAudioEnabled) {
+            startProceduralAudio();
+        }
     }
 
     public void playMusic(String path, boolean looping, float volume) {

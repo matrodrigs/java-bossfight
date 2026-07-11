@@ -2,7 +2,7 @@ package com.bossfight.boss;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
-import com.bossfight.Constants;
+import com.bossfight.config.Constants;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
 

@@ -5,7 +5,7 @@ import com.badlogic.gdx.backends.lwjgl3.Lwjgl3ApplicationConfiguration;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3Window;
 import com.badlogic.gdx.backends.lwjgl3.Lwjgl3WindowAdapter;
 import com.bossfight.MainGame;
-import com.bossfight.Constants;
+import com.bossfight.config.Constants;
 
 public final class DesktopLauncher {
     private DesktopLauncher() {

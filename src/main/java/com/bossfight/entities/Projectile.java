@@ -1,7 +1,7 @@
 package com.bossfight.entities;
 
 import com.badlogic.gdx.math.MathUtils;
-import com.bossfight.Constants;
+import com.bossfight.config.Constants;
 
 public class Projectile {
     public enum Owner {

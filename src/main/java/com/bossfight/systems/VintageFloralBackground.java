@@ -6,7 +6,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.utils.Disposable;
-import com.bossfight.Constants;
+import com.bossfight.config.Constants;
 
 public class VintageFloralBackground implements Disposable {
     private static final String ROOT = "sprites/background/floral_vintage/";

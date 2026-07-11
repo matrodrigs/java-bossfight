@@ -5,7 +5,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
-import com.bossfight.Constants;
+import com.bossfight.config.Constants;
 
 public class AttackTwoState implements BossState {
     private float elapsed;

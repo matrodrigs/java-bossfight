@@ -8,7 +8,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
-import com.bossfight.Constants;
+import com.bossfight.config.Constants;
 import com.bossfight.systems.RetroTextFactory;
 import com.bossfight.systems.TextureDraw;
 

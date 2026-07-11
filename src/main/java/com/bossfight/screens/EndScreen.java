@@ -9,7 +9,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bossfight.systems.RetroTextFactory;
 import com.bossfight.systems.TextureDraw;
-import com.bossfight.Constants;
+import com.bossfight.config.Constants;
 
 public class EndScreen extends ScreenAdapter {
     private static final String VICTORY_BACKGROUND_PATH = "sprites/ui/end_victory_background.png";

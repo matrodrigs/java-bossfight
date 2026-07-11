@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
-import com.bossfight.Constants;
+import com.bossfight.config.Constants;
 
 public class AttackOneState implements BossState {
     private static final float WARNING_TIME = 0.62f;

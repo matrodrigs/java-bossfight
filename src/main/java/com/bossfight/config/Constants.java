@@ -1,4 +1,4 @@
-package com.bossfight;
+package com.bossfight.config;
 
 public final class Constants {
     public static final String GAME_TITLE = "Fúria Botânica";

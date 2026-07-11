@@ -13,7 +13,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bossfight.systems.AudioManager;
 import com.bossfight.systems.RetroTextFactory;
 import com.bossfight.systems.TextureDraw;
-import com.bossfight.Constants;
+import com.bossfight.config.Constants;
 
 public class MenuScreen extends ScreenAdapter {
     private static final float MENU_CENTER_X = 638.5f;

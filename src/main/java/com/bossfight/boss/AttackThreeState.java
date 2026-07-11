@@ -4,7 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
-import com.bossfight.Constants;
+import com.bossfight.config.Constants;
 
 public class AttackThreeState implements BossState {
     private static final float COLUMN_WARNING_TIME = 0.36f;

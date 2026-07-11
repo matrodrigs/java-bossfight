@@ -33,3 +33,7 @@ desktop.ini
 .classpath
 .project
 .settings/
+
+# Ferramentas locais
+.agents/
+tmp/

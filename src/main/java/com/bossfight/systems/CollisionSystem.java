@@ -1,6 +1,7 @@
 package com.bossfight.systems;
 
 import com.bossfight.boss.Boss;
+import com.bossfight.config.Constants;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
 
@@ -44,7 +45,7 @@ public class CollisionSystem {
                 if (hit) {
                     boolean special = projectile.isSpecial();
                     particleSystem.spawnBossHit(projectile.getCenterX(), projectile.getCenterY(), special);
-                    player.addSpecialEnergy(special ? 0f : com.bossfight.Constants.PLAYER_SPECIAL_HIT_CHARGE);
+                    player.addSpecialEnergy(special ? 0f : Constants.PLAYER_SPECIAL_HIT_CHARGE);
                     if (!boss.isDefeated()) {
                         audioManager.playCue(special ? AudioManager.Cue.PLAYER_SPECIAL : AudioManager.Cue.BOSS_HIT);
                     }

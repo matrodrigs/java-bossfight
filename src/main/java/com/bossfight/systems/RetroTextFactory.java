@@ -8,17 +8,21 @@ import com.badlogic.gdx.utils.ObjectSet;
 import java.awt.BasicStroke;
 import java.awt.Font;
 import java.awt.FontMetrics;
-import java.awt.GraphicsEnvironment;
 import java.awt.Graphics2D;
 import java.awt.RenderingHints;
 import java.awt.Shape;
+import java.awt.FontFormatException;
 import java.awt.font.GlyphVector;
 import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
-import java.util.Locale;
+import java.io.IOException;
+import java.io.InputStream;
 
 public class RetroTextFactory implements Disposable {
+    private static final String FONT_PATH = "fonts/LilitaOne-Regular.ttf";
+
     private final ObjectSet<Texture> textures = new ObjectSet<>();
+    private Font baseFont;
 
     public Texture createTitle(String text) {
         return createCartoonText(text, 92, 11, 0xffd64a, 0x672014, 0x050405, 16, 0.048f);
@@ -66,7 +70,7 @@ public class RetroTextFactory implements Disposable {
 
     private Texture createText(String text, int fontSize, int strokeWidth, int fillRgb, int strokeRgb,
                                int shadowRgb, int padding) {
-        Font font = pickFont("Georgia", "Serif", fontSize);
+        Font font = font(fontSize);
         BufferedImage probe = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D probeGraphics = probe.createGraphics();
         applyHints(probeGraphics);
@@ -119,8 +123,8 @@ public class RetroTextFactory implements Disposable {
         int gap = 4;
         int edge = padding + strokeWidth * 2;
 
-        Font labelFont = pickFont("Georgia", "Serif", fontSize);
-        Font valueFont = pickFont("Georgia", "Serif", valueFontSize);
+        Font labelFont = font(fontSize);
+        Font valueFont = font(valueFontSize);
         BufferedImage probe = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D probeGraphics = probe.createGraphics();
         applyHints(probeGraphics);
@@ -177,7 +181,7 @@ public class RetroTextFactory implements Disposable {
 
     private Texture createCartoonText(String text, int fontSize, int strokeWidth, int fillRgb, int strokeRgb,
                                       int shadowRgb, int padding, float tiltStep) {
-        Font font = pickFont("Cooper Black", "Showcard Gothic", "Georgia", fontSize);
+        Font font = font(fontSize);
         BufferedImage probe = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D probeGraphics = probe.createGraphics();
         applyHints(probeGraphics);
@@ -273,27 +277,19 @@ public class RetroTextFactory implements Disposable {
         return new java.awt.Color((rgb >> 16) & 0xff, (rgb >> 8) & 0xff, rgb & 0xff, alpha);
     }
 
-    private Font pickFont(String preferred, String fallback, int size) {
-        return pickFont(preferred, fallback, "Serif", size);
-    }
-
-    private Font pickFont(String preferred, String fallback, String lastResort, int size) {
-        String[] available = GraphicsEnvironment.getLocalGraphicsEnvironment().getAvailableFontFamilyNames();
-        String preferredKey = preferred.toLowerCase(Locale.ROOT);
-        String fallbackKey = fallback.toLowerCase(Locale.ROOT);
-        for (String family : available) {
-            String key = family.toLowerCase(Locale.ROOT);
-            if (key.equals(preferredKey)) {
-                return new Font(family, Font.BOLD, size);
+    Font font(int size) {
+        if (baseFont == null) {
+            InputStream resource = RetroTextFactory.class.getClassLoader().getResourceAsStream(FONT_PATH);
+            if (resource == null) {
+                throw new IllegalStateException("Bundled font not found: " + FONT_PATH);
+            }
+            try (InputStream input = resource) {
+                baseFont = Font.createFont(Font.TRUETYPE_FONT, input);
+            } catch (FontFormatException | IOException exception) {
+                throw new IllegalStateException("Unable to load bundled font: " + FONT_PATH, exception);
             }
         }
-        for (String family : available) {
-            String key = family.toLowerCase(Locale.ROOT);
-            if (key.equals(fallbackKey)) {
-                return new Font(family, Font.BOLD, size);
-            }
-        }
-        return new Font(lastResort, Font.BOLD, size);
+        return baseFont.deriveFont(Font.PLAIN, (float) size);
     }
 
     @Override

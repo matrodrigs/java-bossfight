@@ -2,7 +2,7 @@ package com.bossfight.systems;
 
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.MathUtils;
-import com.bossfight.Constants;
+import com.bossfight.config.Constants;
 
 public final class CameraShake {
     private float timer;

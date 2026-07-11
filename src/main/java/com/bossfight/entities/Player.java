@@ -1,7 +1,7 @@
 package com.bossfight.entities;
 
 import com.badlogic.gdx.math.MathUtils;
-import com.bossfight.Constants;
+import com.bossfight.config.Constants;
 
 public class Player {
     private static final float SHOOT_POSE_HOLD = Constants.PLAYER_SHOOT_COOLDOWN + 0.08f;
