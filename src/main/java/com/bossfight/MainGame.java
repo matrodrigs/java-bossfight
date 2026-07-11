@@ -11,9 +11,9 @@ import com.bossfight.screens.BattleScreen;
 import com.bossfight.screens.EndScreen;
 import com.bossfight.screens.GameContext;
 import com.bossfight.screens.MenuScreen;
-import com.bossfight.systems.AudioManager;
-import com.bossfight.systems.IrisTransition;
-import com.bossfight.systems.OldFilmEffect;
+import com.bossfight.audio.AudioManager;
+import com.bossfight.effects.IrisTransition;
+import com.bossfight.effects.OldFilmEffect;
 
 public class MainGame extends Game implements GameContext {
     private static final String MENU_MUSIC_PATH = "audio/music/menu_theme.mp3";

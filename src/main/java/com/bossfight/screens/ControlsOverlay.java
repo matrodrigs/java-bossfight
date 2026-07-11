@@ -9,8 +9,8 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.bossfight.config.Constants;
-import com.bossfight.systems.RetroTextFactory;
-import com.bossfight.systems.TextureDraw;
+import com.bossfight.rendering.RetroTextFactory;
+import com.bossfight.rendering.TextureDraw;
 
 final class ControlsOverlay {
     private static final String[] KEY_LABELS = {"A", "D", "ESPAÇO", "SHIFT"};

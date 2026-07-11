@@ -1,4 +1,4 @@
-package com.bossfight.systems;
+package com.bossfight.gameplay;
 
 import com.badlogic.gdx.utils.Array;
 import com.bossfight.boss.ProjectileSpawner;
@@ -40,11 +40,11 @@ public final class ProjectileSystem implements ProjectileSpawner {
         removeProjectilesIf(bossProjectiles, removalRule);
     }
 
-    Array<Projectile> playerProjectiles() {
+    public Iterable<Projectile> playerProjectiles() {
         return playerProjectiles;
     }
 
-    Array<Projectile> bossProjectiles() {
+    public Iterable<Projectile> bossProjectiles() {
         return bossProjectiles;
     }
 

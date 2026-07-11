@@ -8,12 +8,12 @@ import com.badlogic.gdx.math.MathUtils;
 import com.bossfight.boss.Boss;
 import com.bossfight.config.Constants;
 import com.bossfight.entities.Player;
-import com.bossfight.systems.AudioManager;
-import com.bossfight.systems.CameraShake;
-import com.bossfight.systems.ParticleSystem;
-import com.bossfight.systems.ProjectileSystem;
-import com.bossfight.systems.RetroTextFactory;
-import com.bossfight.systems.TextureDraw;
+import com.bossfight.audio.AudioManager;
+import com.bossfight.effects.CameraShake;
+import com.bossfight.effects.ParticleSystem;
+import com.bossfight.gameplay.ProjectileSystem;
+import com.bossfight.rendering.RetroTextFactory;
+import com.bossfight.rendering.TextureDraw;
 
 final class BattleFlow {
     private static final String BATTLE_MUSIC_PATH = "audio/music/boss_fight_theme.mp3";

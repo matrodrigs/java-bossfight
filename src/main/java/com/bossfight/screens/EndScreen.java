@@ -7,8 +7,8 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.bossfight.systems.RetroTextFactory;
-import com.bossfight.systems.TextureDraw;
+import com.bossfight.rendering.RetroTextFactory;
+import com.bossfight.rendering.TextureDraw;
 import com.bossfight.config.Constants;
 
 public class EndScreen extends ScreenAdapter {

@@ -1,4 +1,4 @@
-package com.bossfight.systems;
+package com.bossfight.rendering;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;

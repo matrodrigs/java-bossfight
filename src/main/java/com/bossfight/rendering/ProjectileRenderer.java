@@ -1,4 +1,4 @@
-package com.bossfight.systems;
+package com.bossfight.rendering;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -6,10 +6,10 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Disposable;
 import com.bossfight.config.Constants;
 import com.bossfight.entities.Projectile;
+import com.bossfight.gameplay.ProjectileSystem;
 
 public final class ProjectileRenderer implements Disposable {
     private static final float WARNING_VERTICAL_THRESHOLD = 2f;
@@ -66,7 +66,7 @@ public final class ProjectileRenderer implements Disposable {
         return texture;
     }
 
-    private void renderSprites(SpriteBatch batch, Array<Projectile> projectileList) {
+    private void renderSprites(SpriteBatch batch, Iterable<Projectile> projectileList) {
         for (Projectile projectile : projectileList) {
             switch (projectile.getKind()) {
                 case PLAYER_BASIC -> drawTextureAt(batch, playerPea,
@@ -117,7 +117,7 @@ public final class ProjectileRenderer implements Disposable {
         batch.setColor(Color.WHITE);
     }
 
-    private void renderWarnings(ShapeRenderer shapeRenderer, Array<Projectile> projectileList) {
+    private void renderWarnings(ShapeRenderer shapeRenderer, Iterable<Projectile> projectileList) {
         for (Projectile projectile : projectileList) {
             if (projectile.getKind() == Projectile.Kind.BOSS_WARNING) {
                 if (isVineWarning(projectile)) {

@@ -10,9 +10,9 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.bossfight.systems.AudioManager;
-import com.bossfight.systems.RetroTextFactory;
-import com.bossfight.systems.TextureDraw;
+import com.bossfight.audio.AudioManager;
+import com.bossfight.rendering.RetroTextFactory;
+import com.bossfight.rendering.TextureDraw;
 import com.bossfight.config.Constants;
 
 public class MenuScreen extends ScreenAdapter {

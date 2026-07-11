@@ -1,4 +1,4 @@
-package com.bossfight.systems;
+package com.bossfight.effects;
 
 public class IrisTransition {
     private static final float CLOSE_DURATION = 0.56f;

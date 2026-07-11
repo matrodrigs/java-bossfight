@@ -2,7 +2,7 @@ package com.bossfight.screens;
 
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.bossfight.systems.AudioManager;
+import com.bossfight.audio.AudioManager;
 
 public interface GameContext {
     SpriteBatch getBatch();

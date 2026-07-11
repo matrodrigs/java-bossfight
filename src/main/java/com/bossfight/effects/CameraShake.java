@@ -1,4 +1,4 @@
-package com.bossfight.systems;
+package com.bossfight.effects;
 
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.math.MathUtils;

@@ -1,4 +1,4 @@
-package com.bossfight.systems;
+package com.bossfight.gameplay;
 
 import com.bossfight.boss.Boss;
 import com.bossfight.config.Constants;
@@ -6,15 +6,19 @@ import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
 
 public class CollisionSystem {
-    private final ParticleSystem particleSystem;
-    private final AudioManager audioManager;
+    public interface Feedback {
+        void onBossHit(float x, float y, boolean special, boolean defeated);
+
+        void onPlayerHit(float x, float y);
+    }
+
+    private final Feedback feedback;
     private float bossContactCooldown;
     private float requestedHitstop;
     private float requestedShake;
 
-    public CollisionSystem(ParticleSystem particleSystem, AudioManager audioManager) {
-        this.particleSystem = particleSystem;
-        this.audioManager = audioManager;
+    public CollisionSystem(Feedback feedback) {
+        this.feedback = feedback;
     }
 
     public void resolve(Player player, Boss boss, ProjectileSystem projectileSystem, float delta) {
@@ -44,11 +48,8 @@ public class CollisionSystem {
                 boolean hit = boss.takeDamage(projectile.getDamage());
                 if (hit) {
                     boolean special = projectile.isSpecial();
-                    particleSystem.spawnBossHit(projectile.getCenterX(), projectile.getCenterY(), special);
+                    feedback.onBossHit(projectile.getCenterX(), projectile.getCenterY(), special, boss.isDefeated());
                     player.addSpecialEnergy(special ? 0f : Constants.PLAYER_SPECIAL_HIT_CHARGE);
-                    if (!boss.isDefeated()) {
-                        audioManager.playCue(special ? AudioManager.Cue.PLAYER_SPECIAL : AudioManager.Cue.BOSS_HIT);
-                    }
                     if (special) {
                         requestedHitstop = Math.max(requestedHitstop, 0.08f);
                     }
@@ -69,8 +70,7 @@ public class CollisionSystem {
             if (projectile.getDamage() > 0 && projectile.getHitbox().overlaps(player.getHitbox())) {
                 boolean damaged = player.takeDamage(projectile.getDamage(), impactSourceX(player, projectile));
                 if (damaged) {
-                    particleSystem.spawnPlayerDamage(player.getCenterX(), player.getCenterY());
-                    audioManager.playCue(AudioManager.Cue.PLAYER_HIT);
+                    feedback.onPlayerHit(player.getCenterX(), player.getCenterY());
                     requestedHitstop = Math.max(requestedHitstop, 0.07f);
                     requestedShake = Math.max(requestedShake, 8f);
                 }
@@ -101,8 +101,7 @@ public class CollisionSystem {
         if (player.getHitbox().overlaps(boss.getHitbox())) {
             boolean damaged = player.takeDamage(1, boss.getCenterX());
             if (damaged) {
-                particleSystem.spawnPlayerDamage(player.getCenterX(), player.getCenterY());
-                audioManager.playCue(AudioManager.Cue.PLAYER_HIT);
+                feedback.onPlayerHit(player.getCenterX(), player.getCenterY());
                 requestedHitstop = Math.max(requestedHitstop, 0.07f);
                 requestedShake = Math.max(requestedShake, 8f);
                 bossContactCooldown = 0.8f;

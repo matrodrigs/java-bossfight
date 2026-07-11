@@ -9,7 +9,6 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Disposable;
 import com.bossfight.config.Constants;
 import com.bossfight.entities.Player;
-import com.bossfight.systems.RetroTextFactory;
 
 public final class BattleHud implements Disposable {
     private static final float PLAYER_HUD_X = 34f;

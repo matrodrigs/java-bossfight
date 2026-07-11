@@ -1,4 +1,4 @@
-package com.bossfight.systems;
+package com.bossfight.audio;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.AudioDevice;

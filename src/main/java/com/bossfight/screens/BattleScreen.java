@@ -18,21 +18,40 @@ import com.bossfight.input.BattleInput;
 import com.bossfight.rendering.BattleHud;
 import com.bossfight.rendering.BossRenderer;
 import com.bossfight.rendering.PlayerRenderer;
-import com.bossfight.systems.AudioManager;
-import com.bossfight.systems.CameraShake;
-import com.bossfight.systems.CollisionSystem;
-import com.bossfight.systems.ParticleSystem;
-import com.bossfight.systems.PhaseShockwaveEffect;
-import com.bossfight.systems.ProjectileRenderer;
-import com.bossfight.systems.ProjectileSystem;
-import com.bossfight.systems.RetroTextFactory;
-import com.bossfight.systems.VintageFloralBackground;
+import com.bossfight.audio.AudioManager;
+import com.bossfight.effects.CameraShake;
+import com.bossfight.effects.ParticleSystem;
+import com.bossfight.effects.PhaseShockwaveEffect;
+import com.bossfight.gameplay.CollisionSystem;
+import com.bossfight.gameplay.ProjectileSystem;
+import com.bossfight.rendering.ProjectileRenderer;
+import com.bossfight.rendering.RetroTextFactory;
+import com.bossfight.rendering.VintageFloralBackground;
 
 public class BattleScreen extends ScreenAdapter {
     private static final float PHASE_ROAR_SHAKE_MAGNITUDE = 24f;
     private static final float PHASE_ROAR_SHAKE_DURATION = 1.55f;
     private static final float PHASE_SHOCKWAVE_SHAKE_MAGNITUDE = 15f;
     private static final float PHASE_SHOCKWAVE_SHAKE_DURATION = 0.30f;
+
+    private record BattleCollisionFeedback(
+            ParticleSystem particleSystem,
+            AudioManager audioManager
+    ) implements CollisionSystem.Feedback {
+        @Override
+        public void onBossHit(float x, float y, boolean special, boolean defeated) {
+            particleSystem.spawnBossHit(x, y, special);
+            if (!defeated) {
+                audioManager.playCue(special ? AudioManager.Cue.PLAYER_SPECIAL : AudioManager.Cue.BOSS_HIT);
+            }
+        }
+
+        @Override
+        public void onPlayerHit(float x, float y) {
+            particleSystem.spawnPlayerDamage(x, y);
+            audioManager.playCue(AudioManager.Cue.PLAYER_HIT);
+        }
+    }
 
     private final GameContext game;
     private final OrthographicCamera camera;
@@ -71,7 +90,7 @@ public class BattleScreen extends ScreenAdapter {
         projectileSystem = new ProjectileSystem();
         projectileRenderer = new ProjectileRenderer(projectileSystem);
         particleSystem = new ParticleSystem();
-        collisionSystem = new CollisionSystem(particleSystem, game.getAudioManager());
+        collisionSystem = new CollisionSystem(new BattleCollisionFeedback(particleSystem, game.getAudioManager()));
         battleInput = new BattleInput();
         controlsOverlay = new ControlsOverlay(textFactory);
         cameraShake = new CameraShake();
