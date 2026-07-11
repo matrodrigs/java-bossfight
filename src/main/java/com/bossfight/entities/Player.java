@@ -61,8 +61,6 @@ public class Player {
         updateCoyoteTimer(delta, wasGrounded);
         queueBufferedInputs(jumpPressed, dashPressed);
         animationTime += delta;
-        specialEnergy = Math.min(Constants.PLAYER_SPECIAL_MAX,
-                specialEnergy + Constants.PLAYER_SPECIAL_PASSIVE_CHARGE * delta);
         movingHorizontally = dashTimer > 0f;
 
         if (dashTimer > 0f) {

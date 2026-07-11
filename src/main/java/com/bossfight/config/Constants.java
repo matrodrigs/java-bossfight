@@ -26,7 +26,6 @@ public final class Constants {
     public static final float PLAYER_SHOOT_COOLDOWN = 0.18f;
     public static final float PLAYER_INVULNERABILITY_DURATION = 0.95f;
     public static final float PLAYER_SPECIAL_MAX = 100f;
-    public static final float PLAYER_SPECIAL_PASSIVE_CHARGE = 3.5f;
     public static final float PLAYER_SPECIAL_HIT_CHARGE = 3.5f;
     public static final float PLAYER_SPECIAL_COOLDOWN = 0.45f;
     public static final int PLAYER_MAX_HEALTH = 5;
