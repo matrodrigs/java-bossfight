@@ -10,6 +10,7 @@ import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bossfight.boss.Boss;
 import com.bossfight.boss.BossSoundEvent;
+import com.bossfight.boss.BossVisualState;
 import com.bossfight.config.Constants;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
@@ -28,6 +29,11 @@ import com.bossfight.systems.RetroTextFactory;
 import com.bossfight.systems.VintageFloralBackground;
 
 public class BattleScreen extends ScreenAdapter {
+    private static final float PHASE_ROAR_SHAKE_MAGNITUDE = 24f;
+    private static final float PHASE_ROAR_SHAKE_DURATION = 1.55f;
+    private static final float PHASE_SHOCKWAVE_SHAKE_MAGNITUDE = 15f;
+    private static final float PHASE_SHOCKWAVE_SHAKE_DURATION = 0.30f;
+
     private final GameContext game;
     private final OrthographicCamera camera;
     private final FitViewport viewport;
@@ -117,6 +123,7 @@ public class BattleScreen extends ScreenAdapter {
         }
 
         updateVisualEffects(delta);
+        battleFlow.updatePhaseTwoMusicTransition(delta);
         if (battleFlow.isIntroPausedForTransition()) {
             return true;
         }
@@ -158,6 +165,7 @@ public class BattleScreen extends ScreenAdapter {
     private boolean updateNonCombatSequence(float delta) {
         if (battleFlow.isKnockoutSequenceActive()) {
             hitstopTimer = 0f;
+            boss.update(delta, projectileSystem, player);
             battleFlow.updateKnockoutSequence(delta, player, particleSystem, boss);
             return true;
         }
@@ -174,7 +182,7 @@ public class BattleScreen extends ScreenAdapter {
         }
 
         hitstopTimer = Math.max(0f, hitstopTimer - delta);
-        return true;
+        return hitstopTimer > 0f;
     }
 
     private void updatePlayer(float delta) {
@@ -263,6 +271,8 @@ public class BattleScreen extends ScreenAdapter {
         Gdx.gl.glBlendFunc(GL20.GL_SRC_ALPHA, GL20.GL_ONE_MINUS_SRC_ALPHA);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
+        renderPhaseTransitionTint(shapeRenderer);
+
         if (!battleFlow.isFightStarted()) {
             battleFlow.renderIntroSpotlight(shapeRenderer, boss, elapsed);
         }
@@ -311,6 +321,14 @@ public class BattleScreen extends ScreenAdapter {
     private void playBossSoundEvents() {
         BossSoundEvent soundEvent;
         while ((soundEvent = boss.pollSoundEvent()) != null) {
+            if (soundEvent == BossSoundEvent.PHASE_ROAR) {
+                battleFlow.beginPhaseTwoMusicTransition();
+                game.getAudioManager().playBossPhaseRoar();
+                cameraShake.request(PHASE_ROAR_SHAKE_MAGNITUDE, PHASE_ROAR_SHAKE_DURATION);
+                phaseShockwaveEffect.spawn(1.35f);
+                continue;
+            }
+
             AudioManager.Cue cue = switch (soundEvent) {
                 case VINE_CHARGE -> AudioManager.Cue.BOSS_VINE_CHARGE;
                 case VINE_STRIKE -> AudioManager.Cue.BOSS_VINE_STRIKE;
@@ -318,18 +336,28 @@ public class BattleScreen extends ScreenAdapter {
                 case MAGIC_VOLLEY -> AudioManager.Cue.BOSS_MAGIC_VOLLEY;
                 case POLLEN_CHARGE -> AudioManager.Cue.BOSS_POLLEN_CHARGE;
                 case POLLEN_DROP -> AudioManager.Cue.BOSS_POLLEN_DROP;
-                case PHASE_ROAR -> AudioManager.Cue.BOSS_PHASE_ROAR;
                 case PHASE_SHOCKWAVE -> AudioManager.Cue.BOSS_PHASE_SHOCKWAVE;
+                case PHASE_ROAR -> throw new IllegalStateException("Phase roar must use the sampled sound effect");
             };
             game.getAudioManager().playCue(cue);
-            if (soundEvent == BossSoundEvent.PHASE_ROAR) {
-                cameraShake.request(14f, 0.42f);
-                phaseShockwaveEffect.spawn(1.2f);
-            } else if (soundEvent == BossSoundEvent.PHASE_SHOCKWAVE) {
-                cameraShake.request(10f, 0.24f);
-                phaseShockwaveEffect.spawn(1f);
+            if (soundEvent == BossSoundEvent.PHASE_SHOCKWAVE) {
+                cameraShake.request(PHASE_SHOCKWAVE_SHAKE_MAGNITUDE, PHASE_SHOCKWAVE_SHAKE_DURATION);
+                phaseShockwaveEffect.spawn(1.1f);
             }
         }
+    }
+
+    private void renderPhaseTransitionTint(ShapeRenderer shapeRenderer) {
+        if (boss.getVisualState() != BossVisualState.ENRAGING) {
+            return;
+        }
+
+        float progress = 1f - boss.getTelegraphAlpha();
+        float envelope = MathUtils.sin(progress * MathUtils.PI);
+        float pulse = 0.5f + MathUtils.sin(boss.getVisualStateTime() * 18f) * 0.5f;
+        float alpha = 0.035f + envelope * 0.12f + pulse * 0.025f;
+        shapeRenderer.setColor(0.58f, 0.025f, 0.01f, alpha);
+        shapeRenderer.rect(-80f, -80f, Constants.WORLD_WIDTH + 160f, Constants.WORLD_HEIGHT + 160f);
     }
 
 }

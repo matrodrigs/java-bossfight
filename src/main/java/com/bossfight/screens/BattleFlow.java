@@ -17,9 +17,12 @@ import com.bossfight.systems.TextureDraw;
 
 final class BattleFlow {
     private static final String BATTLE_MUSIC_PATH = "audio/music/boss_fight_theme.mp3";
+    private static final String PHASE_TWO_MUSIC_PATH = "audio/music/boss_fight_phase_two_theme.mp3";
     private static final String INTRO_NARRATION_PATH = "audio/voice/narrator_intro.wav";
     private static final String KNOCKOUT_NARRATION_PATH = "audio/voice/narrator_knockout.wav";
     private static final float BATTLE_MUSIC_VOLUME = 0.04f;
+    private static final float PHASE_TWO_MUSIC_VOLUME = 0.05f;
+    private static final float PHASE_TWO_MUSIC_DELAY = 1.75f;
     private static final float INTRO_NARRATION_VOLUME = 1f;
     private static final float KNOCKOUT_NARRATION_VOLUME = 1.3f;
     private static final float INTRO_READY_TEXT_ONSET = 0.1f;
@@ -37,11 +40,13 @@ final class BattleFlow {
     private float introTimer;
     private float knockoutTimer;
     private float knockoutParticleTimer;
+    private float phaseTwoMusicTimer;
     private boolean introVoicePlayed;
     private boolean fightStarted;
     private boolean introPausedForTransition;
     private boolean knockoutSequenceActive;
     private boolean endTransitionRequested;
+    private boolean phaseTwoMusicPending;
 
     BattleFlow(GameContext game, RetroTextFactory textFactory, boolean introPausedForTransition) {
         this.game = game;
@@ -74,6 +79,26 @@ final class BattleFlow {
         fightStarted = false;
     }
 
+    void beginPhaseTwoMusicTransition() {
+        game.getAudioManager().stopMusic();
+        phaseTwoMusicTimer = PHASE_TWO_MUSIC_DELAY;
+        phaseTwoMusicPending = true;
+    }
+
+    void updatePhaseTwoMusicTransition(float delta) {
+        if (!phaseTwoMusicPending) {
+            return;
+        }
+
+        phaseTwoMusicTimer = Math.max(0f, phaseTwoMusicTimer - delta);
+        if (phaseTwoMusicTimer > 0f) {
+            return;
+        }
+
+        phaseTwoMusicPending = false;
+        game.getAudioManager().playMusic(PHASE_TWO_MUSIC_PATH, true, PHASE_TWO_MUSIC_VOLUME);
+    }
+
     void updateIntro(float delta, ControlsOverlay controlsOverlay, Boss boss) {
         if (fightStarted || introPausedForTransition) {
             return;
@@ -96,6 +121,7 @@ final class BattleFlow {
     void beginKnockoutSequence(ProjectileSystem projectiles, ParticleSystem particles,
                                Boss boss, CameraShake cameraShake) {
         knockoutSequenceActive = true;
+        phaseTwoMusicPending = false;
         knockoutTimer = 0f;
         knockoutParticleTimer = 0f;
         projectiles.clear();

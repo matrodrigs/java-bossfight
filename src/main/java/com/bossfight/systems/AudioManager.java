@@ -3,6 +3,7 @@ package com.bossfight.systems;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.AudioDevice;
 import com.badlogic.gdx.audio.Music;
+import com.badlogic.gdx.audio.Sound;
 
 import java.util.concurrent.ConcurrentLinkedQueue;
 
@@ -47,11 +48,14 @@ public class AudioManager {
     }
 
     private static final int SAMPLE_RATE = 44100;
+    private static final String BOSS_PHASE_ROAR_PATH = "audio/sfx/boss_phase_roar.mp3";
+    private static final float BOSS_PHASE_ROAR_VOLUME = 0.36f;
 
     private final ConcurrentLinkedQueue<Tone> tones = new ConcurrentLinkedQueue<>();
     private AudioDevice proceduralDevice;
     private Thread proceduralThread;
     private volatile boolean proceduralAudioRunning;
+    private Sound bossPhaseRoar;
     private final MusicChannel musicChannel = new MusicChannel();
     private final MusicChannel voiceChannel = new MusicChannel();
     private final MusicChannel ambienceChannel = new MusicChannel();
@@ -102,6 +106,24 @@ public class AudioManager {
         tones.offer(createTone(cue));
     }
 
+    public void playBossPhaseRoar() {
+        if (!exists(BOSS_PHASE_ROAR_PATH)) {
+            playCue(Cue.BOSS_PHASE_ROAR);
+            return;
+        }
+
+        try {
+            if (bossPhaseRoar == null) {
+                bossPhaseRoar = Gdx.audio.newSound(Gdx.files.internal(BOSS_PHASE_ROAR_PATH));
+            }
+            bossPhaseRoar.stop();
+            bossPhaseRoar.play(BOSS_PHASE_ROAR_VOLUME);
+        } catch (RuntimeException exception) {
+            Gdx.app.log("AudioManager", "Boss phase roar unavailable: " + exception.getMessage());
+            playCue(Cue.BOSS_PHASE_ROAR);
+        }
+    }
+
     public void dispose() {
         proceduralAudioRunning = false;
         if (proceduralThread != null) {
@@ -115,6 +137,10 @@ public class AudioManager {
         if (proceduralDevice != null) {
             proceduralDevice.dispose();
             proceduralDevice = null;
+        }
+        if (bossPhaseRoar != null) {
+            bossPhaseRoar.dispose();
+            bossPhaseRoar = null;
         }
         stopMusic();
         stopVoice();
