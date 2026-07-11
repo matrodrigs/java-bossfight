@@ -1,6 +1,5 @@
 package com.bossfight.rendering;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -10,6 +9,8 @@ import com.badlogic.gdx.utils.Disposable;
 import com.bossfight.config.Constants;
 import com.bossfight.entities.Projectile;
 import com.bossfight.gameplay.ProjectileSystem;
+
+import java.util.EnumMap;
 
 public final class ProjectileRenderer implements Disposable {
     private static final float WARNING_VERTICAL_THRESHOLD = 2f;
@@ -26,13 +27,7 @@ public final class ProjectileRenderer implements Disposable {
             1f, 0.44f, 0.12f, 0.2f);
 
     private final ProjectileSystem projectiles;
-    private final Texture playerPea;
-    private final Texture playerSpecial;
-    private final Texture bossSeed;
-    private final Texture bossAcorn;
-    private final Texture bossPollen;
-    private final Texture bossThorn;
-    private final Texture bossPetalBomb;
+    private final EnumMap<Projectile.Kind, Texture> textures = new EnumMap<>(Projectile.Kind.class);
 
     private record TrailSpec(
             float width,
@@ -48,13 +43,13 @@ public final class ProjectileRenderer implements Disposable {
 
     public ProjectileRenderer(ProjectileSystem projectiles) {
         this.projectiles = projectiles;
-        playerPea = load("sprites/projectiles/player_pea.png");
-        playerSpecial = load("sprites/projectiles/player_special.png");
-        bossSeed = load("sprites/projectiles/boss_seed.png");
-        bossAcorn = load("sprites/projectiles/boss_acorn.png");
-        bossPollen = load("sprites/projectiles/boss_pollen.png");
-        bossThorn = load("sprites/projectiles/boss_thorn.png");
-        bossPetalBomb = load("sprites/projectiles/boss_petal_bomb.png");
+        registerTexture(Projectile.Kind.PLAYER_BASIC, "sprites/projectiles/player_pea.png");
+        registerTexture(Projectile.Kind.PLAYER_SPECIAL, "sprites/projectiles/player_special.png");
+        registerTexture(Projectile.Kind.BOSS_SEED, "sprites/projectiles/boss_seed.png");
+        registerTexture(Projectile.Kind.BOSS_ACORN, "sprites/projectiles/boss_acorn.png");
+        registerTexture(Projectile.Kind.BOSS_POLLEN, "sprites/projectiles/boss_pollen.png");
+        registerTexture(Projectile.Kind.BOSS_THORN, "sprites/projectiles/boss_thorn.png");
+        registerTexture(Projectile.Kind.BOSS_PETAL_BOMB, "sprites/projectiles/boss_petal_bomb.png");
     }
 
     public void renderWarnings(ShapeRenderer shapeRenderer) {
@@ -69,25 +64,25 @@ public final class ProjectileRenderer implements Disposable {
 
     @Override
     public void dispose() {
-        playerPea.dispose();
-        playerSpecial.dispose();
-        bossSeed.dispose();
-        bossAcorn.dispose();
-        bossPollen.dispose();
-        bossThorn.dispose();
-        bossPetalBomb.dispose();
+        textures.values().forEach(Texture::dispose);
     }
 
-    private Texture load(String path) {
-        Texture texture = new Texture(Gdx.files.internal(path));
-        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+    private void registerTexture(Projectile.Kind kind, String path) {
+        textures.put(kind, TextureLoader.loadLinear(path));
+    }
+
+    private Texture textureFor(Projectile.Kind kind) {
+        Texture texture = textures.get(kind);
+        if (texture == null) {
+            throw new IllegalArgumentException("Nenhuma textura registrada para o tipo de projétil " + kind);
+        }
         return texture;
     }
 
     private void renderSprites(SpriteBatch batch, Iterable<Projectile> projectileList) {
         for (Projectile projectile : projectileList) {
             switch (projectile.getKind()) {
-                case PLAYER_BASIC -> drawTextureAt(batch, playerPea,
+                case PLAYER_BASIC -> drawTextureAt(batch, textureFor(projectile.getKind()),
                         projectile.getCenterX(),
                         projectile.getCenterY(),
                         58f + MathUtils.sin(projectile.getAge() * 15f) * 1.2f,
@@ -95,7 +90,7 @@ public final class ProjectileRenderer implements Disposable {
                         MathUtils.sin(projectile.getAge() * 15f) * 2f,
                         projectile.getVelocityX() < 0f,
                         1f, 1f, 1f, 1f);
-                case PLAYER_SPECIAL -> drawTextureAt(batch, playerSpecial,
+                case PLAYER_SPECIAL -> drawTextureAt(batch, textureFor(projectile.getKind()),
                         projectile.getCenterX(),
                         projectile.getCenterY(),
                         158f + MathUtils.sin(projectile.getAge() * 10f) * 4f,
@@ -104,15 +99,16 @@ public final class ProjectileRenderer implements Disposable {
                         projectile.getVelocityX() < 0f,
                         1f, 1f, 1f, 1f);
                 case BOSS_SEED -> drawTextureWithTrail(
-                        batch, bossSeed, projectile, rotationFor(projectile), SEED_TRAIL);
+                        batch, textureFor(projectile.getKind()), projectile, rotationFor(projectile), SEED_TRAIL);
                 case BOSS_ACORN -> drawTextureWithTrail(
-                        batch, bossAcorn, projectile, rotationFor(projectile), ACORN_TRAIL);
+                        batch, textureFor(projectile.getKind()), projectile, rotationFor(projectile), ACORN_TRAIL);
                 case BOSS_POLLEN -> {
                     float pulse = MathUtils.sin(projectile.getAge() * 8f);
-                    drawTextureAt(batch, bossPollen, projectile.getCenterX(), projectile.getCenterY(),
+                    Texture texture = textureFor(projectile.getKind());
+                    drawTextureAt(batch, texture, projectile.getCenterX(), projectile.getCenterY(),
                             72f + pulse * 5f, 72f - pulse * 3f,
                             projectile.getAge() * 48f, false, 0.7f, 0.32f, 1f, 0.22f);
-                    drawTexture(batch, bossPollen, projectile,
+                    drawTexture(batch, texture, projectile,
                             58f + MathUtils.sin(projectile.getAge() * 8f) * 4f,
                             58f + MathUtils.cos(projectile.getAge() * 8f) * 4f,
                             projectile.getAge() * 80f);
@@ -124,10 +120,10 @@ public final class ProjectileRenderer implements Disposable {
                         drawThornLane(batch, projectile);
                     }
                 }
-                case BOSS_PETAL_BOMB -> drawTextureWithTrail(batch, bossPetalBomb, projectile,
+                case BOSS_PETAL_BOMB -> drawTextureWithTrail(batch,
+                        textureFor(projectile.getKind()), projectile,
                         MathUtils.sin(projectile.getAge() * 9f) * 12f, PETAL_BOMB_TRAIL);
                 case BOSS_WARNING -> {
-                    // Warnings are rendered as shapes in renderWarnings.
                 }
             }
         }
@@ -199,7 +195,7 @@ public final class ProjectileRenderer implements Disposable {
         float drawWidth = projectile.getWidth() + 48f;
         float drawHeight = Math.max(170f, projectile.getHeight() * 4.1f);
         float rise = MathUtils.sin(projectile.getAge() * 18f) * 3f;
-        drawTextureAt(batch, bossThorn,
+        drawTextureAt(batch, textureFor(projectile.getKind()),
                 projectile.getCenterX(), projectile.getCenterY() + rise,
                 drawWidth, drawHeight, 0f, true,
                 1f, 1f, 1f, 1f);
@@ -211,7 +207,7 @@ public final class ProjectileRenderer implements Disposable {
         float drawHeight = projectile.getHeight() + 92f;
         float centerY = projectile.getY() + drawHeight * 0.47f;
 
-        drawTextureAt(batch, bossThorn,
+        drawTextureAt(batch, textureFor(projectile.getKind()),
                 projectile.getCenterX(),
                 centerY,
                 drawHeight,

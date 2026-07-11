@@ -13,6 +13,7 @@ import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bossfight.audio.AudioManager;
 import com.bossfight.rendering.RetroTextFactory;
 import com.bossfight.rendering.TextureDraw;
+import com.bossfight.rendering.TextureLoader;
 import com.bossfight.config.Constants;
 
 public class MenuScreen extends ScreenAdapter {
@@ -58,8 +59,7 @@ public class MenuScreen extends ScreenAdapter {
         startSelectedText = textFactory.createMenuOption("INICIAR DUELO", true);
         exitText = textFactory.createMenuOption("SAIR", false);
         exitSelectedText = textFactory.createMenuOption("SAIR", true);
-        menuBackground = new Texture(Gdx.files.internal("sprites/ui/menu_background.png"));
-        menuBackground.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        menuBackground = TextureLoader.loadLinear("sprites/ui/menu_background.png");
     }
 
     @Override

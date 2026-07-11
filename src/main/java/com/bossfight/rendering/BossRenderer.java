@@ -1,6 +1,5 @@
 package com.bossfight.rendering;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -17,8 +16,14 @@ import com.bossfight.entities.Player;
 public final class BossRenderer implements Disposable {
     private static final int SHEET_COLUMNS = 4;
     private static final int SHEET_ROWS = 2;
-    private static final int FORWARD_FRAME_INDEX = 2;
+    private static final int INTRO_FRAME_INDEX = 0;
+    private static final int IDLE_SIDE_FRAME_INDEX = 1;
+    private static final int IDLE_FORWARD_FRAME_INDEX = 2;
     private static final int MAGIC_FRAME_INDEX = 3;
+    private static final int VINE_FRAME_INDEX = 4;
+    private static final int POLLEN_BREATH_FRAME_INDEX = 5;
+    private static final int POLLEN_RAIN_FRAME_INDEX = 6;
+    private static final int DEFEATED_FRAME_INDEX = 7;
     private static final int FORWARD_RIGHT_TRIM = 24;
     private static final int MAGIC_LEFT_EXTENSION = 20;
     private static final float FRAME_ASPECT_RATIO = 3f / 4f;
@@ -33,10 +38,11 @@ public final class BossRenderer implements Disposable {
     private static final float ENRAGE_VERTICAL_SWAY = 4f;
     private static final float DEFEATED_INITIAL_FRAME_DURATION = 0.18f;
     private static final float DEFEATED_ANIMATION_FPS = 2f;
-    private static final AnimationSpec MAGIC_ANIMATION = new AnimationSpec(3, 11f);
-    private static final AnimationSpec VINE_ANIMATION = new AnimationSpec(4, 14f);
-    private static final AnimationSpec POLLEN_BREATH_ANIMATION = new AnimationSpec(5, 13f);
-    private static final AnimationSpec POLLEN_RAIN_ANIMATION = new AnimationSpec(6, 12f);
+    private static final AnimationSpec MAGIC_ANIMATION = new AnimationSpec(MAGIC_FRAME_INDEX, 11f);
+    private static final AnimationSpec VINE_ANIMATION = new AnimationSpec(VINE_FRAME_INDEX, 14f);
+    private static final AnimationSpec POLLEN_BREATH_ANIMATION =
+            new AnimationSpec(POLLEN_BREATH_FRAME_INDEX, 13f);
+    private static final AnimationSpec POLLEN_RAIN_ANIMATION = new AnimationSpec(POLLEN_RAIN_FRAME_INDEX, 12f);
     private static final PhaseTint PHASE_TWO_TINT = new PhaseTint(0.78f, 0.68f);
     private static final PhaseTint FINAL_RAGE_TINT = new PhaseTint(0.56f, 0.44f);
 
@@ -82,9 +88,9 @@ public final class BossRenderer implements Disposable {
     }
 
     public BossRenderer() {
-        spriteSheet = loadTexture("sprites/boss/flower_boss_sheet.png");
+        spriteSheet = TextureLoader.loadLinear("sprites/boss/flower_boss_sheet.png");
         frames = splitFrames(spriteSheet);
-        inbetweenSheet = loadTexture("sprites/boss/flower_boss_inbetweens.png");
+        inbetweenSheet = TextureLoader.loadLinear("sprites/boss/flower_boss_inbetweens.png");
         inbetweenFrames = splitFrames(inbetweenSheet);
     }
 
@@ -218,7 +224,8 @@ public final class BossRenderer implements Disposable {
     }
 
     private boolean isForwardIdleFrame(TextureRegion frame) {
-        return frame == frames[FORWARD_FRAME_INDEX] || frame == inbetweenFrames[FORWARD_FRAME_INDEX];
+        return frame == frames[IDLE_FORWARD_FRAME_INDEX]
+                || frame == inbetweenFrames[IDLE_FORWARD_FRAME_INDEX];
     }
 
     private float verticalPosition(AnimationSignals signals) {
@@ -316,15 +323,9 @@ public final class BossRenderer implements Disposable {
         inbetweenSheet.dispose();
     }
 
-    private Texture loadTexture(String path) {
-        Texture texture = new Texture(Gdx.files.internal(path));
-        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        return texture;
-    }
-
     private TextureRegion[] splitFrames(Texture sheet) {
         if (sheet.getWidth() % SHEET_COLUMNS != 0 || sheet.getHeight() % SHEET_ROWS != 0) {
-            throw new IllegalArgumentException("Boss sprite sheet must use an exact 4x2 grid");
+            throw new IllegalArgumentException("A spritesheet do chefe deve usar uma grade exata de 4x2");
         }
 
         int frameWidth = sheet.getWidth() / SHEET_COLUMNS;
@@ -338,7 +339,7 @@ public final class BossRenderer implements Disposable {
                 int frameX = column * frameWidth;
                 int regionWidth = frameWidth;
 
-                if (frameIndex == FORWARD_FRAME_INDEX) {
+                if (frameIndex == IDLE_FORWARD_FRAME_INDEX) {
                     regionWidth -= FORWARD_RIGHT_TRIM;
                 } else if (frameIndex == MAGIC_FRAME_INDEX) {
                     frameX -= MAGIC_LEFT_EXTENSION;
@@ -366,7 +367,9 @@ public final class BossRenderer implements Disposable {
 
     private TextureRegion selectFrame(Boss boss, boolean fightStarted, float elapsed, BossVisualState state) {
         if (!fightStarted) {
-            return ((int) (elapsed * 2.2f) & 1) == 0 ? frames[0] : inbetweenFrames[0];
+            return ((int) (elapsed * 2.2f) & 1) == 0
+                    ? frames[INTRO_FRAME_INDEX]
+                    : inbetweenFrames[INTRO_FRAME_INDEX];
         }
         if (boss.isDefeated()) {
             return defeatedAnimationFrame(boss);
@@ -384,20 +387,22 @@ public final class BossRenderer implements Disposable {
     private TextureRegion defeatedAnimationFrame(Boss boss) {
         float stateTime = boss.getVisualStateTime();
         if (stateTime < DEFEATED_INITIAL_FRAME_DURATION) {
-            return frames[7];
+            return frames[DEFEATED_FRAME_INDEX];
         }
 
         int frame = (int) ((stateTime - DEFEATED_INITIAL_FRAME_DURATION) * DEFEATED_ANIMATION_FPS);
-        return (frame & 1) == 0 ? inbetweenFrames[7] : frames[7];
+        return (frame & 1) == 0
+                ? inbetweenFrames[DEFEATED_FRAME_INDEX]
+                : frames[DEFEATED_FRAME_INDEX];
     }
 
     private TextureRegion idleAnimationFrame(Boss boss) {
         int frame = (int) (boss.getVisualStateTime() * 7.5f) % 4;
         return switch (frame) {
-            case 0 -> frames[1];
-            case 1 -> inbetweenFrames[1];
-            case 2 -> frames[2];
-            default -> inbetweenFrames[2];
+            case 0 -> frames[IDLE_SIDE_FRAME_INDEX];
+            case 1 -> inbetweenFrames[IDLE_SIDE_FRAME_INDEX];
+            case 2 -> frames[IDLE_FORWARD_FRAME_INDEX];
+            default -> inbetweenFrames[IDLE_FORWARD_FRAME_INDEX];
         };
     }
 

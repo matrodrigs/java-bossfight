@@ -9,6 +9,7 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.viewport.FitViewport;
 import com.bossfight.rendering.RetroTextFactory;
 import com.bossfight.rendering.TextureDraw;
+import com.bossfight.rendering.TextureLoader;
 import com.bossfight.config.Constants;
 
 public class EndScreen extends ScreenAdapter {
@@ -41,8 +42,7 @@ public class EndScreen extends ScreenAdapter {
         retryActionText = textFactory.createInstruction(victory ? "LUTAR OUTRA VEZ" : "REBOBINAR DUELO");
         menuKeyText = textFactory.createInstructionKey("ESC");
         menuActionText = textFactory.createInstruction("VOLTAR AO MENU");
-        background = new Texture(Gdx.files.internal(victory ? VICTORY_BACKGROUND_PATH : DEFEAT_BACKGROUND_PATH));
-        background.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
+        background = TextureLoader.loadLinear(victory ? VICTORY_BACKGROUND_PATH : DEFEAT_BACKGROUND_PATH);
     }
 
     @Override

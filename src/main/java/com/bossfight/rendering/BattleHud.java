@@ -1,6 +1,5 @@
 package com.bossfight.rendering;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
@@ -28,8 +27,8 @@ public final class BattleHud implements Disposable {
     private final TextureRegion specialClockFillRegion;
 
     public BattleHud(RetroTextFactory textFactory) {
-        hpBoxTexture = loadTexture("sprites/ui/player_hp_box.png");
-        specialClockTexture = loadTexture("sprites/ui/special_clock.png");
+        hpBoxTexture = TextureLoader.loadLinear("sprites/ui/player_hp_box.png");
+        specialClockTexture = TextureLoader.loadLinear("sprites/ui/special_clock.png");
         specialClockFillRegion = new TextureRegion(specialClockTexture);
         hpTexts = new Texture[Constants.PLAYER_MAX_HEALTH + 1];
         for (int i = 0; i < hpTexts.length; i++) {
@@ -47,12 +46,6 @@ public final class BattleHud implements Disposable {
     public void dispose() {
         hpBoxTexture.dispose();
         specialClockTexture.dispose();
-    }
-
-    private Texture loadTexture(String path) {
-        Texture texture = new Texture(Gdx.files.internal(path));
-        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        return texture;
     }
 
     private void drawPlayerHealthText(SpriteBatch batch, Player player) {

@@ -1,6 +1,5 @@
 package com.bossfight.rendering;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
@@ -11,76 +10,49 @@ import com.bossfight.config.Constants;
 public class VintageFloralBackground implements Disposable {
     private static final String ROOT = "sprites/background/floral_vintage/";
 
-    private final Texture sky;
-    private final Texture farHills;
-    private final Texture distantGarden;
-    private final Texture groundMain;
-    private final Texture groundEdgeLeft;
-    private final Texture groundEdgeRight;
-    private final Texture treeLeft;
-    private final Texture treeRight;
-    private final Texture shrubA;
-    private final Texture shrubB;
-    private final Texture shrubC;
-    private final Texture fgLeft;
-    private final Texture fgCenter;
-    private final Texture fgRight;
-    private final Texture decorWarm;
-    private final Texture decorDaisy;
+    private final Layer[] backLayers;
+    private final Layer[] foregroundLayers;
+
+    private record Layer(
+            Texture texture,
+            float x,
+            float y,
+            float width,
+            float height,
+            float parallax,
+            float alpha
+    ) {
+    }
 
     public VintageFloralBackground() {
-        sky = load("sky/sky_wash.png");
-        farHills = load("horizon/far_hills.png");
-        distantGarden = load("horizon/distant_garden.png");
-        groundMain = load("ground/ground_main.png");
-        groundEdgeLeft = load("ground/ground_edge_left.png");
-        groundEdgeRight = load("ground/ground_edge_right.png");
-        treeLeft = load("midground/tree_left_canopy.png");
-        treeRight = load("midground/tree_right_trunk.png");
-        shrubA = load("midground/shrub_cluster_a.png");
-        shrubB = load("midground/shrub_cluster_b.png");
-        shrubC = load("midground/shrub_cluster_c.png");
-        fgLeft = load("foreground/fg_foliage_left.png");
-        fgCenter = load("foreground/fg_foliage_center.png");
-        fgRight = load("foreground/fg_foliage_right.png");
-        decorWarm = load("decor/flower_cluster_warm.png");
-        decorDaisy = load("decor/flower_cluster_daisy.png");
+        backLayers = new Layer[] {
+                layer("sky/sky_wash.png", -40f, -26f, Constants.WORLD_WIDTH + 80f,
+                        Constants.WORLD_HEIGHT + 56f, 0.02f, 1f),
+                layer("horizon/far_hills.png", 84f, 160f, 1120f, 244f, 0.12f, 0.78f),
+                layer("horizon/distant_garden.png", -18f, 100f, 1320f, 172f, 0.24f, 0.78f),
+                layer("midground/tree_left_canopy.png", -12f, 100f, 240f, 370f, 0.38f, 0.84f),
+                layer("midground/tree_right_trunk.png", 1034f, 42f, 264f, 390f, 0.48f, 0.96f),
+                layer("midground/shrub_cluster_a.png", 175f, 98f, 310f, 92f, 0.58f, 0.74f),
+                layer("midground/shrub_cluster_b.png", 535f, 99f, 220f, 112f, 0.6f, 0.78f),
+                layer("midground/shrub_cluster_c.png", 792f, 98f, 340f, 118f, 0.62f, 0.8f),
+                layer("ground/ground_main.png", -40f, -20f, 1350f, 168f, 0.86f, 1f),
+                layer("ground/ground_edge_left.png", -50f, -10f, 160f, 178f, 0.88f, 1f),
+                layer("ground/ground_edge_right.png", 1160f, -10f, 160f, 156f, 0.88f, 1f),
+                layer("decor/flower_cluster_warm.png", 235f, 64f, 140f, 78f, 0.9f, 0.95f),
+                layer("decor/flower_cluster_daisy.png", 610f, 64f, 150f, 70f, 0.9f, 0.95f)
+        };
+        foregroundLayers = new Layer[] {
+                layer("foreground/fg_foliage_left.png", -20f, -44f, 370f, 168f, 1.08f, 0.96f),
+                layer("foreground/fg_foliage_center.png", 420f, -46f, 380f, 154f, 1.08f, 0.94f),
+                layer("foreground/fg_foliage_right.png", 890f, -44f, 390f, 154f, 1.08f, 0.96f)
+        };
     }
 
     public void renderBack(SpriteBatch batch, OrthographicCamera camera) {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
 
-        drawParallax(batch, camera, sky, -40f, -26f, Constants.WORLD_WIDTH + 80f, Constants.WORLD_HEIGHT + 56f,
-                0.02f, 1f);
-        drawParallax(batch, camera, farHills, 84f, 160f, 1120f, 244f,
-                0.12f, 0.78f);
-        drawParallax(batch, camera, distantGarden, -18f, 100f, 1320f, 172f,
-                0.24f, 0.78f);
-
-        drawParallax(batch, camera, treeLeft, -12f, 100f, 240f, 370f,
-                0.38f, 0.84f);
-        drawParallax(batch, camera, treeRight, 1034f, 42f, 264f, 390f,
-                0.48f, 0.96f);
-
-        drawParallax(batch, camera, shrubA, 175f, 98f, 310f, 92f,
-                0.58f, 0.74f);
-        drawParallax(batch, camera, shrubB, 535f, 99f, 220f, 112f,
-                0.6f, 0.78f);
-        drawParallax(batch, camera, shrubC, 792f, 98f, 340f, 118f,
-                0.62f, 0.8f);
-
-        drawParallax(batch, camera, groundMain, -40f, -20f, 1350f, 168f,
-                0.86f, 1f);
-        drawParallax(batch, camera, groundEdgeLeft, -50f, -10f, 160f, 178f,
-                0.88f, 1f);
-        drawParallax(batch, camera, groundEdgeRight, 1160f, -10f, 160f, 156f,
-                0.88f, 1f);
-
-        drawParallax(batch, camera, decorWarm, 235f, 64f, 140f, 78f,
-                0.9f, 0.95f);
-        drawParallax(batch, camera, decorDaisy, 610f, 64f, 150f, 70f,
-                0.9f, 0.95f);
+        drawLayers(batch, camera, backLayers);
 
         batch.setColor(Color.WHITE);
         batch.end();
@@ -90,50 +62,42 @@ public class VintageFloralBackground implements Disposable {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
 
-        drawParallax(batch, camera, fgLeft, -20f, -44f, 370f, 168f,
-                1.08f, 0.96f);
-        drawParallax(batch, camera, fgCenter, 420f, -46f, 380f, 154f,
-                1.08f, 0.94f);
-        drawParallax(batch, camera, fgRight, 890f, -44f, 390f, 154f,
-                1.08f, 0.96f);
+        drawLayers(batch, camera, foregroundLayers);
 
         batch.setColor(Color.WHITE);
         batch.end();
     }
 
-    private Texture load(String relativePath) {
-        Texture texture = new Texture(Gdx.files.internal(ROOT + relativePath));
-        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        return texture;
+    private Layer layer(String relativePath, float x, float y, float width, float height,
+                        float parallax, float alpha) {
+        return new Layer(TextureLoader.loadLinear(ROOT + relativePath),
+                x, y, width, height, parallax, alpha);
     }
 
-    private void drawParallax(SpriteBatch batch, OrthographicCamera camera, Texture texture, float x, float y,
-            float width, float height, float parallax, float alpha) {
+    private void drawLayers(SpriteBatch batch, OrthographicCamera camera, Layer[] layers) {
+        for (Layer layer : layers) {
+            drawParallax(batch, camera, layer);
+        }
+    }
+
+    private void drawParallax(SpriteBatch batch, OrthographicCamera camera, Layer layer) {
         float cameraDeltaX = camera.position.x - Constants.WORLD_WIDTH * 0.5f;
         float cameraDeltaY = camera.position.y - Constants.WORLD_HEIGHT * 0.5f;
-        float drawX = x + cameraDeltaX * (1f - parallax);
-        float drawY = y + cameraDeltaY * (1f - parallax);
-        batch.setColor(1f, 1f, 1f, alpha);
-        batch.draw(texture, drawX, drawY, width, height);
+        float drawX = layer.x() + cameraDeltaX * (1f - layer.parallax());
+        float drawY = layer.y() + cameraDeltaY * (1f - layer.parallax());
+        batch.setColor(1f, 1f, 1f, layer.alpha());
+        batch.draw(layer.texture(), drawX, drawY, layer.width(), layer.height());
     }
 
     @Override
     public void dispose() {
-        sky.dispose();
-        farHills.dispose();
-        distantGarden.dispose();
-        groundMain.dispose();
-        groundEdgeLeft.dispose();
-        groundEdgeRight.dispose();
-        treeLeft.dispose();
-        treeRight.dispose();
-        shrubA.dispose();
-        shrubB.dispose();
-        shrubC.dispose();
-        fgLeft.dispose();
-        fgCenter.dispose();
-        fgRight.dispose();
-        decorWarm.dispose();
-        decorDaisy.dispose();
+        disposeLayers(backLayers);
+        disposeLayers(foregroundLayers);
+    }
+
+    private void disposeLayers(Layer[] layers) {
+        for (Layer layer : layers) {
+            layer.texture().dispose();
+        }
     }
 }
