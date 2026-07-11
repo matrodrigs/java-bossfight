@@ -8,6 +8,15 @@ import com.bossfight.entities.Projectile;
 import com.bossfight.config.Constants;
 
 public class AttackTwoState implements BossState {
+    private static final float PHASE_ONE_INITIAL_WARNING = 0.58f;
+    private static final float PHASE_TWO_INITIAL_WARNING = 0.70f;
+    private static final float PHASE_ONE_VOLLEY_INTERVAL = 0.52f;
+    private static final float PHASE_TWO_VOLLEY_INTERVAL = 0.48f;
+    private static final float PHASE_ONE_PROJECTILE_SPEED = 430f;
+    private static final float PHASE_TWO_PROJECTILE_SPEED = 450f;
+    private static final float PHASE_ONE_SPREAD = 0.16f;
+    private static final float PHASE_TWO_SPREAD = 0.27f;
+
     private float elapsed;
     private float burstTimer;
     private int volleys;
@@ -20,10 +29,10 @@ public class AttackTwoState implements BossState {
     @Override
     public void enter(Boss boss) {
         elapsed = 0f;
-        burstTimer = 0.58f;
+        burstTimer = boss.isPhaseTwo() ? PHASE_TWO_INITIAL_WARNING : PHASE_ONE_INITIAL_WARNING;
         volleys = 0;
         boss.emitSound(BossSoundEvent.MAGIC_CHARGE);
-        boss.showTelegraph(new Color(0.96f, 0.74f, 0.18f, 1f), 0.58f);
+        boss.showTelegraph(new Color(0.96f, 0.74f, 0.18f, 1f), burstTimer);
     }
 
     @Override
@@ -35,19 +44,19 @@ public class AttackTwoState implements BossState {
             boss.emitSound(BossSoundEvent.MAGIC_VOLLEY);
             fireVolley(boss, projectileSpawner, player);
             volleys++;
-            burstTimer = boss.isPhaseTwo() ? 0.38f : 0.52f;
+            burstTimer = boss.isPhaseTwo() ? PHASE_TWO_VOLLEY_INTERVAL : PHASE_ONE_VOLLEY_INTERVAL;
             boss.showTelegraph(new Color(0.96f, 0.74f, 0.18f, 1f), Math.min(0.32f, burstTimer));
         }
 
         int maxVolleys = boss.isPhaseTwo() ? 5 : 4;
-        if (volleys >= maxVolleys && elapsed >= (boss.isPhaseTwo() ? 2.25f : 2.55f)) {
+        if (volleys >= maxVolleys && elapsed >= (boss.isPhaseTwo() ? 2.70f : 2.55f)) {
             boss.finishCurrentAttack();
         }
     }
 
     private void fireVolley(Boss boss, ProjectileSpawner projectileSpawner, Player player) {
         int projectileCount = boss.isPhaseTwo() ? 3 : 2;
-        float speed = boss.isPhaseTwo() ? 490f : 430f;
+        float speed = boss.isPhaseTwo() ? PHASE_TWO_PROJECTILE_SPEED : PHASE_ONE_PROJECTILE_SPEED;
         float originX = boss.getCenterX() - 126f;
         float originY = Constants.FLOOR_Y + (boss.isPhaseTwo() ? 392f : 372f);
         Vector2 baseDirection = new Vector2(
@@ -56,7 +65,8 @@ public class AttackTwoState implements BossState {
         ).nor();
 
         for (int i = 0; i < projectileCount; i++) {
-            float spread = (i - (projectileCount - 1) * 0.5f) * (boss.isPhaseTwo() ? 0.22f : 0.16f);
+            float spread = (i - (projectileCount - 1) * 0.5f)
+                    * (boss.isPhaseTwo() ? PHASE_TWO_SPREAD : PHASE_ONE_SPREAD);
             float angle = (float) Math.atan2(baseDirection.y, baseDirection.x) + spread + MathUtils.random(-0.04f, 0.04f);
             Projectile.Kind kind = i % 2 == 0 ? Projectile.Kind.BOSS_ACORN : Projectile.Kind.BOSS_SEED;
             float sizeBonus = kind == Projectile.Kind.BOSS_ACORN ? 6f : 2f;
@@ -87,7 +97,7 @@ public class AttackTwoState implements BossState {
             }
         }
 
-        if (boss.isPhaseTwo() && volleys % 2 == 1) {
+        if (boss.isPhaseTwo() && volleys == 2) {
             fireArcingAcorn(boss, projectileSpawner, player);
         }
     }

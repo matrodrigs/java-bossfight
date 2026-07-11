@@ -10,10 +10,10 @@ public class AttackFourState implements BossState {
     private static final int TOTAL_CORRIDOR_SPORES = 7;
     private static final int MAX_REPEATED_LANES = 2;
     private static final float FIRST_SPORE_DELAY = 0.32f;
-    private static final float MIN_SPORE_INTERVAL = 0.38f;
-    private static final float MAX_SPORE_INTERVAL = 0.50f;
-    private static final float LOW_TO_HIGH_INTERVAL = 0.90f;
-    private static final float LAST_SPORE_TRAVEL_TIME = 1.25f;
+    private static final float MIN_SPORE_INTERVAL = 0.34f;
+    private static final float MAX_SPORE_INTERVAL = 0.44f;
+    private static final float LOW_TO_HIGH_INTERVAL = 0.80f;
+    private static final float LAST_SPORE_ANIMATION_HOLD = 0.85f;
     private static final float SPORE_SPEED = 690f;
     private static final float SPORE_WIDTH = Constants.BOSS_PROJECTILE_WIDTH + 32f;
     private static final float SPORE_HEIGHT = Constants.BOSS_PROJECTILE_HEIGHT + 28f;
@@ -53,7 +53,7 @@ public class AttackFourState implements BossState {
             boss.emitSound(BossSoundEvent.POLLEN_DROP);
 
             if (puffsSpawned == TOTAL_CORRIDOR_SPORES) {
-                finishTimer = LAST_SPORE_TRAVEL_TIME;
+                finishTimer = LAST_SPORE_ANIMATION_HOLD;
             } else {
                 nextLane = chooseNextLane(spawnedLane);
                 puffTimer = intervalBetween(spawnedLane, nextLane);
