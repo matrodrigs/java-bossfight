@@ -13,39 +13,42 @@ import com.bossfight.systems.RetroTextFactory;
 import com.bossfight.systems.TextureDraw;
 
 final class ControlsOverlay {
-    private static final String[] KEYS = {"A  D", "ESPAÇO", "SHIFT", "MOUSE 1", "MOUSE 2"};
+    private static final String[] KEY_LABELS = {"A", "D", "ESPAÇO", "SHIFT"};
     private static final String[] ACTIONS = {"MOVER", "PULAR", "DASH", "ATIRAR", "ESPECIAL"};
-    private static final float[] KEY_CAP_WIDTHS = {82f, 122f, 104f, 122f, 122f};
     private static final float DISPLAY_DURATION = 5.4f;
     private static final float FADE_IN_DURATION = 0.32f;
     private static final float FADE_OUT_START = 4.25f;
     private static final float FADE_OUT_DURATION = DISPLAY_DURATION - FADE_OUT_START;
-    private static final float PANEL_WIDTH = 1040f;
-    private static final float PANEL_HEIGHT = 116f;
+    private static final float PANEL_WIDTH = 900f;
+    private static final float PANEL_HEIGHT = 118f;
     private static final float PANEL_X = (Constants.WORLD_WIDTH - PANEL_WIDTH) * 0.5f;
-    private static final float PANEL_Y = 574f;
-    private static final float HEADER_CENTER_X = PANEL_X + 102f;
-    private static final float SEPARATOR_X = PANEL_X + 202f;
-    private static final float FIRST_CONTROL_X = PANEL_X + 280f;
-    private static final float CONTROL_GAP = 168f;
-    private static final float KEY_CENTER_Y = PANEL_Y + 71f;
-    private static final float ACTION_CENTER_Y = PANEL_Y + 30f;
+    private static final float PANEL_Y = 558f;
+    private static final float FIRST_CONTROL_X = PANEL_X + 110f;
+    private static final float CONTROL_GAP = 170f;
+    private static final float ICON_CENTER_Y = PANEL_Y + 72f;
+    private static final float ACTION_CENTER_Y = PANEL_Y + 28f;
+    private static final float RIBBON_WIDTH = 218f;
+    private static final float RIBBON_HEIGHT = 44f;
 
     private static boolean shownThisSession;
 
     private final Texture titleText;
-    private final Texture subtitleText;
-    private final Texture[] keyTexts = new Texture[KEYS.length];
+    private final Texture[] keyTexts = new Texture[KEY_LABELS.length];
     private final Texture[] actionTexts = new Texture[ACTIONS.length];
+    private final Texture holdText;
+    private final Texture clickText;
     private float displayTimer = DISPLAY_DURATION;
 
     ControlsOverlay(RetroTextFactory textFactory) {
         titleText = textFactory.createMenuOption("COMANDOS", true);
-        subtitleText = textFactory.createInstruction("DO DUELO");
-        for (int i = 0; i < KEYS.length; i++) {
-            keyTexts[i] = textFactory.createInstructionKey(KEYS[i]);
+        for (int i = 0; i < KEY_LABELS.length; i++) {
+            keyTexts[i] = textFactory.createInstructionKey(KEY_LABELS[i]);
+        }
+        for (int i = 0; i < ACTIONS.length; i++) {
             actionTexts[i] = textFactory.createInstruction(ACTIONS[i]);
         }
+        holdText = textFactory.createInstruction("SEGURE");
+        clickText = textFactory.createInstruction("CLIQUE");
     }
 
     void showOnce() {
@@ -80,38 +83,95 @@ final class ControlsOverlay {
         shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
 
-        roundedRect(shapeRenderer, PANEL_X + 7f, panelY - 7f, PANEL_WIDTH, PANEL_HEIGHT, 12f,
-                0.025f, 0.018f, 0.012f, alpha * 0.44f);
+        roundedRect(shapeRenderer, PANEL_X + 6f, panelY - 6f, PANEL_WIDTH, PANEL_HEIGHT, 12f,
+                0.025f, 0.018f, 0.012f, alpha * 0.34f);
         roundedRect(shapeRenderer, PANEL_X, panelY, PANEL_WIDTH, PANEL_HEIGHT, 12f,
-                0.23f, 0.075f, 0.045f, alpha * 0.98f);
-        roundedRect(shapeRenderer, PANEL_X + 5f, panelY + 5f, PANEL_WIDTH - 10f, PANEL_HEIGHT - 10f, 9f,
-                0.94f, 0.82f, 0.57f, alpha * 0.97f);
-        roundedRect(shapeRenderer, PANEL_X + 11f, panelY + 11f, PANEL_WIDTH - 22f, PANEL_HEIGHT - 22f, 6f,
-                0.32f, 0.11f, 0.065f, alpha * 0.95f);
-        roundedRect(shapeRenderer, PANEL_X + 14f, panelY + 14f, PANEL_WIDTH - 28f, PANEL_HEIGHT - 28f, 5f,
+                0.28f, 0.085f, 0.045f, alpha * 0.97f);
+        roundedRect(shapeRenderer, PANEL_X + 6f, panelY + 6f, PANEL_WIDTH - 12f, PANEL_HEIGHT - 12f, 8f,
                 0.965f, 0.88f, 0.69f, alpha * 0.98f);
 
-        shapeRenderer.setColor(0.37f, 0.12f, 0.07f, alpha * 0.72f);
-        shapeRenderer.rect(SEPARATOR_X, panelY + 19f, 3f, PANEL_HEIGHT - 38f);
+        shapeRenderer.setColor(0.43f, 0.14f, 0.075f, alpha * 0.55f);
+        shapeRenderer.rect(PANEL_X + 18f, panelY + 13f, PANEL_WIDTH - 36f, 2f);
+        shapeRenderer.rect(PANEL_X + 18f, panelY + PANEL_HEIGHT - 15f, PANEL_WIDTH - 36f, 2f);
 
-        for (int i = 0; i < KEY_CAP_WIDTHS.length; i++) {
-            float centerX = FIRST_CONTROL_X + i * CONTROL_GAP;
-            float capWidth = KEY_CAP_WIDTHS[i];
-            roundedRect(shapeRenderer, centerX - capWidth * 0.5f + 2f, panelY + 51f,
-                    capWidth, 39f, 8f, 0.17f, 0.055f, 0.035f, alpha * 0.42f);
-            roundedRect(shapeRenderer, centerX - capWidth * 0.5f, panelY + 55f,
-                    capWidth, 37f, 8f, 0.36f, 0.12f, 0.07f, alpha * 0.96f);
-            roundedRect(shapeRenderer, centerX - capWidth * 0.5f + 4f, panelY + 59f,
-                    capWidth - 8f, 27f, 5f, 0.98f, 0.79f, 0.29f, alpha * 0.94f);
-        }
-
-        float ornamentY = panelY + PANEL_HEIGHT * 0.5f;
-        shapeRenderer.setColor(0.78f, 0.38f, 0.07f, alpha * 0.9f);
-        shapeRenderer.circle(PANEL_X + 15f, ornamentY, 4f);
-        shapeRenderer.circle(PANEL_X + PANEL_WIDTH - 15f, ornamentY, 4f);
+        drawKeyboardControls(shapeRenderer, panelY, alpha);
+        drawMouse(shapeRenderer, controlX(3), ICON_CENTER_Y + panelY - PANEL_Y, true, alpha);
+        drawMouse(shapeRenderer, controlX(4), ICON_CENTER_Y + panelY - PANEL_Y, false, alpha);
+        drawTitleRibbon(shapeRenderer, panelY, alpha);
 
         shapeRenderer.end();
         Gdx.gl.glDisable(GL20.GL_BLEND);
+    }
+
+    private void drawKeyboardControls(ShapeRenderer shapeRenderer, float panelY, float alpha) {
+        float iconY = ICON_CENTER_Y + panelY - PANEL_Y;
+        drawKeyCap(shapeRenderer, controlX(0) - 26f, iconY, 44f, alpha);
+        drawKeyCap(shapeRenderer, controlX(0) + 26f, iconY, 44f, alpha);
+        drawKeyCap(shapeRenderer, controlX(1), iconY, 112f, alpha);
+        drawKeyCap(shapeRenderer, controlX(2), iconY, 102f, alpha);
+    }
+
+    private void drawKeyCap(ShapeRenderer shapeRenderer, float centerX, float centerY, float width, float alpha) {
+        float height = 38f;
+        float x = centerX - width * 0.5f;
+        float y = centerY - height * 0.5f;
+        roundedRect(shapeRenderer, x + 2f, y - 3f, width, height, 7f,
+                0.16f, 0.05f, 0.03f, alpha * 0.4f);
+        roundedRect(shapeRenderer, x, y, width, height, 7f,
+                0.38f, 0.115f, 0.055f, alpha * 0.96f);
+        roundedRect(shapeRenderer, x + 4f, y + 5f, width - 8f, height - 10f, 4f,
+                0.98f, 0.79f, 0.29f, alpha * 0.94f);
+    }
+
+    private void drawMouse(ShapeRenderer shapeRenderer, float centerX, float centerY, boolean leftButton,
+                           float alpha) {
+        float width = 50f;
+        float height = 56f;
+        float x = centerX - width * 0.5f;
+        float y = centerY - height * 0.5f;
+
+        roundedRect(shapeRenderer, x + 3f, y - 3f, width, height, 17f,
+                0.16f, 0.05f, 0.03f, alpha * 0.38f);
+        roundedRect(shapeRenderer, x, y, width, height, 17f,
+                0.38f, 0.115f, 0.055f, alpha * 0.96f);
+        roundedRect(shapeRenderer, x + 4f, y + 4f, width - 8f, height - 8f, 13f,
+                0.97f, 0.86f, 0.66f, alpha * 0.98f);
+
+        float selectedX = leftButton ? x + 6f : centerX + 2f;
+        roundedRect(shapeRenderer, selectedX, y + 31f, 17f, 17f, 5f,
+                0.98f, 0.68f, 0.14f, alpha * 0.96f);
+        shapeRenderer.setColor(0.37f, 0.11f, 0.055f, alpha * 0.78f);
+        shapeRenderer.rect(centerX - 1f, y + 29f, 2f, 19f);
+        roundedRect(shapeRenderer, centerX - 3f, y + 19f, 6f, 11f, 3f,
+                0.37f, 0.11f, 0.055f, alpha * 0.82f);
+    }
+
+    private void drawTitleRibbon(ShapeRenderer shapeRenderer, float panelY, float alpha) {
+        float centerX = Constants.WORLD_WIDTH * 0.5f;
+        float ribbonX = centerX - RIBBON_WIDTH * 0.5f;
+        float ribbonY = panelY + PANEL_HEIGHT - 16f;
+
+        shapeRenderer.setColor(0.17f, 0.05f, 0.03f, alpha * 0.42f);
+        shapeRenderer.triangle(ribbonX - 22f + 3f, ribbonY - 3f,
+                ribbonX + 10f + 3f, ribbonY + RIBBON_HEIGHT * 0.5f - 3f,
+                ribbonX - 22f + 3f, ribbonY + RIBBON_HEIGHT - 3f);
+        shapeRenderer.triangle(ribbonX + RIBBON_WIDTH + 22f + 3f, ribbonY - 3f,
+                ribbonX + RIBBON_WIDTH - 10f + 3f, ribbonY + RIBBON_HEIGHT * 0.5f - 3f,
+                ribbonX + RIBBON_WIDTH + 22f + 3f, ribbonY + RIBBON_HEIGHT - 3f);
+        roundedRect(shapeRenderer, ribbonX + 3f, ribbonY - 3f, RIBBON_WIDTH, RIBBON_HEIGHT, 8f,
+                0.17f, 0.05f, 0.03f, alpha * 0.42f);
+
+        shapeRenderer.setColor(0.38f, 0.115f, 0.055f, alpha * 0.98f);
+        shapeRenderer.triangle(ribbonX - 22f, ribbonY,
+                ribbonX + 10f, ribbonY + RIBBON_HEIGHT * 0.5f,
+                ribbonX - 22f, ribbonY + RIBBON_HEIGHT);
+        shapeRenderer.triangle(ribbonX + RIBBON_WIDTH + 22f, ribbonY,
+                ribbonX + RIBBON_WIDTH - 10f, ribbonY + RIBBON_HEIGHT * 0.5f,
+                ribbonX + RIBBON_WIDTH + 22f, ribbonY + RIBBON_HEIGHT);
+        roundedRect(shapeRenderer, ribbonX, ribbonY, RIBBON_WIDTH, RIBBON_HEIGHT, 8f,
+                0.38f, 0.115f, 0.055f, alpha * 0.98f);
+        roundedRect(shapeRenderer, ribbonX + 5f, ribbonY + 5f, RIBBON_WIDTH - 10f, RIBBON_HEIGHT - 10f, 5f,
+                0.98f, 0.73f, 0.22f, alpha * 0.96f);
     }
 
     private void drawText(SpriteBatch batch, OrthographicCamera camera, float panelY, float alpha) {
@@ -119,18 +179,33 @@ final class ControlsOverlay {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
         batch.setColor(1f, 1f, 1f, alpha);
-        TextureDraw.centeredWithin(batch, titleText, HEADER_CENTER_X, PANEL_Y + 72f + yDelta, 0.43f, 178f);
-        TextureDraw.centeredWithin(batch, subtitleText, HEADER_CENTER_X, PANEL_Y + 35f + yDelta, 0.31f, 150f);
 
-        for (int i = 0; i < keyTexts.length; i++) {
-            float centerX = FIRST_CONTROL_X + i * CONTROL_GAP;
-            TextureDraw.centeredWithin(batch, keyTexts[i], centerX, KEY_CENTER_Y + yDelta, 0.34f,
-                    KEY_CAP_WIDTHS[i] - 8f);
-            TextureDraw.centeredWithin(batch, actionTexts[i], centerX, ACTION_CENTER_Y + yDelta, 0.32f, 132f);
+        float titleY = panelY + PANEL_HEIGHT + 6f;
+        TextureDraw.centeredWithin(batch, titleText, Constants.WORLD_WIDTH * 0.5f, titleY, 0.45f,
+                RIBBON_WIDTH - 22f);
+
+        drawKeyText(batch, keyTexts[0], controlX(0) - 26f, ICON_CENTER_Y + yDelta, 34f);
+        drawKeyText(batch, keyTexts[1], controlX(0) + 26f, ICON_CENTER_Y + yDelta, 34f);
+        drawKeyText(batch, keyTexts[2], controlX(1), ICON_CENTER_Y + yDelta, 98f);
+        drawKeyText(batch, keyTexts[3], controlX(2), ICON_CENTER_Y + yDelta, 88f);
+
+        for (int i = 0; i < actionTexts.length; i++) {
+            float actionY = ACTION_CENTER_Y + yDelta + (i >= 3 ? 4f : 0f);
+            TextureDraw.centeredWithin(batch, actionTexts[i], controlX(i), actionY, 0.35f, 138f);
         }
+        TextureDraw.centeredWithin(batch, holdText, controlX(3), ACTION_CENTER_Y - 17f + yDelta, 0.22f, 100f);
+        TextureDraw.centeredWithin(batch, clickText, controlX(4), ACTION_CENTER_Y - 17f + yDelta, 0.22f, 100f);
 
         batch.setColor(Color.WHITE);
         batch.end();
+    }
+
+    private void drawKeyText(SpriteBatch batch, Texture texture, float centerX, float centerY, float maxWidth) {
+        TextureDraw.centeredWithin(batch, texture, centerX, centerY, 0.34f, maxWidth);
+    }
+
+    private float controlX(int index) {
+        return FIRST_CONTROL_X + index * CONTROL_GAP;
     }
 
     private float alpha() {

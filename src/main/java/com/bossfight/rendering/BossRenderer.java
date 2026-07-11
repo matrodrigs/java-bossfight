@@ -28,6 +28,36 @@ public final class BossRenderer implements Disposable {
     private final Texture inbetweenSheet;
     private final TextureRegion[] inbetweenFrames;
 
+    private record AnimationSignals(
+            BossVisualState state,
+            boolean defeated,
+            float stateTime,
+            float breath,
+            float windup,
+            float actionKick,
+            float actionFollowThrough,
+            float hitKick,
+            float attackPulse
+    ) {
+        private boolean is(BossVisualState expectedState) {
+            return state == expectedState;
+        }
+    }
+
+    private record BossPose(
+            TextureRegion frame,
+            float x,
+            float y,
+            float width,
+            float height,
+            float scaleX,
+            float scaleY,
+            float rotation,
+            float hitKick,
+            boolean flipX
+    ) {
+    }
+
     public BossRenderer() {
         spriteSheet = loadTexture("sprites/boss/flower_boss_sheet.png");
         frames = splitFrames(spriteSheet);
@@ -58,92 +88,163 @@ public final class BossRenderer implements Disposable {
 
     public void render(SpriteBatch batch, OrthographicCamera camera, Boss boss, Player player,
                        boolean fightStarted, float elapsed) {
-        BossVisualState state = boss.getVisualState();
-        boolean defeated = boss.isDefeated();
-        boolean vineStrike = state == BossVisualState.VINE_STRIKE;
-        boolean magicHands = state == BossVisualState.MAGIC_HANDS;
-        boolean pollenRain = state == BossVisualState.POLLEN_RAIN;
-        boolean pollenBreath = state == BossVisualState.POLLEN_BREATH;
-        boolean phaseTransition = state == BossVisualState.ENRAGING;
-        TextureRegion frame = selectFrame(boss, fightStarted, elapsed, state);
-        boolean forwardIdleFrame = frame == frames[FORWARD_FRAME_INDEX]
-                || frame == inbetweenFrames[FORWARD_FRAME_INDEX];
+        BossPose pose = createPose(boss, player, fightStarted, elapsed);
+        drawPose(batch, camera, boss, pose);
+    }
 
+    private BossPose createPose(Boss boss, Player player, boolean fightStarted, float elapsed) {
+        BossVisualState state = boss.getVisualState();
+        TextureRegion frame = selectFrame(boss, fightStarted, elapsed, state);
+        AnimationSignals signals = createAnimationSignals(boss, state);
+        float height = visualHeight(boss, signals);
+        float width = height * frame.getRegionWidth() / frame.getRegionHeight();
+
+        return new BossPose(
+                frame,
+                horizontalPosition(boss, frame, width, height, signals),
+                verticalPosition(signals),
+                width,
+                height,
+                horizontalScale(signals),
+                verticalScale(signals),
+                rotation(signals),
+                signals.hitKick(),
+                state == BossVisualState.POLLEN_BREATH && player.getCenterX() < boss.getCenterX()
+        );
+    }
+
+    private AnimationSignals createAnimationSignals(Boss boss, BossVisualState state) {
+        boolean defeated = boss.isDefeated();
         float stateTime = boss.getVisualStateTime();
-        float breath = defeated ? 0f : MathUtils.sin(stateTime * 3.4f);
-        float windup = boss.isTelegraphing() ? smoothStep(1f - boss.getTelegraphAlpha()) : 0f;
-        float actionTime = 1f - boss.getActionImpulse();
-        float actionKick = boss.getActionImpulse() > 0f ? MathUtils.sin(actionTime * MathUtils.PI) : 0f;
-        float actionFollowThrough = boss.getActionImpulse() > 0f
-                ? MathUtils.sin(actionTime * MathUtils.PI2) * (1f - actionTime)
-                : 0f;
-        float hitTime = 1f - boss.getHitReaction();
-        float hitKick = boss.getHitReaction() > 0f ? MathUtils.sin(hitTime * MathUtils.PI) : 0f;
-        float attackPulse = !defeated && (vineStrike || magicHands || pollenRain || pollenBreath || phaseTransition)
+        float actionImpulse = boss.getActionImpulse();
+        float hitReaction = boss.getHitReaction();
+        float actionTime = 1f - actionImpulse;
+        float hitTime = 1f - hitReaction;
+        float attackPulse = !defeated && isAttackState(state)
                 ? MathUtils.sin(stateTime * 9.5f)
                 : 0f;
-        float visualHeight = 506f + breath * 5f + (boss.isPhaseTwo() ? 18f : 0f);
-        visualHeight += vineStrike ? windup * 18f : 0f;
-        visualHeight += phaseTransition ? windup * 24f + actionKick * 12f : 0f;
-        visualHeight -= defeated ? smoothStep(MathUtils.clamp(stateTime / 0.42f, 0f, 1f)) * 24f : 0f;
-        float visualWidth = visualHeight * frame.getRegionWidth() / frame.getRegionHeight();
 
-        float x = boss.getCenterX() - visualWidth * 0.5f - 18f;
-        if (forwardIdleFrame) {
-            float uncroppedVisualWidth = visualHeight * FRAME_ASPECT_RATIO;
-            x -= (uncroppedVisualWidth - visualWidth) * 0.5f;
+        return new AnimationSignals(
+                state,
+                defeated,
+                stateTime,
+                defeated ? 0f : MathUtils.sin(stateTime * 3.4f),
+                boss.isTelegraphing() ? smoothStep(1f - boss.getTelegraphAlpha()) : 0f,
+                actionImpulse > 0f ? MathUtils.sin(actionTime * MathUtils.PI) : 0f,
+                actionImpulse > 0f ? MathUtils.sin(actionTime * MathUtils.PI2) * (1f - actionTime) : 0f,
+                hitReaction > 0f ? MathUtils.sin(hitTime * MathUtils.PI) : 0f,
+                attackPulse
+        );
+    }
+
+    private boolean isAttackState(BossVisualState state) {
+        return state == BossVisualState.VINE_STRIKE
+                || state == BossVisualState.MAGIC_HANDS
+                || state == BossVisualState.POLLEN_RAIN
+                || state == BossVisualState.POLLEN_BREATH
+                || state == BossVisualState.ENRAGING;
+    }
+
+    private float visualHeight(Boss boss, AnimationSignals signals) {
+        float height = 506f + signals.breath() * 5f + (boss.isPhaseTwo() ? 18f : 0f);
+        height += signals.is(BossVisualState.VINE_STRIKE) ? signals.windup() * 18f : 0f;
+        height += signals.is(BossVisualState.ENRAGING)
+                ? signals.windup() * 24f + signals.actionKick() * 12f
+                : 0f;
+        height -= signals.defeated()
+                ? smoothStep(MathUtils.clamp(signals.stateTime() / 0.42f, 0f, 1f)) * 24f
+                : 0f;
+        return height;
+    }
+
+    private float horizontalPosition(Boss boss, TextureRegion frame, float width, float height,
+                                     AnimationSignals signals) {
+        float x = boss.getCenterX() - width * 0.5f - 18f;
+        if (isForwardIdleFrame(frame)) {
+            float uncroppedWidth = height * FRAME_ASPECT_RATIO;
+            x -= (uncroppedWidth - width) * 0.5f;
         }
-        x += vineStrike
-                ? attackPulse * 5f - 18f - windup * 18f - actionKick * 26f + actionFollowThrough * 11f
-                : 0f;
-        x += magicHands
-                ? MathUtils.sin(stateTime * 7f) * 5f - windup * 10f - actionKick * 8f
-                + actionFollowThrough * 5f
-                : 0f;
-        x += pollenBreath
-                ? -windup * 18f + attackPulse * 4f - actionKick * 18f + actionFollowThrough * 8f
-                : 0f;
-        x += hitKick * 14f;
+        if (signals.is(BossVisualState.VINE_STRIKE)) {
+            x += signals.attackPulse() * 5f - 18f - signals.windup() * 18f
+                    - signals.actionKick() * 26f + signals.actionFollowThrough() * 11f;
+        }
+        if (signals.is(BossVisualState.MAGIC_HANDS)) {
+            x += MathUtils.sin(signals.stateTime() * 7f) * 5f - signals.windup() * 10f
+                    - signals.actionKick() * 8f + signals.actionFollowThrough() * 5f;
+        }
+        if (signals.is(BossVisualState.POLLEN_BREATH)) {
+            x += -signals.windup() * 18f + signals.attackPulse() * 4f
+                    - signals.actionKick() * 18f + signals.actionFollowThrough() * 8f;
+        }
+        return x + signals.hitKick() * 14f;
+    }
 
-        float y = Constants.FLOOR_Y - 30f;
-        y += breath * 2.5f;
-        y += pollenRain ? MathUtils.sin(stateTime * 8.5f) * 6f + actionKick * 5f : 0f;
-        y += phaseTransition ? attackPulse * 6f : 0f;
-        y -= defeated ? smoothStep(MathUtils.clamp(stateTime / 0.42f, 0f, 1f)) * 16f : 0f;
+    private boolean isForwardIdleFrame(TextureRegion frame) {
+        return frame == frames[FORWARD_FRAME_INDEX] || frame == inbetweenFrames[FORWARD_FRAME_INDEX];
+    }
 
-        float scaleX = 1f + breath * 0.014f + (magicHands ? attackPulse * 0.02f : 0f)
-                + actionKick * (vineStrike || pollenBreath ? 0.035f : 0.018f)
-                + actionFollowThrough * 0.012f
-                - hitKick * 0.025f;
-        float scaleY = 1f - breath * 0.01f + (vineStrike ? attackPulse * 0.028f : 0f)
-                - actionKick * (vineStrike || pollenBreath ? 0.045f : 0.018f)
-                - actionFollowThrough * 0.01f
-                + hitKick * 0.035f;
-        float rotation = MathUtils.sin(stateTime * 2.1f) * 0.8f
-                + attackPulse * (pollenRain || phaseTransition ? 1.4f : 0.45f)
-                + actionKick * (vineStrike ? -2.4f : 1.2f)
-                + actionFollowThrough * (vineStrike ? 2.2f : -1.4f)
-                + hitKick * 2.8f;
-        boolean flipX = pollenBreath && player.getCenterX() < boss.getCenterX();
+    private float verticalPosition(AnimationSignals signals) {
+        float y = Constants.FLOOR_Y - 30f + signals.breath() * 2.5f;
+        if (signals.is(BossVisualState.POLLEN_RAIN)) {
+            y += MathUtils.sin(signals.stateTime() * 8.5f) * 6f + signals.actionKick() * 5f;
+        }
+        if (signals.is(BossVisualState.ENRAGING)) {
+            y += signals.attackPulse() * 6f;
+        }
+        if (signals.defeated()) {
+            y -= smoothStep(MathUtils.clamp(signals.stateTime() / 0.42f, 0f, 1f)) * 16f;
+        }
+        return y;
+    }
 
+    private float horizontalScale(AnimationSignals signals) {
+        return 1f + signals.breath() * 0.014f
+                + (signals.is(BossVisualState.MAGIC_HANDS) ? signals.attackPulse() * 0.02f : 0f)
+                + signals.actionKick() * (signals.is(BossVisualState.VINE_STRIKE)
+                || signals.is(BossVisualState.POLLEN_BREATH) ? 0.035f : 0.018f)
+                + signals.actionFollowThrough() * 0.012f
+                - signals.hitKick() * 0.025f;
+    }
+
+    private float verticalScale(AnimationSignals signals) {
+        return 1f - signals.breath() * 0.01f
+                + (signals.is(BossVisualState.VINE_STRIKE) ? signals.attackPulse() * 0.028f : 0f)
+                - signals.actionKick() * (signals.is(BossVisualState.VINE_STRIKE)
+                || signals.is(BossVisualState.POLLEN_BREATH) ? 0.045f : 0.018f)
+                - signals.actionFollowThrough() * 0.01f
+                + signals.hitKick() * 0.035f;
+    }
+
+    private float rotation(AnimationSignals signals) {
+        return MathUtils.sin(signals.stateTime() * 2.1f) * 0.8f
+                + signals.attackPulse() * (signals.is(BossVisualState.POLLEN_RAIN)
+                || signals.is(BossVisualState.ENRAGING) ? 1.4f : 0.45f)
+                + signals.actionKick() * (signals.is(BossVisualState.VINE_STRIKE) ? -2.4f : 1.2f)
+                + signals.actionFollowThrough() * (signals.is(BossVisualState.VINE_STRIKE) ? 2.2f : -1.4f)
+                + signals.hitKick() * 2.8f;
+    }
+
+    private void drawPose(SpriteBatch batch, OrthographicCamera camera, Boss boss, BossPose pose) {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
-        if (hitKick > 0.05f) {
-            batch.setColor(1f, 0.66f + hitKick * 0.26f, 0.66f + hitKick * 0.26f, 1f);
+        if (pose.hitKick() > 0.05f) {
+            batch.setColor(1f, 0.66f + pose.hitKick() * 0.26f, 0.66f + pose.hitKick() * 0.26f, 1f);
         } else if (boss.isPhaseTwo()) {
             batch.setColor(1f, 0.92f, 0.92f, 1f);
         }
-        if (flipX) {
-            frame.flip(true, false);
+        if (pose.flipX()) {
+            pose.frame().flip(true, false);
         }
-        batch.draw(frame,
-                x, y,
-                visualWidth * 0.48f, 44f,
-                visualWidth, visualHeight,
-                scaleX, scaleY,
-                rotation);
-        if (flipX) {
-            frame.flip(true, false);
+        batch.draw(
+                pose.frame(),
+                pose.x(), pose.y(),
+                pose.width() * 0.48f, 44f,
+                pose.width(), pose.height(),
+                pose.scaleX(), pose.scaleY(),
+                pose.rotation()
+        );
+        if (pose.flipX()) {
+            pose.frame().flip(true, false);
         }
         batch.setColor(Color.WHITE);
         batch.end();

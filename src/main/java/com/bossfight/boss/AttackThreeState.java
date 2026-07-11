@@ -37,7 +37,8 @@ public class AttackThreeState implements BossState {
 
         updatePendingColumns(boss, delta, projectileSpawner);
 
-        if (spawnTimer <= 0f && pendingCount == 0) {
+        float duration = boss.isPhaseTwo() ? 3.2f : 2.65f;
+        if (elapsed < duration && spawnTimer <= 0f && pendingCount == 0) {
             if (boss.isPhaseTwo() && elapsed > 0.7f && MathUtils.randomBoolean(0.34f)) {
                 spawnGardenPattern(projectileSpawner);
                 spawnTimer = 0.86f;
@@ -52,8 +53,7 @@ public class AttackThreeState implements BossState {
             }
         }
 
-        float duration = boss.isPhaseTwo() ? 3.2f : 2.65f;
-        if (elapsed >= duration) {
+        if (elapsed >= duration && pendingCount == 0) {
             boss.finishCurrentAttack();
         }
     }

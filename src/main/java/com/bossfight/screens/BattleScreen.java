@@ -112,77 +112,126 @@ public class BattleScreen extends ScreenAdapter {
     }
 
     private boolean update(float delta) {
-        if (!battleFlow.isIntroPausedForTransition() && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            game.getAudioManager().playCue(AudioManager.Cue.MENU_BACK);
-            game.showMenuScreen();
+        if (returnToMenuRequested()) {
             return false;
         }
 
-        elapsed += delta;
-        cameraShake.update(delta);
-        particleSystem.update(delta);
-        phaseShockwaveEffect.update(delta);
-
+        updateVisualEffects(delta);
         if (battleFlow.isIntroPausedForTransition()) {
             return true;
         }
 
         battleFlow.updateIntro(delta, controlsOverlay, boss);
         controlsOverlay.update(delta);
+        if (updateNonCombatSequence(delta)) {
+            return true;
+        }
 
+        battleInput.poll(delta);
+        if (updateHitstop(delta)) {
+            return true;
+        }
+
+        updatePlayer(delta);
+        updateCombat(delta);
+        resolveBattleOutcome();
+        return true;
+    }
+
+    private boolean returnToMenuRequested() {
+        if (battleFlow.isIntroPausedForTransition() || !Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            return false;
+        }
+
+        game.getAudioManager().playCue(AudioManager.Cue.MENU_BACK);
+        game.showMenuScreen();
+        return true;
+    }
+
+    private void updateVisualEffects(float delta) {
+        elapsed += delta;
+        cameraShake.update(delta);
+        particleSystem.update(delta);
+        phaseShockwaveEffect.update(delta);
+    }
+
+    private boolean updateNonCombatSequence(float delta) {
         if (battleFlow.isKnockoutSequenceActive()) {
             hitstopTimer = 0f;
             battleFlow.updateKnockoutSequence(delta, player, particleSystem, boss);
             return true;
         }
-
         if (!battleFlow.isFightStarted()) {
             player.update(delta, false, false, false, false);
             return true;
         }
+        return false;
+    }
 
-        battleInput.poll(delta);
-
-        if (hitstopTimer > 0f) {
-            hitstopTimer = Math.max(0f, hitstopTimer - delta);
-            return true;
+    private boolean updateHitstop(float delta) {
+        if (hitstopTimer <= 0f) {
+            return false;
         }
 
+        hitstopTimer = Math.max(0f, hitstopTimer - delta);
+        return true;
+    }
+
+    private void updatePlayer(float delta) {
         boolean jump = battleInput.consumeJump();
         boolean dash = battleInput.consumeDash();
         boolean special = battleInput.consumeSpecial();
 
         player.update(delta, battleInput.isMoveLeftHeld(), battleInput.isMoveRightHeld(), jump, dash);
+        playMovementFeedback();
+        firePlayerProjectile(special);
+    }
+
+    private void playMovementFeedback() {
         if (player.consumeDashStarted()) {
             particleSystem.spawnDash(player.getCenterX(), player.getCenterY(), player.getFacingDirection());
             game.getAudioManager().playCue(AudioManager.Cue.DASH);
             cameraShake.request(2.4f, 0.09f);
         }
         if (player.consumeLanded()) {
-            particleSystem.spawnLandingDust(player.getCenterX(), Constants.FLOOR_Y  );
+            particleSystem.spawnLandingDust(player.getCenterX(), Constants.FLOOR_Y);
             cameraShake.request(1.35f, 0.08f);
         }
+    }
 
-        if (special) {
-            Projectile projectile = player.tryShootSpecial();
-            if (projectile != null) {
-                projectileSystem.addProjectile(projectile);
-                particleSystem.spawnMuzzle(projectile.getCenterX(), projectile.getCenterY(), player.getFacingDirection(), true);
-                game.getAudioManager().playCue(AudioManager.Cue.PLAYER_SPECIAL);
-                cameraShake.request(6f, 0.16f);
-            }
+    private void firePlayerProjectile(boolean specialRequested) {
+        Projectile projectile;
+        boolean special;
+        if (specialRequested) {
+            projectile = player.tryShootSpecial();
+            special = true;
         } else if (battleInput.isShootHeld()) {
-            Projectile projectile = player.tryShoot();
-            if (projectile != null) {
-                projectileSystem.addProjectile(projectile);
-                particleSystem.spawnMuzzle(projectile.getCenterX(), projectile.getCenterY(), player.getFacingDirection(), false);
-                game.getAudioManager().playCue(AudioManager.Cue.PLAYER_SHOOT);
-            }
+            projectile = player.tryShoot();
+            special = false;
+        } else {
+            return;
         }
 
+        if (projectile == null) {
+            return;
+        }
+        projectileSystem.addProjectile(projectile);
+        particleSystem.spawnMuzzle(
+                projectile.getCenterX(), projectile.getCenterY(), player.getFacingDirection(), special);
+        game.getAudioManager().playCue(special ? AudioManager.Cue.PLAYER_SPECIAL : AudioManager.Cue.PLAYER_SHOOT);
+        if (special) {
+            cameraShake.request(6f, 0.16f);
+        }
+    }
+
+    private void updateCombat(float delta) {
         boss.update(delta, projectileSystem, player);
         projectileSystem.update(delta);
         collisionSystem.resolve(player, boss, projectileSystem, delta);
+        applyCollisionFeedback();
+    }
+
+    private void applyCollisionFeedback() {
         float requestedHitstop = collisionSystem.consumeRequestedHitstop();
         if (requestedHitstop > 0f) {
             hitstopTimer = Math.max(hitstopTimer, requestedHitstop);
@@ -191,20 +240,18 @@ public class BattleScreen extends ScreenAdapter {
         if (requestedShake > 0f) {
             cameraShake.request(requestedShake, 0.18f);
         }
+    }
 
+    private void resolveBattleOutcome() {
         if (boss.isDefeated()) {
             battleFlow.beginKnockoutSequence(projectileSystem, particleSystem, boss, cameraShake);
-            return true;
+            return;
         }
 
         playBossSoundEvents();
-
         if (player.isDead()) {
             battleFlow.requestEndTransition(false);
-            return true;
         }
-
-        return true;
     }
 
     private void renderWorld() {
