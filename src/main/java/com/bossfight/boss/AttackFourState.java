@@ -7,9 +7,24 @@ import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
 
 public class AttackFourState implements BossState {
-    private float elapsed;
+    private static final int TOTAL_CORRIDOR_SPORES = 7;
+    private static final int MAX_REPEATED_LANES = 2;
+    private static final float FIRST_SPORE_DELAY = 0.32f;
+    private static final float MIN_SPORE_INTERVAL = 0.38f;
+    private static final float MAX_SPORE_INTERVAL = 0.50f;
+    private static final float LOW_TO_HIGH_INTERVAL = 0.90f;
+    private static final float LAST_SPORE_TRAVEL_TIME = 1.25f;
+    private static final float SPORE_SPEED = 690f;
+    private static final float SPORE_WIDTH = Constants.BOSS_PROJECTILE_WIDTH + 32f;
+    private static final float SPORE_HEIGHT = Constants.BOSS_PROJECTILE_HEIGHT + 28f;
+    private static final float LOW_LANE_Y = Constants.FLOOR_Y + 3f;
+    private static final float HIGH_LANE_Y = Constants.FLOOR_Y + Constants.PLAYER_HEIGHT + 42f;
+
     private float puffTimer;
+    private float finishTimer;
     private int puffsSpawned;
+    private int repeatedLanes;
+    private SporeLane nextLane;
 
     @Override
     public BossVisualState getVisualState() {
@@ -18,26 +33,38 @@ public class AttackFourState implements BossState {
 
     @Override
     public void enter(Boss boss) {
-        elapsed = 0f;
-        puffTimer = 0.34f;
+        puffTimer = FIRST_SPORE_DELAY;
+        finishTimer = -1f;
         puffsSpawned = 0;
+        repeatedLanes = 1;
+        nextLane = randomLane();
         boss.emitSound(BossSoundEvent.POLLEN_CHARGE);
         boss.showTelegraph(new Color(0.74f, 0.32f, 1f, 1f), 0.58f);
     }
 
     @Override
     public void update(Boss boss, float delta, ProjectileSpawner projectileSpawner, Player player) {
-        elapsed += delta;
         puffTimer -= delta;
 
-        if (puffTimer <= 0f && puffsSpawned < getMaxPuffs(boss)) {
-            spawnPollenPuff(boss, projectileSpawner, player);
+        if (puffTimer <= 0f && puffsSpawned < TOTAL_CORRIDOR_SPORES) {
+            SporeLane spawnedLane = nextLane;
+            spawnCorridorSpore(boss, projectileSpawner, spawnedLane);
             puffsSpawned++;
-            puffTimer = boss.isPhaseTwo() ? 0.16f : 0.22f;
             boss.emitSound(BossSoundEvent.POLLEN_DROP);
+
+            if (puffsSpawned == TOTAL_CORRIDOR_SPORES) {
+                finishTimer = LAST_SPORE_TRAVEL_TIME;
+            } else {
+                nextLane = chooseNextLane(spawnedLane);
+                puffTimer = intervalBetween(spawnedLane, nextLane);
+            }
         }
 
-        if (elapsed >= (boss.isPhaseTwo() ? 2.12f : 1.76f)) {
+        if (finishTimer > 0f) {
+            finishTimer -= delta;
+        }
+
+        if (finishTimer <= 0f && puffsSpawned == TOTAL_CORRIDOR_SPORES) {
             boss.finishCurrentAttack();
         }
     }
@@ -46,35 +73,50 @@ public class AttackFourState implements BossState {
     public void exit(Boss boss) {
     }
 
-    private int getMaxPuffs(Boss boss) {
-        return boss.isPhaseTwo() ? 7 : 5;
-    }
-
-    private void spawnPollenPuff(Boss boss, ProjectileSpawner projectileSpawner, Player player) {
-        float width = Constants.BOSS_PROJECTILE_WIDTH + 26f;
-        float height = Constants.BOSS_PROJECTILE_HEIGHT + 26f;
-        float originX = boss.getCenterX() - 138f;
-        float originY = Constants.FLOOR_Y + 300f + MathUtils.sin(puffsSpawned * 1.35f) * 34f;
-        float speed = boss.isPhaseTwo() ? 330f : 275f;
-        float laneOffset = ((puffsSpawned % 3) - 1f) * 36f;
-        float targetX = player.getCenterX();
-        float targetY = player.getCenterY() + laneOffset + MathUtils.random(-10f, 10f);
-        float angle = MathUtils.atan2(targetY - originY, targetX - originX) + MathUtils.random(-0.06f, 0.06f);
-        float velocityX = MathUtils.clamp(MathUtils.cos(angle) * speed,
-                boss.isPhaseTwo() ? -380f : -320f,
-                boss.isPhaseTwo() ? -245f : -215f);
-        float velocityY = MathUtils.clamp(MathUtils.sin(angle) * speed,
-                boss.isPhaseTwo() ? -120f : -92f,
-                boss.isPhaseTwo() ? 115f : 88f);
+    private void spawnCorridorSpore(Boss boss, ProjectileSpawner projectileSpawner, SporeLane lane) {
+        float centerX = boss.getCenterX() - Constants.BOSS_WIDTH * 0.82f;
+        float y = lane == SporeLane.LOW ? LOW_LANE_Y : HIGH_LANE_Y;
 
         projectileSpawner.addProjectile(Projectile.bossPollen(
-                originX - width * 0.5f,
-                originY - height * 0.5f,
-                width,
-                height,
-                velocityX,
-                velocityY,
+                centerX - SPORE_WIDTH * 0.5f,
+                y,
+                SPORE_WIDTH,
+                SPORE_HEIGHT,
+                -SPORE_SPEED,
+                0f,
                 0f
         ));
+    }
+
+    private SporeLane chooseNextLane(SporeLane currentLane) {
+        SporeLane candidate = randomLane();
+
+        if (candidate == currentLane && repeatedLanes >= MAX_REPEATED_LANES) {
+            candidate = currentLane.opposite();
+        }
+
+        repeatedLanes = candidate == currentLane ? repeatedLanes + 1 : 1;
+        return candidate;
+    }
+
+    private float intervalBetween(SporeLane currentLane, SporeLane followingLane) {
+        if (currentLane == SporeLane.LOW && followingLane == SporeLane.HIGH) {
+            return LOW_TO_HIGH_INTERVAL;
+        }
+
+        return MathUtils.random(MIN_SPORE_INTERVAL, MAX_SPORE_INTERVAL);
+    }
+
+    private SporeLane randomLane() {
+        return MathUtils.randomBoolean() ? SporeLane.LOW : SporeLane.HIGH;
+    }
+
+    private enum SporeLane {
+        LOW,
+        HIGH;
+
+        private SporeLane opposite() {
+            return this == LOW ? HIGH : LOW;
+        }
     }
 }
