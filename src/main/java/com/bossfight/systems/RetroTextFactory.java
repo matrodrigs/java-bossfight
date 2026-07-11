@@ -17,23 +17,33 @@ import java.awt.geom.AffineTransform;
 import java.awt.image.BufferedImage;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.EnumMap;
 
 public class RetroTextFactory implements Disposable {
-    private static final String FONT_PATH = "fonts/LilitaOne-Regular.ttf";
+    private enum FontRole {
+        TITLE("fonts/TitanOne-Regular.ttf"),
+        UI("fonts/LilitaOne-Regular.ttf");
+
+        private final String path;
+
+        FontRole(String path) {
+            this.path = path;
+        }
+    }
 
     private final ObjectSet<Texture> textures = new ObjectSet<>();
-    private Font baseFont;
+    private final EnumMap<FontRole, Font> baseFonts = new EnumMap<>(FontRole.class);
 
     public Texture createTitle(String text) {
-        return createCartoonText(text, 92, 11, 0xffd64a, 0x672014, 0x050405, 16, 0.048f);
+        return createCartoonText(text, FontRole.TITLE, 92, 11, 0xffd64a, 0x672014, 0x050405, 16, 0.048f);
     }
 
     public Texture createSubtitle(String text) {
-        return createText(text, 34, 7, 0xf8eed2, 0x4b2018, 0x080707, 8);
+        return createText(text, FontRole.UI, 34, 7, 0xf8eed2, 0x4b2018, 0x080707, 8);
     }
 
     public Texture createMenuOption(String text, boolean selected) {
-        return createCartoonText(text, selected ? 38 : 34, selected ? 7 : 6,
+        return createCartoonText(text, FontRole.UI, selected ? 38 : 34, selected ? 7 : 6,
                 selected ? 0xffd84a : 0xf7e5b6,
                 selected ? 0x572012 : 0x3d2518,
                 0x130d0a,
@@ -43,17 +53,17 @@ public class RetroTextFactory implements Disposable {
 
     public Texture createFightCue(String text, boolean goCue) {
         int fill = goCue ? 0xffdc45 : 0xffef79;
-        return createCartoonText(text, 96, 12, fill, 0x612416, 0x060506, 18, 0.08f);
+        return createCartoonText(text, FontRole.UI, 96, 12, fill, 0x612416, 0x060506, 18, 0.08f);
     }
 
     public Texture createKnockout(String text) {
-        return createCartoonText(text, 88, 13, 0xffdd55, 0x5a1d12, 0x050405, 18, 0.055f);
+        return createCartoonText(text, FontRole.UI, 88, 13, 0xffdd55, 0x5a1d12, 0x050405, 18, 0.055f);
     }
 
     public Texture createResultTitle(String text, boolean victory) {
         int fill = victory ? 0xffdf58 : 0xf8efe1;
         int stroke = victory ? 0x5b2014 : 0x201815;
-        return createCartoonText(text, 92, 12, fill, stroke, 0x050405, 18, 0.055f);
+        return createCartoonText(text, FontRole.UI, 92, 12, fill, stroke, 0x050405, 18, 0.055f);
     }
 
     public Texture createPlayerHealthHud(int health) {
@@ -61,16 +71,16 @@ public class RetroTextFactory implements Disposable {
     }
 
     public Texture createInstruction(String text) {
-        return createText(text, 28, 5, 0xf6e5b8, 0x312017, 0x050405, 8);
+        return createText(text, FontRole.UI, 28, 5, 0xf6e5b8, 0x312017, 0x050405, 8);
     }
 
     public Texture createInstructionKey(String text) {
-        return createText(text, 31, 6, 0xffd24a, 0x5b2014, 0x050405, 9);
+        return createText(text, FontRole.UI, 31, 6, 0xffd24a, 0x5b2014, 0x050405, 9);
     }
 
-    private Texture createText(String text, int fontSize, int strokeWidth, int fillRgb, int strokeRgb,
-                               int shadowRgb, int padding) {
-        Font font = font(fontSize);
+    private Texture createText(String text, FontRole fontRole, int fontSize, int strokeWidth, int fillRgb,
+                               int strokeRgb, int shadowRgb, int padding) {
+        Font font = font(fontRole, fontSize);
         BufferedImage probe = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D probeGraphics = probe.createGraphics();
         applyHints(probeGraphics);
@@ -123,8 +133,8 @@ public class RetroTextFactory implements Disposable {
         int gap = 4;
         int edge = padding + strokeWidth * 2;
 
-        Font labelFont = font(fontSize);
-        Font valueFont = font(valueFontSize);
+        Font labelFont = font(FontRole.UI, fontSize);
+        Font valueFont = font(FontRole.UI, valueFontSize);
         BufferedImage probe = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D probeGraphics = probe.createGraphics();
         applyHints(probeGraphics);
@@ -179,9 +189,9 @@ public class RetroTextFactory implements Disposable {
         graphics.draw(shine);
     }
 
-    private Texture createCartoonText(String text, int fontSize, int strokeWidth, int fillRgb, int strokeRgb,
-                                      int shadowRgb, int padding, float tiltStep) {
-        Font font = font(fontSize);
+    private Texture createCartoonText(String text, FontRole fontRole, int fontSize, int strokeWidth, int fillRgb,
+                                      int strokeRgb, int shadowRgb, int padding, float tiltStep) {
+        Font font = font(fontRole, fontSize);
         BufferedImage probe = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D probeGraphics = probe.createGraphics();
         applyHints(probeGraphics);
@@ -278,18 +288,28 @@ public class RetroTextFactory implements Disposable {
     }
 
     Font font(int size) {
+        return font(FontRole.UI, size);
+    }
+
+    private Font font(FontRole role, int size) {
+        Font baseFont = baseFonts.get(role);
         if (baseFont == null) {
-            InputStream resource = RetroTextFactory.class.getClassLoader().getResourceAsStream(FONT_PATH);
-            if (resource == null) {
-                throw new IllegalStateException("Bundled font not found: " + FONT_PATH);
-            }
-            try (InputStream input = resource) {
-                baseFont = Font.createFont(Font.TRUETYPE_FONT, input);
-            } catch (FontFormatException | IOException exception) {
-                throw new IllegalStateException("Unable to load bundled font: " + FONT_PATH, exception);
-            }
+            baseFont = loadFont(role.path);
+            baseFonts.put(role, baseFont);
         }
         return baseFont.deriveFont(Font.PLAIN, (float) size);
+    }
+
+    private Font loadFont(String path) {
+        InputStream resource = RetroTextFactory.class.getClassLoader().getResourceAsStream(path);
+        if (resource == null) {
+            throw new IllegalStateException("Bundled font not found: " + path);
+        }
+        try (InputStream input = resource) {
+            return Font.createFont(Font.TRUETYPE_FONT, input);
+        } catch (FontFormatException | IOException exception) {
+            throw new IllegalStateException("Unable to load bundled font: " + path, exception);
+        }
     }
 
     @Override

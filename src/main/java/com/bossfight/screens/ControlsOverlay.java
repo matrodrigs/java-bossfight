@@ -152,22 +152,9 @@ final class ControlsOverlay {
         float ribbonY = panelY + PANEL_HEIGHT - 16f;
 
         shapeRenderer.setColor(0.17f, 0.05f, 0.03f, alpha * 0.42f);
-        shapeRenderer.triangle(ribbonX - 22f + 3f, ribbonY - 3f,
-                ribbonX + 10f + 3f, ribbonY + RIBBON_HEIGHT * 0.5f - 3f,
-                ribbonX - 22f + 3f, ribbonY + RIBBON_HEIGHT - 3f);
-        shapeRenderer.triangle(ribbonX + RIBBON_WIDTH + 22f + 3f, ribbonY - 3f,
-                ribbonX + RIBBON_WIDTH - 10f + 3f, ribbonY + RIBBON_HEIGHT * 0.5f - 3f,
-                ribbonX + RIBBON_WIDTH + 22f + 3f, ribbonY + RIBBON_HEIGHT - 3f);
         roundedRect(shapeRenderer, ribbonX + 3f, ribbonY - 3f, RIBBON_WIDTH, RIBBON_HEIGHT, 8f,
                 0.17f, 0.05f, 0.03f, alpha * 0.42f);
 
-        shapeRenderer.setColor(0.38f, 0.115f, 0.055f, alpha * 0.98f);
-        shapeRenderer.triangle(ribbonX - 22f, ribbonY,
-                ribbonX + 10f, ribbonY + RIBBON_HEIGHT * 0.5f,
-                ribbonX - 22f, ribbonY + RIBBON_HEIGHT);
-        shapeRenderer.triangle(ribbonX + RIBBON_WIDTH + 22f, ribbonY,
-                ribbonX + RIBBON_WIDTH - 10f, ribbonY + RIBBON_HEIGHT * 0.5f,
-                ribbonX + RIBBON_WIDTH + 22f, ribbonY + RIBBON_HEIGHT);
         roundedRect(shapeRenderer, ribbonX, ribbonY, RIBBON_WIDTH, RIBBON_HEIGHT, 8f,
                 0.38f, 0.115f, 0.055f, alpha * 0.98f);
         roundedRect(shapeRenderer, ribbonX + 5f, ribbonY + 5f, RIBBON_WIDTH - 10f, RIBBON_HEIGHT - 10f, 5f,
@@ -180,7 +167,7 @@ final class ControlsOverlay {
         batch.begin();
         batch.setColor(1f, 1f, 1f, alpha);
 
-        float titleY = panelY + PANEL_HEIGHT + 6f;
+        float titleY = panelY + PANEL_HEIGHT + 2f;
         TextureDraw.centeredWithin(batch, titleText, Constants.WORLD_WIDTH * 0.5f, titleY, 0.45f,
                 RIBBON_WIDTH - 22f);
 
@@ -193,8 +180,8 @@ final class ControlsOverlay {
             float actionY = ACTION_CENTER_Y + yDelta + (i >= 3 ? 4f : 0f);
             TextureDraw.centeredWithin(batch, actionTexts[i], controlX(i), actionY, 0.35f, 138f);
         }
-        TextureDraw.centeredWithin(batch, holdText, controlX(3), ACTION_CENTER_Y - 17f + yDelta, 0.22f, 100f);
-        TextureDraw.centeredWithin(batch, clickText, controlX(4), ACTION_CENTER_Y - 17f + yDelta, 0.22f, 100f);
+        TextureDraw.centeredWithin(batch, holdText, controlX(3), ACTION_CENTER_Y - 8f + yDelta, 0.22f, 100f);
+        TextureDraw.centeredWithin(batch, clickText, controlX(4), ACTION_CENTER_Y - 8f + yDelta, 0.22f, 100f);
 
         batch.setColor(Color.WHITE);
         batch.end();

@@ -81,7 +81,7 @@ src/main/java/com/bossfight
 
 assets/
 |-- audio/     # Música, ambiência e locuções
-|-- fonts/     # Fonte empacotada e sua licença
+|-- fonts/     # Fontes empacotadas e suas licenças
 `-- sprites/   # UI, boss, jogador, projéteis e cenário
 ```
 
