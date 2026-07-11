@@ -236,7 +236,7 @@ public final class ProjectileRenderer implements Disposable {
 
         shapeRenderer.setColor(0.14f, 0.72f, 0.16f, alpha * 0.45f);
         shapeRenderer.rect(x, y, width, height);
-        shapeRenderer.setColor(1f, 0.82f, 0.16f, alpha);
+        shapeRenderer.setColor(1f, 0.82f, 0.16f, MathUtils.clamp(alpha * 1.25f, 0f, 0.68f));
         if (vertical) {
             shapeRenderer.rect(x + width * 0.39f, y, width * 0.22f, height);
         } else {
