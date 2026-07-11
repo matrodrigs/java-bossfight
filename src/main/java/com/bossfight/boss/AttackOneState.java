@@ -73,10 +73,6 @@ public class AttackOneState implements BossState {
         }
     }
 
-    @Override
-    public void exit(Boss boss) {
-    }
-
     private void startStrike(Boss boss, boolean useUpperLane) {
         upperLane = useUpperLane;
         warningSpawned = false;

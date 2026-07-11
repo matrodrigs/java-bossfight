@@ -4,12 +4,9 @@ import com.badlogic.gdx.utils.Array;
 import com.bossfight.boss.ProjectileSpawner;
 import com.bossfight.entities.Projectile;
 
-public final class ProjectileSystem implements ProjectileSpawner {
-    @FunctionalInterface
-    public interface ProjectileRemovalRule {
-        boolean shouldRemove(Projectile projectile);
-    }
+import java.util.function.Predicate;
 
+public final class ProjectileSystem implements ProjectileSpawner {
     private final Array<Projectile> playerProjectiles = new Array<>();
     private final Array<Projectile> bossProjectiles = new Array<>();
 
@@ -32,11 +29,11 @@ public final class ProjectileSystem implements ProjectileSpawner {
         bossProjectiles.clear();
     }
 
-    public void removePlayerProjectilesIf(ProjectileRemovalRule removalRule) {
+    public void removePlayerProjectilesIf(Predicate<Projectile> removalRule) {
         removeProjectilesIf(playerProjectiles, removalRule);
     }
 
-    public void removeBossProjectilesIf(ProjectileRemovalRule removalRule) {
+    public void removeBossProjectilesIf(Predicate<Projectile> removalRule) {
         removeProjectilesIf(bossProjectiles, removalRule);
     }
 
@@ -59,10 +56,10 @@ public final class ProjectileSystem implements ProjectileSpawner {
         }
     }
 
-    private void removeProjectilesIf(Array<Projectile> projectiles, ProjectileRemovalRule removalRule) {
+    private void removeProjectilesIf(Array<Projectile> projectiles, Predicate<Projectile> removalRule) {
         for (int i = projectiles.size - 1; i >= 0; i--) {
             Projectile projectile = projectiles.get(i);
-            if (removalRule.shouldRemove(projectile)) {
+            if (removalRule.test(projectile)) {
                 projectile.deactivate();
                 projectiles.removeIndex(i);
             }

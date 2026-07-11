@@ -59,10 +59,6 @@ public class AttackThreeState implements BossState {
         }
     }
 
-    @Override
-    public void exit(Boss boss) {
-    }
-
     private void updatePendingColumns(Boss boss, float delta, ProjectileSpawner projectileSpawner) {
         for (int i = pendingCount - 1; i >= 0; i--) {
             pendingTimers[i] -= delta;

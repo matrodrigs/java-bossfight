@@ -28,7 +28,4 @@ public class IdleState implements BossState {
         }
     }
 
-    @Override
-    public void exit(Boss boss) {
-    }
 }

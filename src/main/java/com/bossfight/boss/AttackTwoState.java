@@ -45,10 +45,6 @@ public class AttackTwoState implements BossState {
         }
     }
 
-    @Override
-    public void exit(Boss boss) {
-    }
-
     private void fireVolley(Boss boss, ProjectileSpawner projectileSpawner, Player player) {
         int projectileCount = boss.isPhaseTwo() ? 3 : 2;
         float speed = boss.isPhaseTwo() ? 490f : 430f;

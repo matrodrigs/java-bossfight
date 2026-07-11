@@ -47,55 +47,55 @@ public class VintageFloralBackground implements Disposable {
         decorDaisy = load("decor/flower_cluster_daisy.png");
     }
 
-    public void renderBack(SpriteBatch batch, OrthographicCamera camera, float elapsed) {
+    public void renderBack(SpriteBatch batch, OrthographicCamera camera) {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
 
         drawParallax(batch, camera, sky, -40f, -26f, Constants.WORLD_WIDTH + 80f, Constants.WORLD_HEIGHT + 56f,
-                0.02f, 1f, 0f);
+                0.02f, 1f);
         drawParallax(batch, camera, farHills, 84f, 160f, 1120f, 244f,
-                0.12f, 0.78f, 0f);
+                0.12f, 0.78f);
         drawParallax(batch, camera, distantGarden, -18f, 100f, 1320f, 172f,
-                0.24f, 0.78f, 0f);
+                0.24f, 0.78f);
 
         drawParallax(batch, camera, treeLeft, -12f, 100f, 240f, 370f,
-                0.38f, 0.84f, 0f);
+                0.38f, 0.84f);
         drawParallax(batch, camera, treeRight, 1034f, 42f, 264f, 390f,
-                0.48f, 0.96f, 0f);
+                0.48f, 0.96f);
 
         drawParallax(batch, camera, shrubA, 175f, 98f, 310f, 92f,
-                0.58f, 0.74f, 0f);
+                0.58f, 0.74f);
         drawParallax(batch, camera, shrubB, 535f, 99f, 220f, 112f,
-                0.6f, 0.78f, 0f);
+                0.6f, 0.78f);
         drawParallax(batch, camera, shrubC, 792f, 98f, 340f, 118f,
-                0.62f, 0.8f, 0f);
+                0.62f, 0.8f);
 
         drawParallax(batch, camera, groundMain, -40f, -20f, 1350f, 168f,
-                0.86f, 1f, 0f);
+                0.86f, 1f);
         drawParallax(batch, camera, groundEdgeLeft, -50f, -10f, 160f, 178f,
-                0.88f, 1f, 0f);
+                0.88f, 1f);
         drawParallax(batch, camera, groundEdgeRight, 1160f, -10f, 160f, 156f,
-                0.88f, 1f, 0f);
+                0.88f, 1f);
 
         drawParallax(batch, camera, decorWarm, 235f, 64f, 140f, 78f,
-                0.9f, 0.95f, 0f);
+                0.9f, 0.95f);
         drawParallax(batch, camera, decorDaisy, 610f, 64f, 150f, 70f,
-                0.9f, 0.95f, 0f);
+                0.9f, 0.95f);
 
         batch.setColor(Color.WHITE);
         batch.end();
     }
 
-    public void renderForeground(SpriteBatch batch, OrthographicCamera camera, float elapsed) {
+    public void renderForeground(SpriteBatch batch, OrthographicCamera camera) {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
 
         drawParallax(batch, camera, fgLeft, -20f, -44f, 370f, 168f,
-                1.08f, 0.96f, 0f);
+                1.08f, 0.96f);
         drawParallax(batch, camera, fgCenter, 420f, -46f, 380f, 154f,
-                1.08f, 0.94f, 0f);
+                1.08f, 0.94f);
         drawParallax(batch, camera, fgRight, 890f, -44f, 390f, 154f,
-                1.08f, 0.96f, 0f);
+                1.08f, 0.96f);
 
         batch.setColor(Color.WHITE);
         batch.end();
@@ -108,11 +108,11 @@ public class VintageFloralBackground implements Disposable {
     }
 
     private void drawParallax(SpriteBatch batch, OrthographicCamera camera, Texture texture, float x, float y,
-            float width, float height, float parallax, float alpha, float yDrift) {
+            float width, float height, float parallax, float alpha) {
         float cameraDeltaX = camera.position.x - Constants.WORLD_WIDTH * 0.5f;
         float cameraDeltaY = camera.position.y - Constants.WORLD_HEIGHT * 0.5f;
         float drawX = x + cameraDeltaX * (1f - parallax);
-        float drawY = y + cameraDeltaY * (1f - parallax) + yDrift;
+        float drawY = y + cameraDeltaY * (1f - parallax);
         batch.setColor(1f, 1f, 1f, alpha);
         batch.draw(texture, drawX, drawY, width, height);
     }

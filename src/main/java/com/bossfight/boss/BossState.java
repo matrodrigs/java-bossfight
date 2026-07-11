@@ -5,9 +5,11 @@ import com.bossfight.entities.Player;
 public interface BossState {
     BossVisualState getVisualState();
 
-    void enter(Boss boss);
+    default void enter(Boss boss) {
+    }
 
     void update(Boss boss, float delta, ProjectileSpawner projectileSpawner, Player player);
 
-    void exit(Boss boss);
+    default void exit(Boss boss) {
+    }
 }

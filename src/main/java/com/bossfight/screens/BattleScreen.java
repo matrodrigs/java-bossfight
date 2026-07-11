@@ -283,7 +283,7 @@ public class BattleScreen extends ScreenAdapter {
 
     private void renderWorld() {
         ShapeRenderer shapeRenderer = game.getShapeRenderer();
-        background.renderBack(game.getBatch(), camera, elapsed);
+        background.renderBack(game.getBatch(), camera);
 
         shapeRenderer.setProjectionMatrix(camera.combined);
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -323,7 +323,7 @@ public class BattleScreen extends ScreenAdapter {
         projectileRenderer.renderSprites(game.getBatch());
         game.getBatch().end();
 
-        background.renderForeground(game.getBatch(), camera, elapsed);
+        background.renderForeground(game.getBatch(), camera);
 
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }

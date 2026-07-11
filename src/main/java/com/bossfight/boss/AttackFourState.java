@@ -69,10 +69,6 @@ public class AttackFourState implements BossState {
         }
     }
 
-    @Override
-    public void exit(Boss boss) {
-    }
-
     private void spawnCorridorSpore(Boss boss, ProjectileSpawner projectileSpawner, SporeLane lane) {
         float centerX = boss.getCenterX() - Constants.BOSS_WIDTH * 0.82f;
         float y = lane == SporeLane.LOW ? LOW_LANE_Y : HIGH_LANE_Y;

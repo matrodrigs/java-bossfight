@@ -38,7 +38,4 @@ public class PhaseTwoTransitionState implements BossState {
         }
     }
 
-    @Override
-    public void exit(Boss boss) {
-    }
 }

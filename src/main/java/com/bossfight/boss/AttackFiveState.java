@@ -75,10 +75,6 @@ public class AttackFiveState implements BossState {
         }
     }
 
-    @Override
-    public void exit(Boss boss) {
-    }
-
     private void updatePendingVines(Boss boss, float delta, ProjectileSpawner projectileSpawner) {
         for (int i = pendingCount - 1; i >= 0; i--) {
             pendingTimers[i] -= delta;
