@@ -8,12 +8,13 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.bossfight.screens.BattleScreen;
 import com.bossfight.screens.EndScreen;
+import com.bossfight.screens.GameContext;
 import com.bossfight.screens.MenuScreen;
 import com.bossfight.systems.AudioManager;
 import com.bossfight.systems.IrisTransition;
 import com.bossfight.systems.OldFilmEffect;
 
-public class MainGame extends Game {
+public class MainGame extends Game implements GameContext {
     private static final String MENU_MUSIC_PATH = "audio/music/menu_theme.mp3";
     private static final String VINYL_NOISE_PATH = "audio/music/vinyl_noise_loop.mp3";
     private static final String VICTORY_MUSIC_PATH = "audio/music/victory_theme.mp3";
@@ -41,14 +42,17 @@ public class MainGame extends Game {
         showMenuScreen();
     }
 
+    @Override
     public void showMenuScreen() {
         showScreen(IrisTransition.Target.MENU, false);
     }
 
+    @Override
     public void showBattleScreen() {
         showScreen(IrisTransition.Target.BATTLE, true);
     }
 
+    @Override
     public void showEndScreen(boolean victory) {
         showScreen(victory ? IrisTransition.Target.END_VICTORY : IrisTransition.Target.END_DEFEAT, false);
     }
@@ -76,18 +80,22 @@ public class MainGame extends Game {
         }
     }
 
+    @Override
     public SpriteBatch getBatch() {
         return batch;
     }
 
+    @Override
     public ShapeRenderer getShapeRenderer() {
         return shapeRenderer;
     }
 
+    @Override
     public AudioManager getAudioManager() {
         return audioManager;
     }
 
+    @Override
     public boolean isIrisTransitionActive() {
         return irisTransition.isActive();
     }

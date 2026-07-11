@@ -5,6 +5,9 @@ out/
 bin/
 target/
 
+# Testes locais (não versionados)
+src/test/
+
 *.log
 *.tmp
 

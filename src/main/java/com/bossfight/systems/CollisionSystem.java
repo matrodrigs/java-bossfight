@@ -1,22 +1,28 @@
 package com.bossfight.systems;
 
-import com.bossfight.entities.Boss;
+import com.bossfight.boss.Boss;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
 
 public class CollisionSystem {
+    private final ParticleSystem particleSystem;
+    private final AudioManager audioManager;
     private float bossContactCooldown;
     private float requestedHitstop;
     private float requestedShake;
 
-    public void resolve(Player player, Boss boss, ProjectileSystem projectileSystem, ParticleSystem particleSystem,
-                        AudioManager audioManager, float delta) {
+    public CollisionSystem(ParticleSystem particleSystem, AudioManager audioManager) {
+        this.particleSystem = particleSystem;
+        this.audioManager = audioManager;
+    }
+
+    public void resolve(Player player, Boss boss, ProjectileSystem projectileSystem, float delta) {
         requestedHitstop = 0f;
         requestedShake = 0f;
         bossContactCooldown = Math.max(0f, bossContactCooldown - delta);
-        resolvePlayerProjectiles(player, boss, projectileSystem, particleSystem, audioManager);
-        resolveBossProjectiles(player, projectileSystem, particleSystem, audioManager);
-        resolveBossContact(player, boss, particleSystem, audioManager);
+        resolvePlayerProjectiles(player, boss, projectileSystem);
+        resolveBossProjectiles(player, projectileSystem);
+        resolveBossContact(player, boss);
     }
 
     public float consumeRequestedHitstop() {
@@ -31,8 +37,7 @@ public class CollisionSystem {
         return value;
     }
 
-    private void resolvePlayerProjectiles(Player player, Boss boss, ProjectileSystem projectileSystem,
-                                           ParticleSystem particleSystem, AudioManager audioManager) {
+    private void resolvePlayerProjectiles(Player player, Boss boss, ProjectileSystem projectileSystem) {
         projectileSystem.removePlayerProjectilesIf(projectile -> {
             if (!boss.isDefeated() && projectile.getHitbox().overlaps(boss.getHitbox())) {
                 boolean hit = boss.takeDamage(projectile.getDamage());
@@ -52,8 +57,7 @@ public class CollisionSystem {
         });
     }
 
-    private void resolveBossProjectiles(Player player, ProjectileSystem projectileSystem, ParticleSystem particleSystem,
-                                        AudioManager audioManager) {
+    private void resolveBossProjectiles(Player player, ProjectileSystem projectileSystem) {
         projectileSystem.removeBossProjectilesIf(projectile -> {
             if (player.isInvulnerableAfterHit()) {
                 return false;
@@ -86,7 +90,7 @@ public class CollisionSystem {
         return projectile.getCenterX();
     }
 
-    private void resolveBossContact(Player player, Boss boss, ParticleSystem particleSystem, AudioManager audioManager) {
+    private void resolveBossContact(Player player, Boss boss) {
         if (boss.isDefeated() || bossContactCooldown > 0f) {
             return;
         }

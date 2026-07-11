@@ -1,20 +1,10 @@
-package com.bossfight.entities;
+package com.bossfight.boss;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
-import com.bossfight.boss.AttackFiveState;
-import com.bossfight.boss.AttackFourState;
-import com.bossfight.boss.AttackOneState;
-import com.bossfight.boss.AttackThreeState;
-import com.bossfight.boss.AttackTwoState;
-import com.bossfight.boss.BossState;
-import com.bossfight.boss.BossSoundEvent;
-import com.bossfight.boss.BossVisualState;
-import com.bossfight.boss.DefeatedState;
-import com.bossfight.boss.IdleState;
-import com.bossfight.boss.PhaseTwoTransitionState;
-import com.bossfight.systems.ProjectileSystem;
 import com.bossfight.Constants;
+import com.bossfight.entities.Hitbox;
+import com.bossfight.entities.Player;
 
 import java.util.ArrayDeque;
 
@@ -22,6 +12,7 @@ public class Boss {
     private final Hitbox hitbox;
     private final ArrayDeque<BossSoundEvent> soundEvents = new ArrayDeque<>();
     private final int maxHealth;
+    private final Color telegraphColor = new Color(1f, 0.24f, 0.1f, 1f);
     private BossState currentState;
     private int health;
     private int lastAttackIndex = -1;
@@ -31,7 +22,6 @@ public class Boss {
     private float telegraphTimer;
     private float telegraphDuration = 1f;
     private boolean phaseTwoTransitionPlayed;
-    private final Color telegraphColor = new Color(1f, 0.24f, 0.1f, 1f);
 
     public Boss() {
         x = Constants.BOSS_START_X;
@@ -42,7 +32,7 @@ public class Boss {
         currentState = new IdleState(1.2f);
     }
 
-    public void update(float delta, ProjectileSystem projectileSystem, Player player) {
+    public void update(float delta, ProjectileSpawner projectileSpawner, Player player) {
         telegraphTimer = Math.max(0f, telegraphTimer - delta);
 
         if (health <= 0 && !(currentState instanceof DefeatedState)) {
@@ -57,7 +47,7 @@ public class Boss {
             setState(new PhaseTwoTransitionState());
         }
 
-        currentState.update(this, delta, projectileSystem, player);
+        currentState.update(this, delta, projectileSpawner, player);
         hitbox.setPosition(x, y);
     }
 
@@ -107,17 +97,13 @@ public class Boss {
         lastAttackIndex = nextAttackIndex;
         phaseTwoAttackCount++;
 
-        if (nextAttackIndex == 0) {
-            return new AttackOneState();
-        } else if (nextAttackIndex == 1) {
-            return new AttackTwoState();
-        } else if (nextAttackIndex == 2) {
-            return new AttackThreeState();
-        } else if (nextAttackIndex == 3) {
-            return new AttackFourState();
-        }
-
-        return new AttackFiveState();
+        return switch (nextAttackIndex) {
+            case 0 -> new AttackOneState();
+            case 1 -> new AttackTwoState();
+            case 2 -> new AttackThreeState();
+            case 3 -> new AttackFourState();
+            default -> new AttackFiveState();
+        };
     }
 
     public void finishCurrentAttack() {

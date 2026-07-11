@@ -3,10 +3,8 @@ package com.bossfight.boss;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.bossfight.Constants;
-import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
-import com.bossfight.systems.ProjectileSystem;
 
 public class AttackFiveState implements BossState {
     private static final int LANE_COUNT = 8;
@@ -53,21 +51,21 @@ public class AttackFiveState implements BossState {
     }
 
     @Override
-    public void update(Boss boss, float delta, ProjectileSystem projectileSystem, Player player) {
+    public void update(Boss boss, float delta, ProjectileSpawner projectileSpawner, Player player) {
         elapsed += delta;
         vineTimer -= delta;
         sporeTimer -= delta;
 
-        updatePendingVines(boss, delta, projectileSystem);
+        updatePendingVines(boss, delta, projectileSpawner);
 
         if (vineTimer <= 0f && vinesQueued < TOTAL_VINES && pendingCount < MAX_PENDING_VINES) {
-            queueVineWarning(boss, projectileSystem, player);
+            queueVineWarning(boss, projectileSpawner, player);
             vinesQueued++;
             vineTimer = VINE_INTERVAL;
         }
 
         if (sporeTimer <= 0f && sporesSpawned < MAX_SPORES) {
-            spawnSpore(projectileSystem);
+            spawnSpore(projectileSpawner);
             sporesSpawned++;
             sporeTimer = SPORE_INTERVAL;
         }
@@ -81,7 +79,7 @@ public class AttackFiveState implements BossState {
     public void exit(Boss boss) {
     }
 
-    private void updatePendingVines(Boss boss, float delta, ProjectileSystem projectileSystem) {
+    private void updatePendingVines(Boss boss, float delta, ProjectileSpawner projectileSpawner) {
         for (int i = pendingCount - 1; i >= 0; i--) {
             pendingTimers[i] -= delta;
             if (pendingTimers[i] <= 0f) {
@@ -89,12 +87,12 @@ public class AttackFiveState implements BossState {
                 pendingCount--;
                 pendingTimers[i] = pendingTimers[pendingCount];
                 pendingXs[i] = pendingXs[pendingCount];
-                spawnVine(boss, projectileSystem, x);
+                spawnVine(boss, projectileSpawner, x);
             }
         }
     }
 
-    private void queueVineWarning(Boss boss, ProjectileSystem projectileSystem, Player player) {
+    private void queueVineWarning(Boss boss, ProjectileSpawner projectileSpawner, Player player) {
         int lane = chooseLane(player);
         float x = laneCenterX(lane);
 
@@ -103,7 +101,7 @@ public class AttackFiveState implements BossState {
         pendingCount++;
         boss.showTelegraph(new Color(0.48f, 1f, 0.18f, 1f), VINE_WARNING_TIME);
 
-        projectileSystem.addProjectile(Projectile.bossWarning(
+        projectileSpawner.addProjectile(Projectile.bossWarning(
                 x - WARNING_WIDTH * 0.5f,
                 Constants.FLOOR_Y,
                 WARNING_WIDTH,
@@ -145,9 +143,9 @@ public class AttackFiveState implements BossState {
         return Constants.ARENA_RIGHT - Constants.ARENA_LEFT;
     }
 
-    private void spawnVine(Boss boss, ProjectileSystem projectileSystem, float centerX) {
+    private void spawnVine(Boss boss, ProjectileSpawner projectileSpawner, float centerX) {
         boss.emitSound(BossSoundEvent.VINE_STRIKE);
-        projectileSystem.addProjectile(Projectile.bossThorn(
+        projectileSpawner.addProjectile(Projectile.bossThorn(
                 centerX - VINE_WIDTH * 0.5f,
                 Constants.FLOOR_Y,
                 VINE_WIDTH,
@@ -156,12 +154,12 @@ public class AttackFiveState implements BossState {
         ));
     }
 
-    private void spawnSpore(ProjectileSystem projectileSystem) {
+    private void spawnSpore(ProjectileSpawner projectileSpawner) {
         float width = Constants.BOSS_PROJECTILE_WIDTH + 12f;
         float height = Constants.BOSS_PROJECTILE_HEIGHT + 12f;
         float centerX = chooseSporeX();
 
-        projectileSystem.addProjectile(Projectile.bossPollen(
+        projectileSpawner.addProjectile(Projectile.bossPollen(
                 centerX - width * 0.5f,
                 Constants.WORLD_HEIGHT + 28f,
                 width,

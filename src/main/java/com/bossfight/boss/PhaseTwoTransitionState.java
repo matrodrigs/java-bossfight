@@ -1,9 +1,7 @@
 package com.bossfight.boss;
 
 import com.badlogic.gdx.graphics.Color;
-import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
-import com.bossfight.systems.ProjectileSystem;
 
 public class PhaseTwoTransitionState implements BossState {
     private static final float DURATION = 1.55f;
@@ -26,7 +24,7 @@ public class PhaseTwoTransitionState implements BossState {
     }
 
     @Override
-    public void update(Boss boss, float delta, ProjectileSystem projectileSystem, Player player) {
+    public void update(Boss boss, float delta, ProjectileSpawner projectileSpawner, Player player) {
         elapsed += delta;
 
         while (shockwavesPlayed < SHOCKWAVE_TIMES.length && elapsed >= SHOCKWAVE_TIMES[shockwavesPlayed]) {

@@ -3,10 +3,8 @@ package com.bossfight.boss;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.bossfight.Constants;
-import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
-import com.bossfight.systems.ProjectileSystem;
 
 public class AttackFourState implements BossState {
     private float elapsed;
@@ -28,12 +26,12 @@ public class AttackFourState implements BossState {
     }
 
     @Override
-    public void update(Boss boss, float delta, ProjectileSystem projectileSystem, Player player) {
+    public void update(Boss boss, float delta, ProjectileSpawner projectileSpawner, Player player) {
         elapsed += delta;
         puffTimer -= delta;
 
         if (puffTimer <= 0f && puffsSpawned < getMaxPuffs(boss)) {
-            spawnPollenPuff(boss, projectileSystem, player);
+            spawnPollenPuff(boss, projectileSpawner, player);
             puffsSpawned++;
             puffTimer = boss.isPhaseTwo() ? 0.16f : 0.22f;
             boss.emitSound(BossSoundEvent.POLLEN_DROP);
@@ -52,7 +50,7 @@ public class AttackFourState implements BossState {
         return boss.isPhaseTwo() ? 7 : 5;
     }
 
-    private void spawnPollenPuff(Boss boss, ProjectileSystem projectileSystem, Player player) {
+    private void spawnPollenPuff(Boss boss, ProjectileSpawner projectileSpawner, Player player) {
         float width = Constants.BOSS_PROJECTILE_WIDTH + 26f;
         float height = Constants.BOSS_PROJECTILE_HEIGHT + 26f;
         float originX = boss.getCenterX() - 138f;
@@ -69,7 +67,7 @@ public class AttackFourState implements BossState {
                 boss.isPhaseTwo() ? -120f : -92f,
                 boss.isPhaseTwo() ? 115f : 88f);
 
-        projectileSystem.addProjectile(Projectile.bossPollen(
+        projectileSpawner.addProjectile(Projectile.bossPollen(
                 originX - width * 0.5f,
                 originY - height * 0.5f,
                 width,

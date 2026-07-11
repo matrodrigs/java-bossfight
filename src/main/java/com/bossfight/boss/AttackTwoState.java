@@ -3,10 +3,8 @@ package com.bossfight.boss;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.math.Vector2;
-import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
-import com.bossfight.systems.ProjectileSystem;
 import com.bossfight.Constants;
 
 public class AttackTwoState implements BossState {
@@ -29,13 +27,13 @@ public class AttackTwoState implements BossState {
     }
 
     @Override
-    public void update(Boss boss, float delta, ProjectileSystem projectileSystem, Player player) {
+    public void update(Boss boss, float delta, ProjectileSpawner projectileSpawner, Player player) {
         elapsed += delta;
         burstTimer -= delta;
 
         if (burstTimer <= 0f) {
             boss.emitSound(BossSoundEvent.MAGIC_VOLLEY);
-            fireVolley(boss, projectileSystem, player);
+            fireVolley(boss, projectileSpawner, player);
             volleys++;
             burstTimer = boss.isPhaseTwo() ? 0.38f : 0.52f;
             boss.showTelegraph(new Color(0.96f, 0.74f, 0.18f, 1f), Math.min(0.32f, burstTimer));
@@ -51,7 +49,7 @@ public class AttackTwoState implements BossState {
     public void exit(Boss boss) {
     }
 
-    private void fireVolley(Boss boss, ProjectileSystem projectileSystem, Player player) {
+    private void fireVolley(Boss boss, ProjectileSpawner projectileSpawner, Player player) {
         int projectileCount = boss.isPhaseTwo() ? 3 : 2;
         float speed = boss.isPhaseTwo() ? 490f : 430f;
         float originX = boss.getCenterX() - 126f;
@@ -71,7 +69,7 @@ public class AttackTwoState implements BossState {
             float velocityX = MathUtils.cos(angle) * speed;
             float velocityY = MathUtils.sin(angle) * speed;
             if (kind == Projectile.Kind.BOSS_ACORN) {
-                projectileSystem.addProjectile(Projectile.bossAcorn(
+                projectileSpawner.addProjectile(Projectile.bossAcorn(
                         originX - width * 0.5f,
                         originY - height * 0.5f,
                         width,
@@ -81,7 +79,7 @@ public class AttackTwoState implements BossState {
                         -70f
                 ));
             } else {
-                projectileSystem.addProjectile(Projectile.bossSeed(
+                projectileSpawner.addProjectile(Projectile.bossSeed(
                         originX - width * 0.5f,
                         originY - height * 0.5f,
                         width,
@@ -94,11 +92,11 @@ public class AttackTwoState implements BossState {
         }
 
         if (boss.isPhaseTwo() && volleys % 2 == 1) {
-            fireArcingAcorn(boss, projectileSystem, player);
+            fireArcingAcorn(boss, projectileSpawner, player);
         }
     }
 
-    private void fireArcingAcorn(Boss boss, ProjectileSystem projectileSystem, Player player) {
+    private void fireArcingAcorn(Boss boss, ProjectileSpawner projectileSpawner, Player player) {
         float width = Constants.BOSS_PROJECTILE_WIDTH + 12f;
         float height = Constants.BOSS_PROJECTILE_HEIGHT + 15f;
         float originX = boss.getCenterX() - 112f;
@@ -107,7 +105,7 @@ public class AttackTwoState implements BossState {
         float velocityX = (player.getCenterX() - originX) / travelTime;
         float velocityY = 360f;
 
-        projectileSystem.addProjectile(Projectile.bossAcorn(
+        projectileSpawner.addProjectile(Projectile.bossAcorn(
                 originX - width * 0.5f,
                 originY - height * 0.5f,
                 width,

@@ -8,9 +8,10 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
 import com.bossfight.Constants;
+import com.bossfight.boss.ProjectileSpawner;
 import com.bossfight.entities.Projectile;
 
-public class ProjectileSystem {
+public class ProjectileSystem implements ProjectileSpawner {
     @FunctionalInterface
     public interface ProjectileRemovalRule {
         boolean shouldRemove(Projectile projectile);
@@ -43,6 +44,7 @@ public class ProjectileSystem {
         bossPetalBomb = load("sprites/projectiles/boss_petal_bomb.png");
     }
 
+    @Override
     public void addProjectile(Projectile projectile) {
         if (projectile.getOwner() == Projectile.Owner.PLAYER) {
             playerProjectiles.add(projectile);

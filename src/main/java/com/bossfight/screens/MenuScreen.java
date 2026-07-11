@@ -10,7 +10,6 @@ import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.bossfight.MainGame;
 import com.bossfight.systems.AudioManager;
 import com.bossfight.systems.RetroTextFactory;
 import com.bossfight.systems.TextureDraw;
@@ -18,8 +17,8 @@ import com.bossfight.Constants;
 
 public class MenuScreen extends ScreenAdapter {
     private static final float MENU_CENTER_X = 638.5f;
-    private static final float START_CENTER_Y = 383.7f;
-    private static final float EXIT_CENTER_Y = 287.7f;
+    private static final float START_CENTER_Y = 300f;
+    private static final float EXIT_CENTER_Y = 184f;
     private static final float BUTTON_HALF_WIDTH = 221f;
     private static final float OPTION_TEXT_X_OFFSET = -3f;
     private static final float OPTION_TEXT_Y_OFFSET = -7f;
@@ -29,7 +28,7 @@ public class MenuScreen extends ScreenAdapter {
     private static final Color POINTER_GOLD_DARK = new Color(0.58f, 0.27f, 0.03f, 1f);
     private static final Color POINTER_HIGHLIGHT = new Color(1f, 0.84f, 0.33f, 0.92f);
 
-    private final MainGame game;
+    private final GameContext game;
     private final OrthographicCamera camera;
     private final FitViewport viewport;
     private final RetroTextFactory textFactory;
@@ -43,7 +42,7 @@ public class MenuScreen extends ScreenAdapter {
     private float elapsed;
     private int selectedIndex;
 
-    public MenuScreen(MainGame game) {
+    public MenuScreen(GameContext game) {
         this.game = game;
         camera = new OrthographicCamera();
         viewport = new FitViewport(Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT, camera);

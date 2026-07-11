@@ -2,10 +2,8 @@ package com.bossfight.boss;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
-import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
-import com.bossfight.systems.ProjectileSystem;
 import com.bossfight.Constants;
 
 public class AttackThreeState implements BossState {
@@ -33,23 +31,23 @@ public class AttackThreeState implements BossState {
     }
 
     @Override
-    public void update(Boss boss, float delta, ProjectileSystem projectileSystem, Player player) {
+    public void update(Boss boss, float delta, ProjectileSpawner projectileSpawner, Player player) {
         elapsed += delta;
         spawnTimer -= delta;
 
-        updatePendingColumns(boss, delta, projectileSystem);
+        updatePendingColumns(boss, delta, projectileSpawner);
 
         if (spawnTimer <= 0f && pendingCount == 0) {
             if (boss.isPhaseTwo() && elapsed > 0.7f && MathUtils.randomBoolean(0.34f)) {
-                spawnGardenPattern(projectileSystem);
+                spawnGardenPattern(projectileSpawner);
                 spawnTimer = 0.86f;
             } else {
-                spawnWarningColumn(projectileSystem);
+                spawnWarningColumn(projectileSpawner);
                 spawnTimer = boss.isPhaseTwo() ? 0.42f : 0.56f;
             }
 
             if (boss.isPhaseTwo() && MathUtils.randomBoolean(0.45f)) {
-                spawnDriftingPollen(projectileSystem,
+                spawnDriftingPollen(projectileSpawner,
                         MathUtils.random(Constants.ARENA_LEFT + 26f, Constants.ARENA_RIGHT - 46f));
             }
         }
@@ -64,7 +62,7 @@ public class AttackThreeState implements BossState {
     public void exit(Boss boss) {
     }
 
-    private void updatePendingColumns(Boss boss, float delta, ProjectileSystem projectileSystem) {
+    private void updatePendingColumns(Boss boss, float delta, ProjectileSpawner projectileSpawner) {
         for (int i = pendingCount - 1; i >= 0; i--) {
             pendingTimers[i] -= delta;
             if (pendingTimers[i] <= 0f) {
@@ -72,17 +70,17 @@ public class AttackThreeState implements BossState {
                 pendingCount--;
                 pendingTimers[i] = pendingTimers[pendingCount];
                 pendingXs[i] = pendingXs[pendingCount];
-                spawnFallingProjectile(boss, projectileSystem, x);
+                spawnFallingProjectile(boss, projectileSpawner, x);
             }
         }
     }
 
-    private void spawnWarningColumn(ProjectileSystem projectileSystem) {
+    private void spawnWarningColumn(ProjectileSpawner projectileSpawner) {
         float x = MathUtils.random(Constants.ARENA_LEFT + 22f, Constants.ARENA_RIGHT - 44f);
-        addPendingColumn(projectileSystem, x);
+        addPendingColumn(projectileSpawner, x);
     }
 
-    private void spawnGardenPattern(ProjectileSystem projectileSystem) {
+    private void spawnGardenPattern(ProjectileSpawner projectileSpawner) {
         int safeLane = MathUtils.random(3);
         float laneWidth = (Constants.ARENA_RIGHT - Constants.ARENA_LEFT) / 4f;
 
@@ -92,11 +90,11 @@ public class AttackThreeState implements BossState {
             }
 
             float x = Constants.ARENA_LEFT + laneWidth * (lane + 0.5f) + MathUtils.random(-24f, 24f);
-            addPendingColumn(projectileSystem, x);
+            addPendingColumn(projectileSpawner, x);
         }
     }
 
-    private void addPendingColumn(ProjectileSystem projectileSystem, float x) {
+    private void addPendingColumn(ProjectileSpawner projectileSpawner, float x) {
         if (pendingCount >= MAX_PENDING_COLUMNS) {
             return;
         }
@@ -104,7 +102,7 @@ public class AttackThreeState implements BossState {
         pendingXs[pendingCount] = x;
         pendingTimers[pendingCount] = COLUMN_WARNING_TIME;
         pendingCount++;
-        projectileSystem.addProjectile(Projectile.bossWarning(
+        projectileSpawner.addProjectile(Projectile.bossWarning(
                 x - 12f,
                 Constants.FLOOR_Y,
                 34f,
@@ -113,13 +111,13 @@ public class AttackThreeState implements BossState {
         ));
     }
 
-    private void spawnFallingProjectile(Boss boss, ProjectileSystem projectileSystem, float x) {
+    private void spawnFallingProjectile(Boss boss, ProjectileSpawner projectileSpawner, float x) {
         boss.emitSound(BossSoundEvent.POLLEN_DROP);
         float y = Constants.WORLD_HEIGHT + 30f;
         float horizontalDrift = boss.isPhaseTwo() ? MathUtils.random(-65f, 65f) : MathUtils.random(-28f, 28f);
         float fallSpeed = boss.isPhaseTwo() ? -560f : -430f;
 
-        projectileSystem.addProjectile(Projectile.bossPetalBomb(
+        projectileSpawner.addProjectile(Projectile.bossPetalBomb(
                 x,
                 y,
                 Constants.BOSS_PROJECTILE_WIDTH + 4f,
@@ -130,8 +128,8 @@ public class AttackThreeState implements BossState {
         ));
     }
 
-    private void spawnDriftingPollen(ProjectileSystem projectileSystem, float x) {
-        projectileSystem.addProjectile(Projectile.bossPollen(
+    private void spawnDriftingPollen(ProjectileSpawner projectileSpawner, float x) {
+        projectileSpawner.addProjectile(Projectile.bossPollen(
                 x,
                 Constants.WORLD_HEIGHT + 26f,
                 Constants.BOSS_PROJECTILE_WIDTH + 12f,

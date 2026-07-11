@@ -7,7 +7,6 @@ import com.badlogic.gdx.graphics.GL20;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.utils.viewport.FitViewport;
-import com.bossfight.MainGame;
 import com.bossfight.systems.RetroTextFactory;
 import com.bossfight.systems.TextureDraw;
 import com.bossfight.Constants;
@@ -19,7 +18,7 @@ public class EndScreen extends ScreenAdapter {
     private static final float TEXT_MAX_WIDTH = 690f;
     private static final float PROMPT_GAP = 14f;
 
-    private final MainGame game;
+    private final GameContext game;
     private final boolean victory;
     private final OrthographicCamera camera;
     private final FitViewport viewport;
@@ -31,7 +30,7 @@ public class EndScreen extends ScreenAdapter {
     private final Texture menuKeyText;
     private final Texture menuActionText;
 
-    public EndScreen(MainGame game, boolean victory) {
+    public EndScreen(GameContext game, boolean victory) {
         this.game = game;
         this.victory = victory;
         camera = new OrthographicCamera();

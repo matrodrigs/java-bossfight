@@ -2,10 +2,8 @@ package com.bossfight.boss;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.math.MathUtils;
-import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
-import com.bossfight.systems.ProjectileSystem;
 import com.bossfight.Constants;
 
 public class AttackOneState implements BossState {
@@ -33,10 +31,10 @@ public class AttackOneState implements BossState {
     }
 
     @Override
-    public void update(Boss boss, float delta, ProjectileSystem projectileSystem, Player player) {
+    public void update(Boss boss, float delta, ProjectileSpawner projectileSpawner, Player player) {
         if (!warningSpawned) {
             warningSpawned = true;
-            projectileSystem.addProjectile(Projectile.bossWarning(
+            projectileSpawner.addProjectile(Projectile.bossWarning(
                     Constants.ARENA_LEFT,
                     getLaneY(),
                     getThornHitboxWidth(),
@@ -54,7 +52,7 @@ public class AttackOneState implements BossState {
             strikesFired++;
             recoveryTimer = boss.isPhaseTwo() ? 0.28f : 0.42f;
             boss.emitSound(BossSoundEvent.VINE_STRIKE);
-            projectileSystem.addProjectile(Projectile.bossThorn(
+            projectileSpawner.addProjectile(Projectile.bossThorn(
                     Constants.ARENA_LEFT,
                     getLaneY(),
                     getThornHitboxWidth(),

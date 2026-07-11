@@ -1,8 +1,6 @@
 package com.bossfight.boss;
 
-import com.bossfight.entities.Boss;
 import com.bossfight.entities.Player;
-import com.bossfight.systems.ProjectileSystem;
 
 public class IdleState implements BossState {
     private final float duration;
@@ -23,7 +21,7 @@ public class IdleState implements BossState {
     }
 
     @Override
-    public void update(Boss boss, float delta, ProjectileSystem projectileSystem, Player player) {
+    public void update(Boss boss, float delta, ProjectileSpawner projectileSpawner, Player player) {
         elapsed += delta;
         if (elapsed >= duration && !boss.isDefeated()) {
             boss.setState(boss.createNextAttackState());
