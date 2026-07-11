@@ -41,7 +41,7 @@ public class Player {
         x = Constants.PLAYER_START_X;
         y = Constants.PLAYER_START_Y;
         health = Constants.PLAYER_MAX_HEALTH;
-        specialEnergy = Constants.PLAYER_SPECIAL_MAX * 0.35f;
+        specialEnergy = 0f;
         hitbox = new Hitbox(x, y, Constants.PLAYER_WIDTH, Constants.PLAYER_HEIGHT);
     }
 
