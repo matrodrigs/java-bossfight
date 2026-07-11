@@ -99,6 +99,7 @@ public class BattleScreen extends ScreenAdapter {
     private final ParticleSystem particleSystem;
     private final CollisionSystem collisionSystem;
     private final BattleInput battleInput;
+    private final ControlsOverlay controlsOverlay;
     private final CameraShake cameraShake;
     private final PhaseShockwaveEffect phaseShockwaveEffect;
     private float elapsed;
@@ -143,6 +144,7 @@ public class BattleScreen extends ScreenAdapter {
         particleSystem = new ParticleSystem();
         collisionSystem = new CollisionSystem(particleSystem, game.getAudioManager());
         battleInput = new BattleInput();
+        controlsOverlay = new ControlsOverlay(textFactory);
         cameraShake = new CameraShake();
         phaseShockwaveEffect = new PhaseShockwaveEffect();
         this.introPausedForTransition = introPausedForTransition;
@@ -229,6 +231,7 @@ public class BattleScreen extends ScreenAdapter {
         }
 
         updateIntro(delta);
+        controlsOverlay.update(delta);
 
         if (knockoutSequenceActive) {
             return updateKnockoutSequence(delta);
@@ -610,6 +613,7 @@ public class BattleScreen extends ScreenAdapter {
         drawIntroOverlay();
         drawKnockoutOverlay();
         game.getBatch().end();
+        controlsOverlay.render(game.getBatch(), game.getShapeRenderer(), camera, elapsed);
     }
 
     private void drawPlayerHealthBox() {
@@ -740,6 +744,7 @@ public class BattleScreen extends ScreenAdapter {
 
         if (introTimer >= Constants.INTRO_TOTAL_DURATION) {
             fightStarted = true;
+            controlsOverlay.showOnce();
             game.getAudioManager().playMusic(BATTLE_MUSIC_PATH, true, BATTLE_MUSIC_VOLUME);
             boss.showTelegraph(new Color(1f, 0.38f, 0.12f, 1f), 0.35f);
         }

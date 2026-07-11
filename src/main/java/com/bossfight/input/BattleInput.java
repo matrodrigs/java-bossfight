@@ -15,23 +15,15 @@ public final class BattleInput {
 
     public void poll(float delta) {
         jumpBufferTimer = updateBuffer(jumpBufferTimer, delta,
-                Gdx.input.isKeyJustPressed(Input.Keys.W)
-                        || Gdx.input.isKeyJustPressed(Input.Keys.UP)
-                        || Gdx.input.isKeyJustPressed(Input.Keys.SPACE));
+                Gdx.input.isKeyJustPressed(Input.Keys.SPACE));
         dashBufferTimer = updateBuffer(dashBufferTimer, delta,
-                Gdx.input.isKeyJustPressed(Input.Keys.K)
-                        || Gdx.input.isKeyJustPressed(Input.Keys.SHIFT_LEFT)
-                        || Gdx.input.isKeyJustPressed(Input.Keys.SHIFT_RIGHT));
+                Gdx.input.isKeyJustPressed(Input.Keys.K));
         specialBufferTimer = updateBuffer(specialBufferTimer, delta,
-                Gdx.input.isKeyJustPressed(Input.Keys.G)
-                        || Gdx.input.isKeyJustPressed(Input.Keys.ALT_LEFT)
-                        || Gdx.input.isKeyJustPressed(Input.Keys.ALT_RIGHT));
+                Gdx.input.isKeyJustPressed(Input.Keys.L));
 
-        moveLeft = Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT);
-        moveRight = Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT);
-        shootHeld = Gdx.input.isKeyPressed(Input.Keys.F)
-                || Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)
-                || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
+        moveLeft = Gdx.input.isKeyPressed(Input.Keys.A);
+        moveRight = Gdx.input.isKeyPressed(Input.Keys.D);
+        shootHeld = Gdx.input.isKeyPressed(Input.Keys.J);
     }
 
     public boolean isMoveLeftHeld() {

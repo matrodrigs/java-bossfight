@@ -56,12 +56,12 @@ Se o Gradle reclamar de JVM antiga, confira se `JAVA_HOME` aponta para um JDK 21
 
 | Ação | Teclas |
 | --- | --- |
-| Mover para a esquerda | `A` ou `Seta esquerda` |
-| Mover para a direita | `D` ou `Seta direita` |
-| Pular | `W`, `Espaço` ou `Seta cima` |
-| Atirar | `F` ou `Ctrl` |
-| Dash | `K` ou `Shift` |
-| Ataque especial | `G` ou `Alt` |
+| Mover para a esquerda | `A` |
+| Mover para a direita | `D` |
+| Pular | `Espaço` |
+| Atirar | `J` |
+| Dash | `K` |
+| Ataque especial | `L` |
 | Voltar ao menu | `Esc` |
 | Tela final | `R` para lutar de novo, `Esc`/`Enter` para voltar ao menu |
 | Alternar fullscreen | `Alt` + `Enter` |
