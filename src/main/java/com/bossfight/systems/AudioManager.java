@@ -52,7 +52,6 @@ public class AudioManager {
     private static final float BOSS_PHASE_ROAR_VOLUME = 0.36f;
 
     private final ConcurrentLinkedQueue<Tone> tones = new ConcurrentLinkedQueue<>();
-    private AudioDevice proceduralDevice;
     private Thread proceduralThread;
     private volatile boolean proceduralAudioRunning;
     private Sound bossPhaseRoar;
@@ -126,18 +125,17 @@ public class AudioManager {
 
     public void dispose() {
         proceduralAudioRunning = false;
-        if (proceduralThread != null) {
-            proceduralThread.interrupt();
+        Thread audioThread = proceduralThread;
+        if (audioThread != null) {
+            audioThread.interrupt();
             try {
-                proceduralThread.join(120L);
+                audioThread.join(1_000L);
             } catch (InterruptedException exception) {
                 Thread.currentThread().interrupt();
             }
         }
-        if (proceduralDevice != null) {
-            proceduralDevice.dispose();
-            proceduralDevice = null;
-        }
+        proceduralThread = null;
+        tones.clear();
         if (bossPhaseRoar != null) {
             bossPhaseRoar.dispose();
             bossPhaseRoar = null;
@@ -160,14 +158,20 @@ public class AudioManager {
     }
 
     private void startProceduralAudio() {
+        AudioDevice audioDevice = null;
         try {
-            proceduralDevice = Gdx.audio.newAudioDevice(SAMPLE_RATE, true);
+            audioDevice = Gdx.audio.newAudioDevice(SAMPLE_RATE, true);
             proceduralAudioRunning = true;
-            proceduralThread = new Thread(this::runProceduralAudio, "bossfight-procedural-audio");
+            AudioDevice ownedDevice = audioDevice;
+            proceduralThread = new Thread(() -> runProceduralAudio(ownedDevice), "bossfight-procedural-audio");
             proceduralThread.setDaemon(true);
             proceduralThread.start();
         } catch (RuntimeException exception) {
             proceduralAudioRunning = false;
+            if (audioDevice != null) {
+                audioDevice.dispose();
+            }
+            proceduralThread = null;
             Gdx.app.log("AudioManager", "Procedural audio unavailable: " + exception.getMessage());
         }
     }
@@ -176,19 +180,25 @@ public class AudioManager {
         return new Tone(cue.frequency, cue.duration, cue.volume, cue.sweep, cue.noiseMix);
     }
 
-    private void runProceduralAudio() {
-        while (proceduralAudioRunning) {
-            Tone tone = tones.poll();
-            if (tone == null) {
-                sleepQuietly(4L);
-                continue;
-            }
+    private void runProceduralAudio(AudioDevice audioDevice) {
+        try {
+            while (proceduralAudioRunning) {
+                Tone tone = tones.poll();
+                if (tone == null) {
+                    sleepQuietly(4L);
+                    continue;
+                }
 
-            writeTone(tone);
+                writeTone(audioDevice, tone);
+            }
+        } finally {
+            proceduralAudioRunning = false;
+            tones.clear();
+            audioDevice.dispose();
         }
     }
 
-    private void writeTone(Tone tone) {
+    private void writeTone(AudioDevice audioDevice, Tone tone) {
         int sampleCount = Math.max(1, (int) (SAMPLE_RATE * tone.duration));
         float[] samples = new float[sampleCount];
         double phase = 0.0;
@@ -210,8 +220,8 @@ public class AudioManager {
             samples[i] = mixedWave * envelope * tone.volume;
         }
 
-        if (proceduralAudioRunning && proceduralDevice != null) {
-            proceduralDevice.writeSamples(samples, 0, samples.length);
+        if (proceduralAudioRunning) {
+            audioDevice.writeSamples(samples, 0, samples.length);
         }
     }
 
