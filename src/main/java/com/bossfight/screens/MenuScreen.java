@@ -18,9 +18,14 @@ import com.bossfight.Constants;
 public class MenuScreen extends ScreenAdapter {
     private static final float MENU_CENTER_X = 638.5f;
     private static final float START_CENTER_Y = 300f;
-    private static final float EXIT_CENTER_Y = 184f;
+    private static final float EXIT_CENTER_Y = 176f;
+    private static final float TITLE_CENTER_Y = 489f;
+    private static final float SUBTITLE_CENTER_Y = 426f;
     private static final float BUTTON_HALF_WIDTH = 221f;
-    private static final float OPTION_TEXT_X_OFFSET = -3f;
+    private static final float TITLE_TEXT_X_OFFSET = -2f;
+    private static final float SUBTITLE_TEXT_X_OFFSET = 9f;
+    private static final float START_TEXT_X_OFFSET = -3f;
+    private static final float EXIT_TEXT_X_OFFSET = -6f;
     private static final float OPTION_TEXT_Y_OFFSET = -7f;
     private static final Color POINTER_SHADOW = new Color(0.03f, 0.02f, 0.01f, 0.45f);
     private static final Color POINTER_INK = new Color(0.05f, 0.035f, 0.02f, 0.96f);
@@ -86,9 +91,10 @@ public class MenuScreen extends ScreenAdapter {
 
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
-        TextureDraw.centered(game.getBatch(), titleText, MENU_CENTER_X, 525f + MathUtils.sin(elapsed * 2.2f) * 3f,
-                0.72f);
-        TextureDraw.centered(game.getBatch(), subtitleText, MENU_CENTER_X, 462f, 0.72f);
+        TextureDraw.centered(game.getBatch(), titleText, MENU_CENTER_X + TITLE_TEXT_X_OFFSET,
+                TITLE_CENTER_Y + MathUtils.sin(elapsed * 2.2f) * 3f, 0.72f);
+        TextureDraw.centered(game.getBatch(), subtitleText, MENU_CENTER_X + SUBTITLE_TEXT_X_OFFSET,
+                SUBTITLE_CENTER_Y, 0.72f);
         drawOptionText(0, START_CENTER_Y);
         drawOptionText(1, EXIT_CENTER_Y);
         game.getBatch().end();
@@ -214,7 +220,8 @@ public class MenuScreen extends ScreenAdapter {
         } else {
             texture = selected ? exitSelectedText : exitText;
         }
-        float xOffset = OPTION_TEXT_X_OFFSET + (selected ? MathUtils.sin(elapsed * 10f) * 4f : 0f);
+        float baseXOffset = index == 0 ? START_TEXT_X_OFFSET : EXIT_TEXT_X_OFFSET;
+        float xOffset = baseXOffset + (selected ? MathUtils.sin(elapsed * 10f) * 4f : 0f);
         TextureDraw.centered(game.getBatch(), texture, MENU_CENTER_X + xOffset, centerY + OPTION_TEXT_Y_OFFSET, 0.64f);
     }
 }
