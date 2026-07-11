@@ -45,9 +45,9 @@ public class CollisionSystem {
     private void resolvePlayerProjectiles(Player player, Boss boss, ProjectileSystem projectileSystem) {
         projectileSystem.removePlayerProjectilesIf(projectile -> {
             if (!boss.isDefeated() && projectile.getHitbox().overlaps(boss.getHitbox())) {
-                boolean hit = boss.takeDamage(projectile.getDamage());
+                boolean special = projectile.isSpecial();
+                boolean hit = boss.takeDamage(projectile.getDamage(), special);
                 if (hit) {
-                    boolean special = projectile.isSpecial();
                     feedback.onBossHit(projectile.getCenterX(), projectile.getCenterY(), special, boss.isDefeated());
                     player.addSpecialEnergy(special ? 0f : Constants.PLAYER_SPECIAL_HIT_CHARGE);
                     if (special) {

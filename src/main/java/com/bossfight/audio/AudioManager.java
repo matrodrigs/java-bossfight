@@ -23,6 +23,9 @@ public class AudioManager {
         BOSS_MAGIC_VOLLEY(760f, 0.1f, 0.15f, 0.62f, 0.08f),
         BOSS_POLLEN_CHARGE(250f, 0.22f, 0.1f, 1.3f, 0.22f),
         BOSS_POLLEN_DROP(125f, 0.16f, 0.16f, 0.5f, 0.3f),
+        BOSS_STAGGER(118f, 0.18f, 0.17f, 0.42f, 0.36f),
+        BOSS_CHAIN_WARNING(440f, 0.16f, 0.14f, 1.65f, 0.12f),
+        BOSS_FINAL_RAGE(72f, 0.42f, 0.23f, 0.28f, 0.52f),
         BOSS_PHASE_ROAR(88f, 0.48f, 0.24f, 0.34f, 0.58f),
         BOSS_PHASE_SHOCKWAVE(64f, 0.18f, 0.2f, 0.2f, 0.48f),
         BOSS_DEFEAT_EXPLOSION(96f, 0.085f, 0.21f, 0.24f, 0.82f),
@@ -75,6 +78,10 @@ public class AudioManager {
 
     public void stopMusic() {
         musicChannel.stop();
+    }
+
+    public void setMusicVolume(float volume) {
+        musicChannel.setVolume(clampVolume(volume));
     }
 
     public void playVoice(String path, float volume) {

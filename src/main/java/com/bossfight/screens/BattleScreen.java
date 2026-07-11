@@ -74,6 +74,7 @@ public class BattleScreen extends ScreenAdapter {
     private final PhaseShockwaveEffect phaseShockwaveEffect;
     private float elapsed;
     private float hitstopTimer;
+    private float arenaPetalTimer;
 
     public BattleScreen(GameContext game, boolean introPausedForTransition) {
         this.game = game;
@@ -143,6 +144,7 @@ public class BattleScreen extends ScreenAdapter {
 
         updateVisualEffects(delta);
         battleFlow.updatePhaseTwoMusicTransition(delta);
+        battleFlow.updateDynamicMusic(delta, boss);
         if (battleFlow.isIntroPausedForTransition()) {
             return true;
         }
@@ -179,6 +181,25 @@ public class BattleScreen extends ScreenAdapter {
         cameraShake.update(delta);
         particleSystem.update(delta);
         phaseShockwaveEffect.update(delta);
+        updateArenaPetals(delta);
+    }
+
+    private void updateArenaPetals(float delta) {
+        if (!battleFlow.isFightStarted() || !boss.isPhaseTwo() || boss.isDefeated()) {
+            return;
+        }
+
+        arenaPetalTimer -= delta;
+        if (arenaPetalTimer > 0f) {
+            return;
+        }
+
+        particleSystem.spawnArenaPetal(boss.isFinalRage());
+        arenaPetalTimer = arenaPetalInterval();
+    }
+
+    private float arenaPetalInterval() {
+        return boss.isFinalRage() ? 0.11f : 0.22f;
     }
 
     private boolean updateNonCombatSequence(float delta) {
@@ -283,7 +304,7 @@ public class BattleScreen extends ScreenAdapter {
 
     private void renderWorld() {
         ShapeRenderer shapeRenderer = game.getShapeRenderer();
-        background.renderBack(game.getBatch(), camera);
+        background.renderBack(game.getBatch(), camera, boss, elapsed);
 
         shapeRenderer.setProjectionMatrix(camera.combined);
         Gdx.gl.glEnable(GL20.GL_BLEND);
@@ -323,7 +344,7 @@ public class BattleScreen extends ScreenAdapter {
         projectileRenderer.renderSprites(game.getBatch());
         game.getBatch().end();
 
-        background.renderForeground(game.getBatch(), camera);
+        background.renderForeground(game.getBatch(), camera, boss, elapsed);
 
         Gdx.gl.glDisable(GL20.GL_BLEND);
     }
@@ -355,11 +376,22 @@ public class BattleScreen extends ScreenAdapter {
                 case MAGIC_VOLLEY -> AudioManager.Cue.BOSS_MAGIC_VOLLEY;
                 case POLLEN_CHARGE -> AudioManager.Cue.BOSS_POLLEN_CHARGE;
                 case POLLEN_DROP -> AudioManager.Cue.BOSS_POLLEN_DROP;
+                case BOSS_STAGGER -> AudioManager.Cue.BOSS_STAGGER;
+                case CHAIN_WARNING -> AudioManager.Cue.BOSS_CHAIN_WARNING;
+                case FINAL_RAGE -> AudioManager.Cue.BOSS_FINAL_RAGE;
                 case PHASE_SHOCKWAVE -> AudioManager.Cue.BOSS_PHASE_SHOCKWAVE;
                 case PHASE_ROAR -> throw new IllegalStateException(
                         "O rugido da fase deve usar o efeito sonoro gravado");
             };
             game.getAudioManager().playCue(cue);
+            if (soundEvent == BossSoundEvent.BOSS_STAGGER) {
+                cameraShake.request(8f, 0.20f);
+            }
+            if (soundEvent == BossSoundEvent.FINAL_RAGE) {
+                cameraShake.request(18f, 0.82f);
+                phaseShockwaveEffect.spawn(1.28f);
+                particleSystem.spawnBossRage(boss.getCenterX() - 28f, Constants.FLOOR_Y + 300f);
+            }
             if (soundEvent == BossSoundEvent.PHASE_SHOCKWAVE) {
                 cameraShake.request(PHASE_SHOCKWAVE_SHAKE_MAGNITUDE, PHASE_SHOCKWAVE_SHAKE_DURATION);
                 phaseShockwaveEffect.spawn(1.1f);

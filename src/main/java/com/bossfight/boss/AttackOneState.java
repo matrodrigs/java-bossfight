@@ -8,6 +8,10 @@ import com.bossfight.config.Constants;
 
 public class AttackOneState implements BossState {
     private static final float WARNING_TIME = 0.62f;
+    private static final float CHAIN_WARNING_TIME = 0.58f;
+
+    private final int forcedStrikeCount;
+    private final boolean chainFollowUp;
 
     private float currentWarningTime;
     private float warningTimer;
@@ -18,6 +22,19 @@ public class AttackOneState implements BossState {
     private int strikesFired;
     private int strikesTotal;
 
+    public AttackOneState() {
+        this(0, false);
+    }
+
+    private AttackOneState(int forcedStrikeCount, boolean chainFollowUp) {
+        this.forcedStrikeCount = forcedStrikeCount;
+        this.chainFollowUp = chainFollowUp;
+    }
+
+    static AttackOneState chainedStrike() {
+        return new AttackOneState(1, true);
+    }
+
     @Override
     public BossVisualState getVisualState() {
         return BossVisualState.VINE_STRIKE;
@@ -26,7 +43,7 @@ public class AttackOneState implements BossState {
     @Override
     public void enter(Boss boss) {
         strikesFired = 0;
-        strikesTotal = boss.isPhaseTwo() ? 3 : 1;
+        strikesTotal = forcedStrikeCount > 0 ? forcedStrikeCount : strikeCountFor(boss);
         startStrike(boss, MathUtils.randomBoolean());
     }
 
@@ -77,15 +94,35 @@ public class AttackOneState implements BossState {
         upperLane = useUpperLane;
         warningSpawned = false;
         fired = false;
-        currentWarningTime = boss.isPhaseTwo() ? 0.52f : WARNING_TIME;
+        currentWarningTime = warningTimeFor(boss);
         warningTimer = currentWarningTime;
         recoveryTimer = 0f;
-        boss.emitSound(BossSoundEvent.VINE_CHARGE);
-        boss.showTelegraph(new Color(1f, 0.16f, 0.08f, 1f), warningTimer);
+        boss.emitSound(chainFollowUp ? BossSoundEvent.CHAIN_WARNING : BossSoundEvent.VINE_CHARGE);
+        Color color = chainFollowUp
+                ? new Color(1f, 0.58f, 0.08f, 1f)
+                : new Color(1f, 0.16f, 0.08f, 1f);
+        boss.showTelegraph(color, warningTimer);
     }
 
     private float getLaneY() {
         return upperLane ? Constants.FLOOR_Y + 142f : Constants.FLOOR_Y + 8f;
+    }
+
+    private int strikeCountFor(Boss boss) {
+        if (boss.isFinalRage()) {
+            return 4;
+        }
+        return boss.isPhaseTwo() ? 3 : 1;
+    }
+
+    private float warningTimeFor(Boss boss) {
+        if (chainFollowUp) {
+            return CHAIN_WARNING_TIME;
+        }
+        if (boss.isFinalRage()) {
+            return 0.48f;
+        }
+        return boss.isPhaseTwo() ? 0.52f : WARNING_TIME;
     }
 
     private float getLaneHeight() {

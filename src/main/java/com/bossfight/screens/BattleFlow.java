@@ -22,6 +22,8 @@ final class BattleFlow {
     private static final String KNOCKOUT_NARRATION_PATH = "audio/voice/narrator_knockout.wav";
     private static final float BATTLE_MUSIC_VOLUME = 0.04f;
     private static final float PHASE_TWO_MUSIC_VOLUME = 0.05f;
+    private static final float FINAL_RAGE_MUSIC_VOLUME = 0.065f;
+    private static final float MUSIC_VOLUME_RESPONSE = 2.4f;
     private static final float PHASE_TWO_MUSIC_DELAY = 1.75f;
     private static final float INTRO_NARRATION_VOLUME = 1f;
     private static final float KNOCKOUT_NARRATION_VOLUME = 1.3f;
@@ -41,6 +43,7 @@ final class BattleFlow {
     private float knockoutTimer;
     private float knockoutParticleTimer;
     private float phaseTwoMusicTimer;
+    private float currentMusicVolume = BATTLE_MUSIC_VOLUME;
     private boolean introVoicePlayed;
     private boolean fightStarted;
     private boolean introPausedForTransition;
@@ -96,7 +99,28 @@ final class BattleFlow {
         }
 
         phaseTwoMusicPending = false;
+        currentMusicVolume = PHASE_TWO_MUSIC_VOLUME;
         game.getAudioManager().playMusic(PHASE_TWO_MUSIC_PATH, true, PHASE_TWO_MUSIC_VOLUME);
+    }
+
+    void updateDynamicMusic(float delta, Boss boss) {
+        if (!fightStarted || phaseTwoMusicPending || knockoutSequenceActive) {
+            return;
+        }
+
+        float targetVolume = targetMusicVolume(boss);
+        currentMusicVolume = MathUtils.lerp(
+                currentMusicVolume,
+                targetVolume,
+                Math.min(1f, delta * MUSIC_VOLUME_RESPONSE));
+        game.getAudioManager().setMusicVolume(currentMusicVolume);
+    }
+
+    private float targetMusicVolume(Boss boss) {
+        if (boss.isFinalRage()) {
+            return FINAL_RAGE_MUSIC_VOLUME;
+        }
+        return boss.isPhaseTwo() ? PHASE_TWO_MUSIC_VOLUME : BATTLE_MUSIC_VOLUME;
     }
 
     void updateIntro(float delta, ControlsOverlay controlsOverlay, Boss boss) {
@@ -113,6 +137,7 @@ final class BattleFlow {
         if (introTimer >= Constants.INTRO_TOTAL_DURATION) {
             fightStarted = true;
             controlsOverlay.showOnce();
+            currentMusicVolume = BATTLE_MUSIC_VOLUME;
             game.getAudioManager().playMusic(BATTLE_MUSIC_PATH, true, BATTLE_MUSIC_VOLUME);
             boss.showTelegraph(new Color(1f, 0.38f, 0.12f, 1f), 0.35f);
         }

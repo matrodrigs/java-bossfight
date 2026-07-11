@@ -65,7 +65,7 @@ public class AttackFourState implements BossState {
         }
 
         if (finishTimer <= 0f && puffsSpawned == TOTAL_CORRIDOR_SPORES) {
-            boss.finishCurrentAttack();
+            boss.finishCurrentAttack(AttackOneState.chainedStrike());
         }
     }
 

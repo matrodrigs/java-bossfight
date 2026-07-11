@@ -11,9 +11,11 @@ import java.util.ArrayDeque;
 public class Boss {
     private static final float ACTION_IMPULSE_DURATION = 0.30f;
     private static final float HIT_REACTION_DURATION = 0.22f;
+    private static final float SPECIAL_HIT_REACTION_DURATION = 0.36f;
     private static final float PHASE_ONE_RECOVERY_DURATION = 0.90f;
     private static final float PHASE_TWO_RECOVERY_DURATION = 0.42f;
     private static final float FINAL_RAGE_RECOVERY_DURATION = 0.34f;
+    private static final float CHAIN_RECOVERY_DURATION = 0.20f;
     private static final float FINAL_RAGE_HEALTH_RATIO = 0.20f;
 
     private final Hitbox hitbox;
@@ -24,6 +26,7 @@ public class Boss {
     private int health;
     private int lastAttackIndex = -1;
     private int phaseTwoAttackCount;
+    private BossState queuedFollowUpState;
     private float x;
     private float y;
     private float telegraphTimer;
@@ -31,7 +34,9 @@ public class Boss {
     private float visualStateTime;
     private float actionImpulseTimer;
     private float hitReactionTimer;
+    private float specialHitReactionTimer;
     private boolean phaseTwoTransitionPlayed;
+    private boolean finalRageTransitionPlayed;
 
     public Boss() {
         x = Constants.BOSS_START_X;
@@ -47,6 +52,7 @@ public class Boss {
         visualStateTime += delta;
         actionImpulseTimer = Math.max(0f, actionImpulseTimer - delta);
         hitReactionTimer = Math.max(0f, hitReactionTimer - delta);
+        specialHitReactionTimer = Math.max(0f, specialHitReactionTimer - delta);
 
         if (health <= 0 && !(currentState instanceof DefeatedState)) {
             setState(new DefeatedState());
@@ -58,6 +64,12 @@ public class Boss {
                 && !(currentState instanceof DefeatedState)) {
             phaseTwoTransitionPlayed = true;
             setState(new PhaseTwoTransitionState());
+        } else if (isFinalRage()
+                && !finalRageTransitionPlayed
+                && !(currentState instanceof FinalRageState)
+                && !(currentState instanceof DefeatedState)) {
+            finalRageTransitionPlayed = true;
+            setState(new FinalRageState());
         }
 
         currentState.update(this, delta, projectileSpawner, player);
@@ -65,15 +77,22 @@ public class Boss {
     }
 
     public boolean takeDamage(int amount) {
+        return takeDamage(amount, false);
+    }
+
+    public boolean takeDamage(int amount, boolean specialHit) {
         if (isDefeated() || isInvulnerable()) {
             return false;
         }
 
         health = MathUtils.clamp(health - amount, 0, maxHealth);
         hitReactionTimer = HIT_REACTION_DURATION;
+        specialHitReactionTimer = specialHit ? SPECIAL_HIT_REACTION_DURATION : 0f;
         if (health == 0) {
             soundEvents.clear();
             setState(new DefeatedState());
+        } else if (specialHit) {
+            emitSound(BossSoundEvent.BOSS_STAGGER);
         }
         return true;
     }
@@ -84,6 +103,8 @@ public class Boss {
             if (soundEvent == BossSoundEvent.VINE_STRIKE
                     || soundEvent == BossSoundEvent.MAGIC_VOLLEY
                     || soundEvent == BossSoundEvent.POLLEN_DROP
+                    || soundEvent == BossSoundEvent.BOSS_STAGGER
+                    || soundEvent == BossSoundEvent.FINAL_RAGE
                     || soundEvent == BossSoundEvent.PHASE_ROAR
                     || soundEvent == BossSoundEvent.PHASE_SHOCKWAVE) {
                 actionImpulseTimer = ACTION_IMPULSE_DURATION;
@@ -102,6 +123,12 @@ public class Boss {
     }
 
     public BossState createNextAttackState() {
+        if (queuedFollowUpState != null) {
+            BossState followUpState = queuedFollowUpState;
+            queuedFollowUpState = null;
+            return followUpState;
+        }
+
         int attackCount = isPhaseTwo() ? 5 : 3;
         int nextAttackIndex;
 
@@ -141,6 +168,11 @@ public class Boss {
         setState(new IdleState(recoveryDuration));
     }
 
+    void finishCurrentAttack(BossState followUpState) {
+        queuedFollowUpState = followUpState;
+        setState(new IdleState(CHAIN_RECOVERY_DURATION));
+    }
+
     public void setState(BossState nextState) {
         if (currentState != null) {
             currentState.exit(this);
@@ -165,7 +197,8 @@ public class Boss {
     }
 
     public boolean isInvulnerable() {
-        return currentState instanceof PhaseTwoTransitionState;
+        return currentState instanceof PhaseTwoTransitionState
+                || currentState instanceof FinalRageState;
     }
 
     public float getCenterX() {
@@ -195,6 +228,10 @@ public class Boss {
         return MathUtils.clamp(telegraphTimer / telegraphDuration, 0f, 1f);
     }
 
+    public Color getTelegraphColor() {
+        return telegraphColor;
+    }
+
     public float getVisualStateTime() {
         return visualStateTime;
     }
@@ -205,5 +242,9 @@ public class Boss {
 
     public float getHitReaction() {
         return MathUtils.clamp(hitReactionTimer / HIT_REACTION_DURATION, 0f, 1f);
+    }
+
+    public float getSpecialHitReaction() {
+        return MathUtils.clamp(specialHitReactionTimer / SPECIAL_HIT_REACTION_DURATION, 0f, 1f);
     }
 }

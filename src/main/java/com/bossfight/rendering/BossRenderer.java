@@ -36,6 +36,9 @@ public final class BossRenderer implements Disposable {
     private static final float POLLEN_RAIN_VERTICAL_SWAY = 4f;
     private static final float POLLEN_RAIN_ATTACK_LIFT = 3.5f;
     private static final float ENRAGE_VERTICAL_SWAY = 4f;
+    private static final float SPECIAL_RECOIL_X = 28f;
+    private static final float SPECIAL_SQUASH_Y = 16f;
+    private static final float SPECIAL_REACTION_ROTATION = 5.5f;
     private static final float DEFEATED_INITIAL_FRAME_DURATION = 0.18f;
     private static final float DEFEATED_ANIMATION_FPS = 2f;
     private static final AnimationSpec MAGIC_ANIMATION = new AnimationSpec(MAGIC_FRAME_INDEX, 11f);
@@ -66,6 +69,7 @@ public final class BossRenderer implements Disposable {
             float actionKick,
             float actionFollowThrough,
             float hitKick,
+            float specialKick,
             float attackPulse
     ) {
         private boolean is(BossVisualState expectedState) {
@@ -83,6 +87,7 @@ public final class BossRenderer implements Disposable {
             float scaleY,
             float rotation,
             float hitKick,
+            float specialKick,
             boolean flipX
     ) {
     }
@@ -119,9 +124,10 @@ public final class BossRenderer implements Disposable {
             shapeRenderer.setColor(1f, 0.70f, 0.16f, 0.14f * alpha);
             shapeRenderer.circle(centerX, centerY, radius * 0.34f);
         } else {
-            shapeRenderer.setColor(1f, 0.58f, 0.12f, 0.16f * alpha);
+            Color color = boss.getTelegraphColor();
+            shapeRenderer.setColor(color.r * 0.72f, color.g * 0.72f, color.b * 0.72f, 0.18f * alpha);
             shapeRenderer.circle(centerX, centerY, radius);
-            shapeRenderer.setColor(1f, 0.94f, 0.38f, 0.16f * alpha);
+            shapeRenderer.setColor(color.r, color.g, color.b, 0.20f * alpha);
             shapeRenderer.circle(centerX, centerY, radius * 0.58f);
         }
     }
@@ -149,6 +155,7 @@ public final class BossRenderer implements Disposable {
                 verticalScale(signals),
                 rotation(signals),
                 signals.hitKick(),
+                signals.specialKick(),
                 state == BossVisualState.POLLEN_BREATH && player.getCenterX() < boss.getCenterX()
         );
     }
@@ -176,6 +183,7 @@ public final class BossRenderer implements Disposable {
                         ? MathUtils.sin(actionProgress * MathUtils.PI2) * (1f - actionProgress)
                         * ATTACK_IMPULSE_SCALE : 0f,
                 hitReaction > 0f ? MathUtils.sin(hitTime * MathUtils.PI) : 0f,
+                boss.getSpecialHitReaction(),
                 attackPulse
         );
     }
@@ -194,6 +202,7 @@ public final class BossRenderer implements Disposable {
         height += signals.is(BossVisualState.ENRAGING)
                 ? signals.windup() * 24f + signals.actionKick() * 12f
                 : 0f;
+        height -= signals.specialKick() * SPECIAL_SQUASH_Y;
         height -= signals.defeated()
                 ? smoothStep(MathUtils.clamp(signals.stateTime() / 0.42f, 0f, 1f)) * 24f
                 : 0f;
@@ -220,7 +229,7 @@ public final class BossRenderer implements Disposable {
             x += -signals.windup() * 18f + signals.attackPulse() * 4f * CONTINUOUS_MOTION_SCALE
                     - signals.actionKick() * 18f + signals.actionFollowThrough() * 8f;
         }
-        return x + signals.hitKick() * 14f;
+        return x + signals.hitKick() * 14f + signals.specialKick() * SPECIAL_RECOIL_X;
     }
 
     private boolean isForwardIdleFrame(TextureRegion frame) {
@@ -241,7 +250,7 @@ public final class BossRenderer implements Disposable {
         if (signals.defeated()) {
             y -= smoothStep(MathUtils.clamp(signals.stateTime() / 0.42f, 0f, 1f)) * 16f;
         }
-        return y;
+        return y - signals.specialKick() * 4f;
     }
 
     private float horizontalScale(AnimationSignals signals) {
@@ -251,7 +260,8 @@ public final class BossRenderer implements Disposable {
                 + signals.actionKick() * (signals.is(BossVisualState.VINE_STRIKE)
                 || signals.is(BossVisualState.POLLEN_BREATH) ? 0.035f : 0.018f)
                 + signals.actionFollowThrough() * 0.012f
-                - signals.hitKick() * 0.025f;
+                - signals.hitKick() * 0.025f
+                + signals.specialKick() * 0.07f;
     }
 
     private float verticalScale(AnimationSignals signals) {
@@ -261,7 +271,8 @@ public final class BossRenderer implements Disposable {
                 - signals.actionKick() * (signals.is(BossVisualState.VINE_STRIKE)
                 || signals.is(BossVisualState.POLLEN_BREATH) ? 0.045f : 0.018f)
                 - signals.actionFollowThrough() * 0.01f
-                + signals.hitKick() * 0.035f;
+                + signals.hitKick() * 0.035f
+                - signals.specialKick() * 0.09f;
     }
 
     private float rotation(AnimationSignals signals) {
@@ -270,13 +281,17 @@ public final class BossRenderer implements Disposable {
                 || signals.is(BossVisualState.ENRAGING) ? 1.4f : 0.45f) * CONTINUOUS_MOTION_SCALE
                 + signals.actionKick() * (signals.is(BossVisualState.VINE_STRIKE) ? -2.4f : 1.2f)
                 + signals.actionFollowThrough() * (signals.is(BossVisualState.VINE_STRIKE) ? 2.2f : -1.4f)
-                + signals.hitKick() * 2.8f;
+                + signals.hitKick() * 2.8f
+                + signals.specialKick() * SPECIAL_REACTION_ROTATION;
     }
 
     private void drawPose(SpriteBatch batch, OrthographicCamera camera, Boss boss, BossPose pose) {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
-        if (pose.hitKick() > 0.05f) {
+        if (pose.specialKick() > 0.05f) {
+            float flash = 0.5f + MathUtils.sin(boss.getVisualStateTime() * 30f) * 0.5f;
+            batch.setColor(1f, 0.65f + flash * 0.3f, 0.32f + flash * 0.4f, 1f);
+        } else if (pose.hitKick() > 0.05f) {
             batch.setColor(1f, 0.66f + pose.hitKick() * 0.26f, 0.66f + pose.hitKick() * 0.26f, 1f);
         } else if (boss.getVisualState() == BossVisualState.ENRAGING) {
             float progress = 1f - boss.getTelegraphAlpha();

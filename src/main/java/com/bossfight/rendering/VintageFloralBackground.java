@@ -4,7 +4,9 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.Texture;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
+import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Disposable;
+import com.bossfight.boss.Boss;
 import com.bossfight.config.Constants;
 
 public class VintageFloralBackground implements Disposable {
@@ -22,6 +24,9 @@ public class VintageFloralBackground implements Disposable {
             float parallax,
             float alpha
     ) {
+    }
+
+    private record SceneMood(float phaseIntensity, float elapsed, float sway) {
     }
 
     public VintageFloralBackground() {
@@ -48,21 +53,23 @@ public class VintageFloralBackground implements Disposable {
         };
     }
 
-    public void renderBack(SpriteBatch batch, OrthographicCamera camera) {
+    public void renderBack(SpriteBatch batch, OrthographicCamera camera, Boss boss, float elapsed) {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
 
-        drawLayers(batch, camera, backLayers);
+        drawLayers(batch, camera, backLayers, sceneMood(boss, elapsed, 0f));
 
         batch.setColor(Color.WHITE);
         batch.end();
     }
 
-    public void renderForeground(SpriteBatch batch, OrthographicCamera camera) {
+    public void renderForeground(SpriteBatch batch, OrthographicCamera camera, Boss boss, float elapsed) {
         batch.setProjectionMatrix(camera.combined);
         batch.begin();
 
-        drawLayers(batch, camera, foregroundLayers);
+        float baseSway = boss.isFinalRage() ? 4.5f : boss.isPhaseTwo() ? 2.4f : 0.8f;
+        drawLayers(batch, camera, foregroundLayers,
+                sceneMood(boss, elapsed, baseSway + boss.getActionImpulse() * 4f));
 
         batch.setColor(Color.WHITE);
         batch.end();
@@ -74,18 +81,27 @@ public class VintageFloralBackground implements Disposable {
                 x, y, width, height, parallax, alpha);
     }
 
-    private void drawLayers(SpriteBatch batch, OrthographicCamera camera, Layer[] layers) {
+    private SceneMood sceneMood(Boss boss, float elapsed, float sway) {
+        float phaseIntensity = boss.isFinalRage() ? 1f : boss.isPhaseTwo() ? 0.55f : 0f;
+        return new SceneMood(phaseIntensity, elapsed, sway);
+    }
+
+    private void drawLayers(SpriteBatch batch, OrthographicCamera camera, Layer[] layers, SceneMood mood) {
         for (Layer layer : layers) {
-            drawParallax(batch, camera, layer);
+            drawParallax(batch, camera, layer, mood);
         }
     }
 
-    private void drawParallax(SpriteBatch batch, OrthographicCamera camera, Layer layer) {
+    private void drawParallax(SpriteBatch batch, OrthographicCamera camera, Layer layer, SceneMood mood) {
         float cameraDeltaX = camera.position.x - Constants.WORLD_WIDTH * 0.5f;
         float cameraDeltaY = camera.position.y - Constants.WORLD_HEIGHT * 0.5f;
         float drawX = layer.x() + cameraDeltaX * (1f - layer.parallax());
-        float drawY = layer.y() + cameraDeltaY * (1f - layer.parallax());
-        batch.setColor(1f, 1f, 1f, layer.alpha());
+        float layerSway = MathUtils.sin(mood.elapsed() * 2f + layer.x() * 0.012f) * mood.sway();
+        float drawY = layer.y() + cameraDeltaY * (1f - layer.parallax()) + layerSway;
+        batch.setColor(1f,
+                1f - mood.phaseIntensity() * 0.12f,
+                1f - mood.phaseIntensity() * 0.20f,
+                layer.alpha());
         batch.draw(layer.texture(), drawX, drawY, layer.width(), layer.height());
     }
 

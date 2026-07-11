@@ -4,6 +4,7 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.MathUtils;
 import com.badlogic.gdx.utils.Array;
+import com.bossfight.config.Constants;
 
 public class ParticleSystem {
     private final Array<Particle> particles = new Array<>();
@@ -169,6 +170,39 @@ public class ParticleSystem {
                     0.34f,
                     new Color(1f, 0.2f, 0.18f, 0.92f),
                     -300f);
+        }
+    }
+
+    public void spawnArenaPetal(boolean enraged) {
+        Color color = enraged && MathUtils.randomBoolean()
+                ? new Color(1f, 0.28f, 0.08f, 0.62f)
+                : new Color(1f, 0.72f, 0.42f, 0.58f);
+        add(MathUtils.random(Constants.ARENA_LEFT, Constants.ARENA_RIGHT),
+                Constants.WORLD_HEIGHT + 8f,
+                MathUtils.random(-52f, 52f),
+                MathUtils.random(-105f, -62f),
+                MathUtils.random(2.5f, 5f),
+                -0.8f,
+                MathUtils.random(3.2f, 4.6f),
+                color,
+                MathUtils.random(-24f, -8f));
+    }
+
+    public void spawnBossRage(float x, float y) {
+        for (int i = 0; i < 34; i++) {
+            float angle = MathUtils.random(0f, MathUtils.PI2);
+            float speed = MathUtils.random(90f, 410f);
+            Color color = MathUtils.randomBoolean()
+                    ? new Color(1f, 0.18f, 0.04f, 0.9f)
+                    : new Color(1f, 0.68f, 0.12f, 0.84f);
+            add(x, y,
+                    MathUtils.cos(angle) * speed,
+                    MathUtils.sin(angle) * speed + 90f,
+                    MathUtils.random(3f, 8f),
+                    -10f,
+                    MathUtils.random(0.45f, 0.78f),
+                    color,
+                    -260f);
         }
     }
 

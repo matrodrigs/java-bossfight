@@ -47,6 +47,7 @@ public final class ProjectileRenderer implements Disposable {
         registerTexture(Projectile.Kind.PLAYER_SPECIAL, "sprites/projectiles/player_special.png");
         registerTexture(Projectile.Kind.BOSS_SEED, "sprites/projectiles/boss_seed.png");
         registerTexture(Projectile.Kind.BOSS_ACORN, "sprites/projectiles/boss_acorn.png");
+        registerTexture(Projectile.Kind.BOSS_ACORN_OBSTACLE, "sprites/projectiles/boss_acorn.png");
         registerTexture(Projectile.Kind.BOSS_POLLEN, "sprites/projectiles/boss_pollen.png");
         registerTexture(Projectile.Kind.BOSS_THORN, "sprites/projectiles/boss_thorn.png");
         registerTexture(Projectile.Kind.BOSS_PETAL_BOMB, "sprites/projectiles/boss_petal_bomb.png");
@@ -102,6 +103,7 @@ public final class ProjectileRenderer implements Disposable {
                         batch, textureFor(projectile.getKind()), projectile, rotationFor(projectile), SEED_TRAIL);
                 case BOSS_ACORN -> drawTextureWithTrail(
                         batch, textureFor(projectile.getKind()), projectile, rotationFor(projectile), ACORN_TRAIL);
+                case BOSS_ACORN_OBSTACLE -> drawAcornObstacle(batch, projectile);
                 case BOSS_POLLEN -> {
                     float pulse = MathUtils.sin(projectile.getAge() * 8f);
                     Texture texture = textureFor(projectile.getKind());
@@ -138,6 +140,10 @@ public final class ProjectileRenderer implements Disposable {
                 } else {
                     drawPollenWarningShadow(shapeRenderer, projectile);
                 }
+            } else if (projectile.getKind() == Projectile.Kind.BOSS_ACORN_OBSTACLE
+                    && projectile.isGrounded()) {
+                drawImpactShadow(shapeRenderer, projectile.getCenterX(), Constants.FLOOR_Y - 7f,
+                        62f, 16f, 0.42f);
             } else if (isFallingImpactProjectile(projectile)) {
                 drawFallingImpactShadow(shapeRenderer, projectile);
             }
@@ -172,6 +178,21 @@ public final class ProjectileRenderer implements Disposable {
 
         drawTextureAt(batch, texture, projectile.getCenterX(), projectile.getCenterY(),
                 trail.width(), trail.height(), rotation, false, 1f, 1f, 1f, 1f);
+    }
+
+    private void drawAcornObstacle(SpriteBatch batch, Projectile projectile) {
+        Texture texture = textureFor(projectile.getKind());
+        if (!projectile.isGrounded()) {
+            drawTextureWithTrail(batch, texture, projectile, rotationFor(projectile), ACORN_TRAIL);
+            return;
+        }
+
+        float pulse = MathUtils.sin(projectile.getAge() * 7f);
+        drawTextureAt(batch, texture,
+                projectile.getCenterX(), projectile.getCenterY() + 7f,
+                64f + pulse * 2f, 62f - pulse * 2f,
+                pulse * 2.5f, false,
+                1f, 0.88f, 0.68f, 1f);
     }
 
     private void drawTextureAt(SpriteBatch batch, Texture texture, float centerX, float centerY,

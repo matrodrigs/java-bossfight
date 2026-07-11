@@ -15,6 +15,9 @@ public class AttackThreeState implements BossState {
     private float elapsed;
     private float spawnTimer;
     private int pendingCount;
+    private int nextSafeLane;
+    private int safeLaneStep;
+    private boolean gardenPatternNext;
 
     @Override
     public BossVisualState getVisualState() {
@@ -26,6 +29,9 @@ public class AttackThreeState implements BossState {
         elapsed = 0f;
         spawnTimer = 0.12f;
         pendingCount = 0;
+        safeLaneStep = MathUtils.randomBoolean() ? 1 : -1;
+        nextSafeLane = safeLaneStep > 0 ? 0 : 3;
+        gardenPatternNext = true;
         boss.emitSound(BossSoundEvent.POLLEN_CHARGE);
         boss.showTelegraph(new Color(0.76f, 0.28f, 1f, 1f), 0.42f);
     }
@@ -39,7 +45,10 @@ public class AttackThreeState implements BossState {
 
         float duration = boss.isPhaseTwo() ? 3.2f : 2.65f;
         if (elapsed < duration && spawnTimer <= 0f && pendingCount == 0) {
-            boolean gardenPattern = boss.isPhaseTwo() && elapsed > 0.7f && MathUtils.randomBoolean(0.45f);
+            boolean gardenPattern = boss.isPhaseTwo() && elapsed > 0.7f && gardenPatternNext;
+            if (boss.isPhaseTwo() && elapsed > 0.7f) {
+                gardenPatternNext = !gardenPatternNext;
+            }
             if (gardenPattern) {
                 spawnGardenPattern(projectileSpawner);
                 spawnTimer = 0.86f;
@@ -55,7 +64,11 @@ public class AttackThreeState implements BossState {
         }
 
         if (elapsed >= duration && pendingCount == 0) {
-            boss.finishCurrentAttack();
+            if (boss.isPhaseTwo()) {
+                boss.finishCurrentAttack(new SeedFollowUpState());
+            } else {
+                boss.finishCurrentAttack();
+            }
         }
     }
 
@@ -78,7 +91,12 @@ public class AttackThreeState implements BossState {
     }
 
     private void spawnGardenPattern(ProjectileSpawner projectileSpawner) {
-        int safeLane = MathUtils.random(3);
+        int safeLane = nextSafeLane;
+        nextSafeLane += safeLaneStep;
+        if (nextSafeLane < 0 || nextSafeLane > 3) {
+            safeLaneStep *= -1;
+            nextSafeLane += safeLaneStep * 2;
+        }
         float laneWidth = (Constants.ARENA_RIGHT - Constants.ARENA_LEFT) / 4f;
 
         for (int lane = 0; lane < 4; lane++) {

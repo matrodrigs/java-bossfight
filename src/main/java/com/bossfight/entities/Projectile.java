@@ -4,6 +4,11 @@ import com.badlogic.gdx.math.MathUtils;
 import com.bossfight.config.Constants;
 
 public class Projectile {
+    private static final float ACORN_OBSTACLE_WIDTH = Constants.BOSS_PROJECTILE_WIDTH + 12f;
+    private static final float ACORN_OBSTACLE_HEIGHT = Constants.BOSS_PROJECTILE_HEIGHT + 15f;
+    private static final float ACORN_OBSTACLE_GRAVITY = -900f;
+    private static final float ACORN_OBSTACLE_LIFETIME = 6.80f;
+
     public enum Owner {
         PLAYER,
         BOSS
@@ -14,6 +19,7 @@ public class Projectile {
         PLAYER_SPECIAL,
         BOSS_SEED,
         BOSS_ACORN,
+        BOSS_ACORN_OBSTACLE,
         BOSS_POLLEN,
         BOSS_THORN,
         BOSS_PETAL_BOMB,
@@ -33,6 +39,7 @@ public class Projectile {
     private float velocityX;
     private float velocityY;
     private float age;
+    private boolean grounded;
 
     public static Projectile playerBasic(float x, float y, float velocityX) {
         return new Projectile(Owner.PLAYER, Kind.PLAYER_BASIC, x, y,
@@ -64,6 +71,20 @@ public class Projectile {
     public static Projectile bossAcorn(float x, float y, float width, float height, float velocityX, float velocityY,
                                        float gravity) {
         return bossProjectile(Kind.BOSS_ACORN, x, y, width, height, velocityX, velocityY, gravity);
+    }
+
+    public static Projectile bossAcornObstacle(float originCenterX, float originCenterY,
+                                               float landingCenterX, float travelTime) {
+        float x = originCenterX - ACORN_OBSTACLE_WIDTH * 0.5f;
+        float y = originCenterY - ACORN_OBSTACLE_HEIGHT * 0.5f;
+        float velocityX = (landingCenterX - originCenterX) / travelTime;
+        float displacementY = Constants.FLOOR_Y - y;
+        float velocityY = (displacementY - 0.5f * ACORN_OBSTACLE_GRAVITY * travelTime * travelTime)
+                / travelTime;
+        return new Projectile(Owner.BOSS, Kind.BOSS_ACORN_OBSTACLE,
+                x, y, ACORN_OBSTACLE_WIDTH, ACORN_OBSTACLE_HEIGHT,
+                velocityX, velocityY, Constants.BOSS_PROJECTILE_DAMAGE,
+                ACORN_OBSTACLE_LIFETIME, ACORN_OBSTACLE_GRAVITY, true);
     }
 
     public static Projectile bossPollen(float x, float y, float width, float height, float velocityX, float velocityY,
@@ -99,14 +120,28 @@ public class Projectile {
 
     public void update(float delta) {
         age += delta;
-        velocityY += gravity * delta;
-        x += velocityX * delta;
-        y += velocityY * delta;
+        if (!grounded) {
+            velocityY += gravity * delta;
+            x += velocityX * delta;
+            y += velocityY * delta;
+            landObstacleIfNeeded();
+        }
         hitbox.setPosition(x, y);
 
         if (lifetime > 0f && age >= lifetime) {
             active = false;
         }
+    }
+
+    private void landObstacleIfNeeded() {
+        if (kind != Kind.BOSS_ACORN_OBSTACLE || velocityY >= 0f || y > Constants.FLOOR_Y) {
+            return;
+        }
+
+        y = Constants.FLOOR_Y;
+        velocityX = 0f;
+        velocityY = 0f;
+        grounded = true;
     }
 
     public boolean isOutsideWorld() {
@@ -182,6 +217,10 @@ public class Projectile {
 
     public float getAge() {
         return age;
+    }
+
+    public boolean isGrounded() {
+        return grounded;
     }
 
     public float getWarningProgress() {

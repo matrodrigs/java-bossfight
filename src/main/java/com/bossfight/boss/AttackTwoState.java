@@ -15,11 +15,18 @@ public class AttackTwoState implements BossState {
     private static final float PHASE_ONE_PROJECTILE_SPEED = 430f;
     private static final float PHASE_TWO_PROJECTILE_SPEED = 450f;
     private static final float PHASE_ONE_SPREAD = 0.16f;
-    private static final float PHASE_TWO_SPREAD = 0.27f;
+    private static final float PHASE_TWO_MIN_SPREAD = 0.18f;
+    private static final float PHASE_TWO_MAX_SPREAD = 0.42f;
+    private static final float OBSTACLE_TRAVEL_TIME = 1.25f;
+    private static final float OBSTACLE_WARNING_WIDTH = 48f;
+    private static final float OBSTACLE_PLAYER_OFFSET = 190f;
+    private static final float OBSTACLE_ARENA_MARGIN = 70f;
+    private static final float OBSTACLE_BOSS_CLEARANCE = 170f;
 
     private float elapsed;
     private float burstTimer;
     private int volleys;
+    private boolean fanOpens;
 
     @Override
     public BossVisualState getVisualState() {
@@ -31,6 +38,7 @@ public class AttackTwoState implements BossState {
         elapsed = 0f;
         burstTimer = boss.isPhaseTwo() ? PHASE_TWO_INITIAL_WARNING : PHASE_ONE_INITIAL_WARNING;
         volleys = 0;
+        fanOpens = MathUtils.randomBoolean();
         boss.emitSound(BossSoundEvent.MAGIC_CHARGE);
         boss.showTelegraph(new Color(0.96f, 0.74f, 0.18f, 1f), burstTimer);
     }
@@ -55,7 +63,7 @@ public class AttackTwoState implements BossState {
     }
 
     private void fireVolley(Boss boss, ProjectileSpawner projectileSpawner, Player player) {
-        int projectileCount = boss.isPhaseTwo() ? 3 : 2;
+        int projectileCount = boss.isPhaseTwo() && volleys == 2 ? 3 : 2;
         float speed = boss.isPhaseTwo() ? PHASE_TWO_PROJECTILE_SPEED : PHASE_ONE_PROJECTILE_SPEED;
         float originX = boss.getCenterX() - 126f;
         float originY = Constants.FLOOR_Y + (boss.isPhaseTwo() ? 392f : 372f);
@@ -65,9 +73,11 @@ public class AttackTwoState implements BossState {
         ).nor();
 
         for (int i = 0; i < projectileCount; i++) {
+            float spreadStep = boss.isPhaseTwo() ? phaseTwoSpread() : PHASE_ONE_SPREAD;
             float spread = (i - (projectileCount - 1) * 0.5f)
-                    * (boss.isPhaseTwo() ? PHASE_TWO_SPREAD : PHASE_ONE_SPREAD);
-            float angle = (float) Math.atan2(baseDirection.y, baseDirection.x) + spread + MathUtils.random(-0.04f, 0.04f);
+                    * spreadStep;
+            float angle = (float) Math.atan2(baseDirection.y, baseDirection.x)
+                    + spread + MathUtils.random(-0.04f, 0.04f);
             Projectile.Kind kind = i % 2 == 0 ? Projectile.Kind.BOSS_ACORN : Projectile.Kind.BOSS_SEED;
             float sizeBonus = kind == Projectile.Kind.BOSS_ACORN ? 6f : 2f;
             float width = Constants.BOSS_PROJECTILE_WIDTH + sizeBonus;
@@ -102,23 +112,40 @@ public class AttackTwoState implements BossState {
         }
     }
 
+    private float phaseTwoSpread() {
+        float progress = MathUtils.clamp(volleys / 4f, 0f, 1f);
+        if (!fanOpens) {
+            progress = 1f - progress;
+        }
+        return MathUtils.lerp(PHASE_TWO_MIN_SPREAD, PHASE_TWO_MAX_SPREAD, progress);
+    }
+
     private void fireArcingAcorn(Boss boss, ProjectileSpawner projectileSpawner, Player player) {
-        float width = Constants.BOSS_PROJECTILE_WIDTH + 12f;
-        float height = Constants.BOSS_PROJECTILE_HEIGHT + 15f;
         float originX = boss.getCenterX() - 112f;
         float originY = Constants.FLOOR_Y + 346f;
-        float travelTime = 1.06f;
-        float velocityX = (player.getCenterX() - originX) / travelTime;
-        float velocityY = 360f;
+        float landingX = obstacleLandingX(boss, player);
 
-        projectileSpawner.addProjectile(Projectile.bossAcorn(
-                originX - width * 0.5f,
-                originY - height * 0.5f,
-                width,
-                height,
-                velocityX,
-                velocityY,
-                Constants.GRAVITY * 0.42f
+        projectileSpawner.addProjectile(Projectile.bossWarning(
+                landingX - OBSTACLE_WARNING_WIDTH * 0.5f,
+                Constants.FLOOR_Y,
+                OBSTACLE_WARNING_WIDTH,
+                Constants.WORLD_HEIGHT - Constants.FLOOR_Y,
+                OBSTACLE_TRAVEL_TIME
         ));
+        projectileSpawner.addProjectile(Projectile.bossAcornObstacle(
+                originX,
+                originY,
+                landingX,
+                OBSTACLE_TRAVEL_TIME
+        ));
+    }
+
+    private float obstacleLandingX(Boss boss, Player player) {
+        float arenaCenter = (Constants.ARENA_LEFT + Constants.ARENA_RIGHT) * 0.5f;
+        float offset = player.getCenterX() < arenaCenter ? OBSTACLE_PLAYER_OFFSET : -OBSTACLE_PLAYER_OFFSET;
+        return MathUtils.clamp(
+                player.getCenterX() + offset,
+                Constants.ARENA_LEFT + OBSTACLE_ARENA_MARGIN,
+                boss.getCenterX() - OBSTACLE_BOSS_CLEARANCE);
     }
 }

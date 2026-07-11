@@ -7,6 +7,9 @@ public enum BossSoundEvent {
     MAGIC_VOLLEY,
     POLLEN_CHARGE,
     POLLEN_DROP,
+    BOSS_STAGGER,
+    CHAIN_WARNING,
+    FINAL_RAGE,
     PHASE_ROAR,
     PHASE_SHOCKWAVE
 }
