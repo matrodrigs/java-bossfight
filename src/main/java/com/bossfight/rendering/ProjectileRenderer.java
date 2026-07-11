@@ -18,6 +18,12 @@ public final class ProjectileRenderer implements Disposable {
     private static final float IMPACT_SHADOW_MIN_HEIGHT = 13f;
     private static final float IMPACT_SHADOW_MAX_HEIGHT = 23f;
     private static final float POLLEN_IMPACT_SHADOW_MIN_FALL_SPEED = -160f;
+    private static final TrailSpec SEED_TRAIL = new TrailSpec(46f, 34f, 2, 14f,
+            1f, 0.42f, 0.18f, 0.16f);
+    private static final TrailSpec ACORN_TRAIL = new TrailSpec(50f, 54f, 2, 14f,
+            0.8f, 0.48f, 0.18f, 0.18f);
+    private static final TrailSpec PETAL_BOMB_TRAIL = new TrailSpec(54f, 70f, 2, 18f,
+            1f, 0.44f, 0.12f, 0.2f);
 
     private final ProjectileSystem projectiles;
     private final Texture playerPea;
@@ -27,6 +33,18 @@ public final class ProjectileRenderer implements Disposable {
     private final Texture bossPollen;
     private final Texture bossThorn;
     private final Texture bossPetalBomb;
+
+    private record TrailSpec(
+            float width,
+            float height,
+            int count,
+            float spacing,
+            float red,
+            float green,
+            float blue,
+            float alpha
+    ) {
+    }
 
     public ProjectileRenderer(ProjectileSystem projectiles) {
         this.projectiles = projectiles;
@@ -85,10 +103,10 @@ public final class ProjectileRenderer implements Disposable {
                         0f,
                         projectile.getVelocityX() < 0f,
                         1f, 1f, 1f, 1f);
-                case BOSS_SEED -> drawTextureWithTrail(batch, bossSeed, projectile,
-                        46f, 34f, rotationFor(projectile), 2, 14f, 1f, 0.42f, 0.18f, 0.16f);
-                case BOSS_ACORN -> drawTextureWithTrail(batch, bossAcorn, projectile,
-                        50f, 54f, rotationFor(projectile), 2, 14f, 0.8f, 0.48f, 0.18f, 0.18f);
+                case BOSS_SEED -> drawTextureWithTrail(
+                        batch, bossSeed, projectile, rotationFor(projectile), SEED_TRAIL);
+                case BOSS_ACORN -> drawTextureWithTrail(
+                        batch, bossAcorn, projectile, rotationFor(projectile), ACORN_TRAIL);
                 case BOSS_POLLEN -> {
                     float pulse = MathUtils.sin(projectile.getAge() * 8f);
                     drawTextureAt(batch, bossPollen, projectile.getCenterX(), projectile.getCenterY(),
@@ -106,9 +124,8 @@ public final class ProjectileRenderer implements Disposable {
                         drawThornLane(batch, projectile);
                     }
                 }
-                case BOSS_PETAL_BOMB -> drawTextureWithTrail(batch, bossPetalBomb, projectile, 54f, 70f,
-                        MathUtils.sin(projectile.getAge() * 9f) * 12f, 2, 18f,
-                        1f, 0.44f, 0.12f, 0.2f);
+                case BOSS_PETAL_BOMB -> drawTextureWithTrail(batch, bossPetalBomb, projectile,
+                        MathUtils.sin(projectile.getAge() * 9f) * 12f, PETAL_BOMB_TRAIL);
                 case BOSS_WARNING -> {
                     // Warnings are rendered as shapes in renderWarnings.
                 }
@@ -138,35 +155,27 @@ public final class ProjectileRenderer implements Disposable {
     }
 
     private void drawTextureWithTrail(SpriteBatch batch, Texture texture, Projectile projectile,
-                                      float width, float height, float rotation, int trailCount, float trailSpacing,
-                                      float red, float green, float blue, float alpha) {
-        drawTextureWithTrail(batch, texture, projectile, width, height, rotation, false, trailCount, trailSpacing,
-                red, green, blue, alpha);
-    }
-
-    private void drawTextureWithTrail(SpriteBatch batch, Texture texture, Projectile projectile,
-                                      float width, float height, float rotation, boolean flipX, int trailCount,
-                                      float trailSpacing, float red, float green, float blue, float alpha) {
+                                      float rotation, TrailSpec trail) {
         float velocityAngle = MathUtils.atan2(projectile.getVelocityY(), projectile.getVelocityX());
-        float trailX = -MathUtils.cos(velocityAngle) * trailSpacing;
-        float trailY = -MathUtils.sin(velocityAngle) * trailSpacing;
+        float trailX = -MathUtils.cos(velocityAngle) * trail.spacing();
+        float trailY = -MathUtils.sin(velocityAngle) * trail.spacing();
 
-        for (int i = trailCount; i >= 1; i--) {
-            float progress = (float) i / (trailCount + 1f);
+        for (int i = trail.count(); i >= 1; i--) {
+            float progress = (float) i / (trail.count() + 1f);
             float scale = 1f + progress * 0.18f;
             drawTextureAt(batch, texture,
                     projectile.getCenterX() + trailX * i,
                     projectile.getCenterY() + trailY * i,
-                    width * scale,
-                    height * scale,
+                    trail.width() * scale,
+                    trail.height() * scale,
                     rotation - i * 5f,
-                    flipX,
-                    red, green, blue,
-                    alpha * (1f - progress * 0.45f));
+                    false,
+                    trail.red(), trail.green(), trail.blue(),
+                    trail.alpha() * (1f - progress * 0.45f));
         }
 
-        drawTextureAt(batch, texture, projectile.getCenterX(), projectile.getCenterY(), width, height,
-                rotation, flipX, 1f, 1f, 1f, 1f);
+        drawTextureAt(batch, texture, projectile.getCenterX(), projectile.getCenterY(),
+                trail.width(), trail.height(), rotation, false, 1f, 1f, 1f, 1f);
     }
 
     private void drawTextureAt(SpriteBatch batch, Texture texture, float centerX, float centerY,

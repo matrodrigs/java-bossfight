@@ -33,15 +33,23 @@ public final class BossRenderer implements Disposable {
     private static final float ENRAGE_VERTICAL_SWAY = 4f;
     private static final float DEFEATED_INITIAL_FRAME_DURATION = 0.18f;
     private static final float DEFEATED_ANIMATION_FPS = 2f;
-    private static final float PHASE_TWO_TINT_GREEN = 0.78f;
-    private static final float PHASE_TWO_TINT_BLUE = 0.68f;
-    private static final float FINAL_RAGE_TINT_GREEN = 0.56f;
-    private static final float FINAL_RAGE_TINT_BLUE = 0.44f;
+    private static final AnimationSpec MAGIC_ANIMATION = new AnimationSpec(3, 11f);
+    private static final AnimationSpec VINE_ANIMATION = new AnimationSpec(4, 14f);
+    private static final AnimationSpec POLLEN_BREATH_ANIMATION = new AnimationSpec(5, 13f);
+    private static final AnimationSpec POLLEN_RAIN_ANIMATION = new AnimationSpec(6, 12f);
+    private static final PhaseTint PHASE_TWO_TINT = new PhaseTint(0.78f, 0.68f);
+    private static final PhaseTint FINAL_RAGE_TINT = new PhaseTint(0.56f, 0.44f);
 
     private final Texture spriteSheet;
     private final TextureRegion[] frames;
     private final Texture inbetweenSheet;
     private final TextureRegion[] inbetweenFrames;
+
+    private record AnimationSpec(int frameIndex, float framesPerSecond) {
+    }
+
+    private record PhaseTint(float green, float blue) {
+    }
 
     private record AnimationSignals(
             BossVisualState state,
@@ -277,11 +285,11 @@ public final class BossRenderer implements Disposable {
                 float pulse = 0.5f + MathUtils.sin(boss.getVisualStateTime() * 6f) * 0.5f;
                 batch.setColor(
                         1f,
-                        MathUtils.lerp(PHASE_TWO_TINT_GREEN, FINAL_RAGE_TINT_GREEN, 0.72f + pulse * 0.28f),
-                        MathUtils.lerp(PHASE_TWO_TINT_BLUE, FINAL_RAGE_TINT_BLUE, 0.72f + pulse * 0.28f),
+                        MathUtils.lerp(PHASE_TWO_TINT.green(), FINAL_RAGE_TINT.green(), 0.72f + pulse * 0.28f),
+                        MathUtils.lerp(PHASE_TWO_TINT.blue(), FINAL_RAGE_TINT.blue(), 0.72f + pulse * 0.28f),
                         1f);
             } else {
-                batch.setColor(1f, PHASE_TWO_TINT_GREEN, PHASE_TWO_TINT_BLUE, 1f);
+                batch.setColor(1f, PHASE_TWO_TINT.green(), PHASE_TWO_TINT.blue(), 1f);
             }
         }
         if (pose.flipX()) {
@@ -364,10 +372,10 @@ public final class BossRenderer implements Disposable {
             return defeatedAnimationFrame(boss);
         }
         return switch (state) {
-            case ENRAGING, MAGIC_HANDS -> attackAnimationFrame(boss, 3, 11f);
-            case VINE_STRIKE -> attackAnimationFrame(boss, 4, 14f);
-            case POLLEN_BREATH -> attackAnimationFrame(boss, 5, 13f);
-            case POLLEN_RAIN -> attackAnimationFrame(boss, 6, 12f);
+            case ENRAGING, MAGIC_HANDS -> attackAnimationFrame(boss, MAGIC_ANIMATION);
+            case VINE_STRIKE -> attackAnimationFrame(boss, VINE_ANIMATION);
+            case POLLEN_BREATH -> attackAnimationFrame(boss, POLLEN_BREATH_ANIMATION);
+            case POLLEN_RAIN -> attackAnimationFrame(boss, POLLEN_RAIN_ANIMATION);
             case DEFEATED -> defeatedAnimationFrame(boss);
             case IDLE -> idleAnimationFrame(boss);
         };
@@ -393,13 +401,13 @@ public final class BossRenderer implements Disposable {
         };
     }
 
-    private TextureRegion attackAnimationFrame(Boss boss, int index, float framesPerSecond) {
+    private TextureRegion attackAnimationFrame(Boss boss, AnimationSpec animation) {
         if (boss.isTelegraphing() && boss.getActionImpulse() <= 0f) {
-            return inbetweenFrames[index];
+            return inbetweenFrames[animation.frameIndex()];
         }
-        return ((int) (boss.getVisualStateTime() * framesPerSecond) & 1) == 0
-                ? frames[index]
-                : inbetweenFrames[index];
+        return ((int) (boss.getVisualStateTime() * animation.framesPerSecond()) & 1) == 0
+                ? frames[animation.frameIndex()]
+                : inbetweenFrames[animation.frameIndex()];
     }
 
     private float smoothStep(float value) {
