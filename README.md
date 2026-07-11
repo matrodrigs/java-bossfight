@@ -59,9 +59,9 @@ Se o Gradle reclamar de JVM antiga, confira se `JAVA_HOME` aponta para um JDK 21
 | Mover para a esquerda | `A` |
 | Mover para a direita | `D` |
 | Pular | `Espaço` |
-| Atirar | `J` |
-| Dash | `K` |
-| Ataque especial | `L` |
+| Atirar | `Botão esquerdo do mouse` |
+| Dash | `Shift esquerdo` |
+| Ataque especial | `Botão direito do mouse` |
 | Voltar ao menu | `Esc` |
 | Tela final | `R` para lutar de novo, `Esc`/`Enter` para voltar ao menu |
 | Alternar fullscreen | `Alt` + `Enter` |

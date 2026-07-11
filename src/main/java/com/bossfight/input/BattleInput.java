@@ -17,13 +17,13 @@ public final class BattleInput {
         jumpBufferTimer = updateBuffer(jumpBufferTimer, delta,
                 Gdx.input.isKeyJustPressed(Input.Keys.SPACE));
         dashBufferTimer = updateBuffer(dashBufferTimer, delta,
-                Gdx.input.isKeyJustPressed(Input.Keys.K));
+                Gdx.input.isKeyJustPressed(Input.Keys.SHIFT_LEFT));
         specialBufferTimer = updateBuffer(specialBufferTimer, delta,
-                Gdx.input.isKeyJustPressed(Input.Keys.L));
+                Gdx.input.isButtonJustPressed(Input.Buttons.RIGHT));
 
         moveLeft = Gdx.input.isKeyPressed(Input.Keys.A);
         moveRight = Gdx.input.isKeyPressed(Input.Keys.D);
-        shootHeld = Gdx.input.isKeyPressed(Input.Keys.J);
+        shootHeld = Gdx.input.isButtonPressed(Input.Buttons.LEFT);
     }
 
     public boolean isMoveLeftHeld() {

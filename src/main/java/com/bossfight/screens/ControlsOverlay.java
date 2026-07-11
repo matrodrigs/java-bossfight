@@ -13,9 +13,9 @@ import com.bossfight.systems.RetroTextFactory;
 import com.bossfight.systems.TextureDraw;
 
 final class ControlsOverlay {
-    private static final String[] KEYS = {"A  D", "ESPAÇO", "J", "K", "L"};
-    private static final String[] ACTIONS = {"MOVER", "PULAR", "ATIRAR", "DASH", "ESPECIAL"};
-    private static final float[] KEY_CAP_WIDTHS = {82f, 122f, 54f, 54f, 54f};
+    private static final String[] KEYS = {"A  D", "ESPAÇO", "SHIFT", "MOUSE 1", "MOUSE 2"};
+    private static final String[] ACTIONS = {"MOVER", "PULAR", "DASH", "ATIRAR", "ESPECIAL"};
+    private static final float[] KEY_CAP_WIDTHS = {82f, 122f, 104f, 122f, 122f};
     private static final float DISPLAY_DURATION = 5.4f;
     private static final float FADE_IN_DURATION = 0.32f;
     private static final float FADE_OUT_START = 4.25f;
