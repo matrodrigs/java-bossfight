@@ -22,6 +22,21 @@ public final class BossRenderer implements Disposable {
     private static final int FORWARD_RIGHT_TRIM = 24;
     private static final int MAGIC_LEFT_EXTENSION = 20;
     private static final float FRAME_ASPECT_RATIO = 3f / 4f;
+    private static final float IDLE_BREATH_FREQUENCY = 2.5f;
+    private static final float ATTACK_PULSE_FREQUENCY = 7.2f;
+    private static final float MAGIC_SWAY_FREQUENCY = 5.4f;
+    private static final float POLLEN_RAIN_SWAY_FREQUENCY = 6.2f;
+    private static final float CONTINUOUS_MOTION_SCALE = 0.5f;
+    private static final float ATTACK_IMPULSE_SCALE = 0.55f;
+    private static final float POLLEN_RAIN_VERTICAL_SWAY = 4f;
+    private static final float POLLEN_RAIN_ATTACK_LIFT = 3.5f;
+    private static final float ENRAGE_VERTICAL_SWAY = 4f;
+    private static final float DEFEATED_INITIAL_FRAME_DURATION = 0.18f;
+    private static final float DEFEATED_ANIMATION_FPS = 2f;
+    private static final float PHASE_TWO_TINT_GREEN = 0.78f;
+    private static final float PHASE_TWO_TINT_BLUE = 0.68f;
+    private static final float FINAL_RAGE_TINT_GREEN = 0.56f;
+    private static final float FINAL_RAGE_TINT_BLUE = 0.44f;
 
     private final Texture spriteSheet;
     private final TextureRegion[] frames;
@@ -77,13 +92,24 @@ public final class BossRenderer implements Disposable {
         }
 
         float alpha = boss.getTelegraphAlpha();
-        float radius = 118f + (1f - alpha) * 55f;
+        boolean enraging = boss.getVisualState() == BossVisualState.ENRAGING;
+        float pulse = 0.5f + MathUtils.sin(boss.getVisualStateTime() * 16f) * 0.5f;
+        float radius = (enraging ? 155f : 118f) + (1f - alpha) * (enraging ? 105f : 55f);
         float centerX = boss.getCenterX() - 30f;
         float centerY = Constants.FLOOR_Y + 360f;
-        shapeRenderer.setColor(1f, 0.58f, 0.12f, 0.16f * alpha);
-        shapeRenderer.circle(centerX, centerY, radius);
-        shapeRenderer.setColor(1f, 0.94f, 0.38f, 0.16f * alpha);
-        shapeRenderer.circle(centerX, centerY, radius * 0.58f);
+        if (enraging) {
+            shapeRenderer.setColor(0.72f, 0.025f, 0.01f, (0.20f + pulse * 0.08f) * alpha);
+            shapeRenderer.circle(centerX, centerY, radius);
+            shapeRenderer.setColor(1f, 0.16f, 0.025f, (0.20f + pulse * 0.07f) * alpha);
+            shapeRenderer.circle(centerX, centerY, radius * 0.67f);
+            shapeRenderer.setColor(1f, 0.70f, 0.16f, 0.14f * alpha);
+            shapeRenderer.circle(centerX, centerY, radius * 0.34f);
+        } else {
+            shapeRenderer.setColor(1f, 0.58f, 0.12f, 0.16f * alpha);
+            shapeRenderer.circle(centerX, centerY, radius);
+            shapeRenderer.setColor(1f, 0.94f, 0.38f, 0.16f * alpha);
+            shapeRenderer.circle(centerX, centerY, radius * 0.58f);
+        }
     }
 
     public void render(SpriteBatch batch, OrthographicCamera camera, Boss boss, Player player,
@@ -95,7 +121,7 @@ public final class BossRenderer implements Disposable {
     private BossPose createPose(Boss boss, Player player, boolean fightStarted, float elapsed) {
         BossVisualState state = boss.getVisualState();
         TextureRegion frame = selectFrame(boss, fightStarted, elapsed, state);
-        AnimationSignals signals = createAnimationSignals(boss, state);
+        AnimationSignals signals = createAnimationSignals(boss, state, elapsed);
         float height = visualHeight(boss, signals);
         float width = height * frame.getRegionWidth() / frame.getRegionHeight();
 
@@ -113,25 +139,28 @@ public final class BossRenderer implements Disposable {
         );
     }
 
-    private AnimationSignals createAnimationSignals(Boss boss, BossVisualState state) {
+    private AnimationSignals createAnimationSignals(Boss boss, BossVisualState state, float elapsed) {
         boolean defeated = boss.isDefeated();
         float stateTime = boss.getVisualStateTime();
         float actionImpulse = boss.getActionImpulse();
         float hitReaction = boss.getHitReaction();
-        float actionTime = 1f - actionImpulse;
+        float actionProgress = smoothStep(1f - actionImpulse);
         float hitTime = 1f - hitReaction;
         float attackPulse = !defeated && isAttackState(state)
-                ? MathUtils.sin(stateTime * 9.5f)
+                ? MathUtils.sin(stateTime * ATTACK_PULSE_FREQUENCY)
                 : 0f;
 
         return new AnimationSignals(
                 state,
                 defeated,
                 stateTime,
-                defeated ? 0f : MathUtils.sin(stateTime * 3.4f),
+                defeated ? 0f : MathUtils.sin(elapsed * IDLE_BREATH_FREQUENCY),
                 boss.isTelegraphing() ? smoothStep(1f - boss.getTelegraphAlpha()) : 0f,
-                actionImpulse > 0f ? MathUtils.sin(actionTime * MathUtils.PI) : 0f,
-                actionImpulse > 0f ? MathUtils.sin(actionTime * MathUtils.PI2) * (1f - actionTime) : 0f,
+                actionImpulse > 0f
+                        ? MathUtils.sin(actionProgress * MathUtils.PI) * ATTACK_IMPULSE_SCALE : 0f,
+                actionImpulse > 0f
+                        ? MathUtils.sin(actionProgress * MathUtils.PI2) * (1f - actionProgress)
+                        * ATTACK_IMPULSE_SCALE : 0f,
                 hitReaction > 0f ? MathUtils.sin(hitTime * MathUtils.PI) : 0f,
                 attackPulse
         );
@@ -146,7 +175,7 @@ public final class BossRenderer implements Disposable {
     }
 
     private float visualHeight(Boss boss, AnimationSignals signals) {
-        float height = 506f + signals.breath() * 5f + (boss.isPhaseTwo() ? 18f : 0f);
+        float height = 506f + signals.breath() * 2f + (boss.isPhaseTwo() ? 18f : 0f);
         height += signals.is(BossVisualState.VINE_STRIKE) ? signals.windup() * 18f : 0f;
         height += signals.is(BossVisualState.ENRAGING)
                 ? signals.windup() * 24f + signals.actionKick() * 12f
@@ -165,15 +194,16 @@ public final class BossRenderer implements Disposable {
             x -= (uncroppedWidth - width) * 0.5f;
         }
         if (signals.is(BossVisualState.VINE_STRIKE)) {
-            x += signals.attackPulse() * 5f - 18f - signals.windup() * 18f
+            x += signals.attackPulse() * 5f * CONTINUOUS_MOTION_SCALE - 18f - signals.windup() * 18f
                     - signals.actionKick() * 26f + signals.actionFollowThrough() * 11f;
         }
         if (signals.is(BossVisualState.MAGIC_HANDS)) {
-            x += MathUtils.sin(signals.stateTime() * 7f) * 5f - signals.windup() * 10f
+            x += MathUtils.sin(signals.stateTime() * MAGIC_SWAY_FREQUENCY) * 5f * CONTINUOUS_MOTION_SCALE
+                    - signals.windup() * 10f
                     - signals.actionKick() * 8f + signals.actionFollowThrough() * 5f;
         }
         if (signals.is(BossVisualState.POLLEN_BREATH)) {
-            x += -signals.windup() * 18f + signals.attackPulse() * 4f
+            x += -signals.windup() * 18f + signals.attackPulse() * 4f * CONTINUOUS_MOTION_SCALE
                     - signals.actionKick() * 18f + signals.actionFollowThrough() * 8f;
         }
         return x + signals.hitKick() * 14f;
@@ -184,12 +214,14 @@ public final class BossRenderer implements Disposable {
     }
 
     private float verticalPosition(AnimationSignals signals) {
-        float y = Constants.FLOOR_Y - 30f + signals.breath() * 2.5f;
+        float y = Constants.FLOOR_Y - 30f + signals.breath();
         if (signals.is(BossVisualState.POLLEN_RAIN)) {
-            y += MathUtils.sin(signals.stateTime() * 8.5f) * 6f + signals.actionKick() * 5f;
+            y += MathUtils.sin(signals.stateTime() * POLLEN_RAIN_SWAY_FREQUENCY)
+                    * POLLEN_RAIN_VERTICAL_SWAY * CONTINUOUS_MOTION_SCALE
+                    + signals.actionKick() * POLLEN_RAIN_ATTACK_LIFT;
         }
         if (signals.is(BossVisualState.ENRAGING)) {
-            y += signals.attackPulse() * 6f;
+            y += signals.attackPulse() * ENRAGE_VERTICAL_SWAY * CONTINUOUS_MOTION_SCALE;
         }
         if (signals.defeated()) {
             y -= smoothStep(MathUtils.clamp(signals.stateTime() / 0.42f, 0f, 1f)) * 16f;
@@ -198,8 +230,9 @@ public final class BossRenderer implements Disposable {
     }
 
     private float horizontalScale(AnimationSignals signals) {
-        return 1f + signals.breath() * 0.014f
-                + (signals.is(BossVisualState.MAGIC_HANDS) ? signals.attackPulse() * 0.02f : 0f)
+        return 1f + signals.breath() * 0.005f
+                + (signals.is(BossVisualState.MAGIC_HANDS)
+                ? signals.attackPulse() * 0.02f * CONTINUOUS_MOTION_SCALE : 0f)
                 + signals.actionKick() * (signals.is(BossVisualState.VINE_STRIKE)
                 || signals.is(BossVisualState.POLLEN_BREATH) ? 0.035f : 0.018f)
                 + signals.actionFollowThrough() * 0.012f
@@ -207,8 +240,9 @@ public final class BossRenderer implements Disposable {
     }
 
     private float verticalScale(AnimationSignals signals) {
-        return 1f - signals.breath() * 0.01f
-                + (signals.is(BossVisualState.VINE_STRIKE) ? signals.attackPulse() * 0.028f : 0f)
+        return 1f - signals.breath() * 0.004f
+                + (signals.is(BossVisualState.VINE_STRIKE)
+                ? signals.attackPulse() * 0.028f * CONTINUOUS_MOTION_SCALE : 0f)
                 - signals.actionKick() * (signals.is(BossVisualState.VINE_STRIKE)
                 || signals.is(BossVisualState.POLLEN_BREATH) ? 0.045f : 0.018f)
                 - signals.actionFollowThrough() * 0.01f
@@ -216,9 +250,9 @@ public final class BossRenderer implements Disposable {
     }
 
     private float rotation(AnimationSignals signals) {
-        return MathUtils.sin(signals.stateTime() * 2.1f) * 0.8f
+        return MathUtils.sin(signals.stateTime() * 2.1f) * 0.25f
                 + signals.attackPulse() * (signals.is(BossVisualState.POLLEN_RAIN)
-                || signals.is(BossVisualState.ENRAGING) ? 1.4f : 0.45f)
+                || signals.is(BossVisualState.ENRAGING) ? 1.4f : 0.45f) * CONTINUOUS_MOTION_SCALE
                 + signals.actionKick() * (signals.is(BossVisualState.VINE_STRIKE) ? -2.4f : 1.2f)
                 + signals.actionFollowThrough() * (signals.is(BossVisualState.VINE_STRIKE) ? 2.2f : -1.4f)
                 + signals.hitKick() * 2.8f;
@@ -229,8 +263,26 @@ public final class BossRenderer implements Disposable {
         batch.begin();
         if (pose.hitKick() > 0.05f) {
             batch.setColor(1f, 0.66f + pose.hitKick() * 0.26f, 0.66f + pose.hitKick() * 0.26f, 1f);
+        } else if (boss.getVisualState() == BossVisualState.ENRAGING) {
+            float progress = 1f - boss.getTelegraphAlpha();
+            float pulse = 0.5f + MathUtils.sin(boss.getVisualStateTime() * 18f) * 0.5f;
+            float intensity = MathUtils.clamp(0.38f + progress * 0.48f + pulse * 0.14f, 0f, 1f);
+            batch.setColor(
+                    1f,
+                    MathUtils.lerp(1f, 0.48f, intensity),
+                    MathUtils.lerp(1f, 0.38f, intensity),
+                    1f);
         } else if (boss.isPhaseTwo()) {
-            batch.setColor(1f, 0.92f, 0.92f, 1f);
+            if (boss.isFinalRage()) {
+                float pulse = 0.5f + MathUtils.sin(boss.getVisualStateTime() * 6f) * 0.5f;
+                batch.setColor(
+                        1f,
+                        MathUtils.lerp(PHASE_TWO_TINT_GREEN, FINAL_RAGE_TINT_GREEN, 0.72f + pulse * 0.28f),
+                        MathUtils.lerp(PHASE_TWO_TINT_BLUE, FINAL_RAGE_TINT_BLUE, 0.72f + pulse * 0.28f),
+                        1f);
+            } else {
+                batch.setColor(1f, PHASE_TWO_TINT_GREEN, PHASE_TWO_TINT_BLUE, 1f);
+            }
         }
         if (pose.flipX()) {
             pose.frame().flip(true, false);
@@ -309,16 +361,26 @@ public final class BossRenderer implements Disposable {
             return ((int) (elapsed * 2.2f) & 1) == 0 ? frames[0] : inbetweenFrames[0];
         }
         if (boss.isDefeated()) {
-            return boss.getVisualStateTime() < 0.18f ? frames[7] : inbetweenFrames[7];
+            return defeatedAnimationFrame(boss);
         }
         return switch (state) {
             case ENRAGING, MAGIC_HANDS -> attackAnimationFrame(boss, 3, 11f);
             case VINE_STRIKE -> attackAnimationFrame(boss, 4, 14f);
             case POLLEN_BREATH -> attackAnimationFrame(boss, 5, 13f);
             case POLLEN_RAIN -> attackAnimationFrame(boss, 6, 12f);
-            case DEFEATED -> inbetweenFrames[7];
+            case DEFEATED -> defeatedAnimationFrame(boss);
             case IDLE -> idleAnimationFrame(boss);
         };
+    }
+
+    private TextureRegion defeatedAnimationFrame(Boss boss) {
+        float stateTime = boss.getVisualStateTime();
+        if (stateTime < DEFEATED_INITIAL_FRAME_DURATION) {
+            return frames[7];
+        }
+
+        int frame = (int) ((stateTime - DEFEATED_INITIAL_FRAME_DURATION) * DEFEATED_ANIMATION_FPS);
+        return (frame & 1) == 0 ? inbetweenFrames[7] : frames[7];
     }
 
     private TextureRegion idleAnimationFrame(Boss boss) {
