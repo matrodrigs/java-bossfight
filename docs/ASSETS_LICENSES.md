@@ -13,9 +13,9 @@ Este build não copia sprites, músicas, efeitos, logos, fontes ou arquivos ofic
 - `sprites/background/floral_vintage/**/*.png`: camadas finais de cenário floral vintage, geradas com OpenAI imagegen e recortadas localmente para montagem em parallax.
 - `audio/voice/narrator_intro.wav`: locução gerada pelo Google AI Studio para a abertura da luta, sincronizada com os textos READY?/GO!.
 - `audio/voice/narrator_knockout.wav`: locução gerada pelo Google AI Studio para o encerramento da luta.
-- `audio/music/menu_theme.mp3`, `boss_fight_theme.mp3`, `victory_theme.mp3` e `defeat_theme.mp3`: trilhas sonoras obtidas no site Pixabay.
+- `audio/music/menu_theme.mp3`, `boss_fight_theme.mp3`, `boss_fight_phase_two_theme.mp3`, `victory_theme.mp3` e `defeat_theme.mp3`: trilhas sonoras obtidas no site Pixabay.
+- `audio/sfx/boss_phase_roar.mp3`: efeito “Large Fantasy Creature Roar”, de DavidDumaisAudio, obtido no Pixabay sob a Pixabay Content License para o grito de transição da segunda fase; fonte: https://pixabay.com/sound-effects/film-special-effects-large-fantasy-creature-roar-195714/.
 - Demais efeitos sonoros: sintetizados proceduralmente em runtime pelo `AudioManager`.
 - `fonts/LilitaOne-Regular.ttf`: fonte Lilita One distribuída pelo projeto Google Fonts sob a SIL Open Font License 1.1; a licença acompanha o arquivo em `fonts/OFL-LilitaOne.txt`.
-- Fontes/texto: texturas geradas localmente em runtime pelo Java2D a partir da fonte empacotada, evitando variação entre sistemas e o visual borrado do `BitmapFont` padrão.
-
-Arquivos intermediários de geração, sheets brutas, previews locais e scripts temporários de recorte não são embarcados no build final. Nenhum asset oficial de Cuphead foi copiado para o projeto.
+- `fonts/TitanOne-Regular.ttf`: fonte Titan One usada no título principal, distribuída pelo projeto Google Fonts sob a SIL Open Font License 1.1; a licença acompanha o arquivo em `fonts/OFL-TitanOne.txt`.
+- Fontes/texto: texturas geradas localmente em runtime pelo Java2D a partir das fontes empacotadas, evitando variação entre sistemas e o visual borrado do `BitmapFont` padrão.
