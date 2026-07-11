@@ -18,6 +18,8 @@ public class EndScreen extends ScreenAdapter {
     private static final float TEXT_CENTER_X = 380f;
     private static final float TEXT_MAX_WIDTH = 690f;
     private static final float PROMPT_GAP = 14f;
+    private static final float VICTORY_TITLE_OFFSET_X = 17f;
+    private static final float DEFEAT_TITLE_OFFSET_X = 14f;
 
     private final GameContext game;
     private final boolean victory;
@@ -68,7 +70,9 @@ public class EndScreen extends ScreenAdapter {
         game.getBatch().setProjectionMatrix(camera.combined);
         game.getBatch().begin();
         game.getBatch().draw(background, 0f, 0f, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
-        TextureDraw.centeredWithin(game.getBatch(), titleText, TEXT_CENTER_X, 506f, 0.92f, TEXT_MAX_WIDTH);
+        float titleOffsetX = victory ? VICTORY_TITLE_OFFSET_X : DEFEAT_TITLE_OFFSET_X;
+        TextureDraw.centeredWithin(game.getBatch(), titleText, TEXT_CENTER_X + titleOffsetX, 506f, 0.92f,
+                TEXT_MAX_WIDTH);
         drawPrompts();
         game.getBatch().end();
     }

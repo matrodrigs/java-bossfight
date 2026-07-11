@@ -105,9 +105,7 @@ public class MainGame extends Game implements GameContext {
     }
 
     private boolean isFullscreenShortcutPressed() {
-        boolean altPressed = Gdx.input.isKeyPressed(Input.Keys.ALT_LEFT)
-                || Gdx.input.isKeyPressed(Input.Keys.ALT_RIGHT);
-        return altPressed && Gdx.input.isKeyJustPressed(Input.Keys.ENTER);
+        return Gdx.input.isKeyJustPressed(Input.Keys.F11);
     }
 
     private void toggleFullscreen() {
