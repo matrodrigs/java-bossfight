@@ -22,6 +22,7 @@ public class MainGame extends Game implements GameContext {
     private static final String DEFEAT_MUSIC_PATH = "audio/music/defeat_theme.mp3";
     private static final float MENU_MUSIC_VOLUME = 0.07f;
     private static final float END_MUSIC_VOLUME = 0.07f;
+    private static final float DEFEAT_MUSIC_DELAY = 0.18f;
     private static final float VINYL_NOISE_BASE_VOLUME = 0.03f;
     private static final float VINYL_NOISE_IRIS_VOLUME = 0.1f;
 
@@ -29,6 +30,7 @@ public class MainGame extends Game implements GameContext {
     private ShapeRenderer shapeRenderer;
     private AudioManager audioManager;
     private OldFilmEffect oldFilmEffect;
+    private float defeatMusicTimer = -1f;
     private final IrisTransition irisTransition = new IrisTransition();
 
     @Override
@@ -69,6 +71,7 @@ public class MainGame extends Game implements GameContext {
         }
         oldFilmEffect.begin();
         super.render();
+        updateDefeatMusicDelay(Math.min(delta, 1f / 30f));
         updateIrisTransition(Math.min(delta, 1f / 30f));
         oldFilmEffect.renderToScreen(delta, getIrisApertureProgress());
     }
@@ -197,13 +200,28 @@ public class MainGame extends Game implements GameContext {
     }
 
     private void afterIrisTargetScreenChange(IrisTransition.Target target) {
+        defeatMusicTimer = -1f;
         if (target == IrisTransition.Target.MENU) {
             audioManager.playMusic(MENU_MUSIC_PATH, true, MENU_MUSIC_VOLUME);
         } else if (target == IrisTransition.Target.END_VICTORY) {
             audioManager.playMusic(VICTORY_MUSIC_PATH, true, END_MUSIC_VOLUME);
         } else if (target == IrisTransition.Target.END_DEFEAT) {
-            audioManager.playMusic(DEFEAT_MUSIC_PATH, true, END_MUSIC_VOLUME);
+            defeatMusicTimer = DEFEAT_MUSIC_DELAY;
         }
+    }
+
+    private void updateDefeatMusicDelay(float delta) {
+        if (defeatMusicTimer < 0f) {
+            return;
+        }
+
+        defeatMusicTimer = Math.max(0f, defeatMusicTimer - delta);
+        if (defeatMusicTimer > 0f) {
+            return;
+        }
+
+        defeatMusicTimer = -1f;
+        audioManager.playMusic(DEFEAT_MUSIC_PATH, true, END_MUSIC_VOLUME);
     }
 
     private void changeScreen(Screen nextScreen) {
