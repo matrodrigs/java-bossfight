@@ -69,8 +69,7 @@ public class EndScreen extends ScreenAdapter {
         game.getBatch().begin();
         game.getBatch().draw(background, 0f, 0f, Constants.WORLD_WIDTH, Constants.WORLD_HEIGHT);
         TextureDraw.centeredWithin(game.getBatch(), titleText, TEXT_CENTER_X, 506f, 0.92f, TEXT_MAX_WIDTH);
-        drawPrompt(retryKeyText, retryActionText, 332f);
-        drawPrompt(menuKeyText, menuActionText, 282f);
+        drawPrompts();
         game.getBatch().end();
     }
 
@@ -85,25 +84,32 @@ public class EndScreen extends ScreenAdapter {
         background.dispose();
     }
 
-    private void drawPrompt(Texture keyTexture, Texture actionTexture, float centerY) {
+    private void drawPrompts() {
         float keyScale = 0.72f;
         float actionScale = 0.68f;
-        float referenceTotalWidth = retryKeyText.getWidth() * keyScale
-                + PROMPT_GAP
-                + retryActionText.getWidth() * actionScale;
-        if (referenceTotalWidth > TEXT_MAX_WIDTH) {
-            float shrink = TEXT_MAX_WIDTH / referenceTotalWidth;
+        float keyColumnWidth = Math.max(retryKeyText.getWidth(), menuKeyText.getWidth()) * keyScale;
+        float actionColumnWidth = Math.max(retryActionText.getWidth(), menuActionText.getWidth()) * actionScale;
+        float gap = PROMPT_GAP;
+        float totalWidth = keyColumnWidth + gap + actionColumnWidth;
+
+        if (totalWidth > TEXT_MAX_WIDTH) {
+            float shrink = TEXT_MAX_WIDTH / totalWidth;
             keyScale *= shrink;
             actionScale *= shrink;
-            referenceTotalWidth = retryKeyText.getWidth() * keyScale
-                    + PROMPT_GAP * shrink
-                    + retryActionText.getWidth() * actionScale;
+            keyColumnWidth *= shrink;
+            actionColumnWidth *= shrink;
+            gap *= shrink;
+            totalWidth = keyColumnWidth + gap + actionColumnWidth;
         }
 
-        float gap = PROMPT_GAP * (keyScale / 0.72f);
-        float referenceX = TEXT_CENTER_X - referenceTotalWidth * 0.5f;
-        float actionX = referenceX + retryKeyText.getWidth() * keyScale + gap;
-        float keyRightX = actionX - gap;
+        float keyRightX = TEXT_CENTER_X - totalWidth * 0.5f + keyColumnWidth;
+        float actionX = keyRightX + gap;
+        drawPrompt(retryKeyText, retryActionText, 332f, keyRightX, actionX, keyScale, actionScale);
+        drawPrompt(menuKeyText, menuActionText, 282f, keyRightX, actionX, keyScale, actionScale);
+    }
+
+    private void drawPrompt(Texture keyTexture, Texture actionTexture, float centerY,
+                            float keyRightX, float actionX, float keyScale, float actionScale) {
         float keyWidth = keyTexture.getWidth() * keyScale;
         TextureDraw.atCenterY(game.getBatch(), keyTexture, keyRightX - keyWidth, centerY, keyScale);
         TextureDraw.atCenterY(game.getBatch(), actionTexture, actionX, centerY, actionScale);
