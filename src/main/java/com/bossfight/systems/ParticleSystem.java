@@ -54,6 +54,36 @@ public class ParticleSystem {
                     new Color(0.34f, 0.92f, 1f, 0.85f),
                     -120f);
         }
+
+        float footY = y - 38f;
+        for (int i = 0; i < 12; i++) {
+            float speed = MathUtils.random(70f, 230f);
+            add(x - direction * MathUtils.random(10f, 28f),
+                    footY + MathUtils.random(-2f, 8f),
+                    -direction * speed,
+                    MathUtils.random(18f, 78f),
+                    MathUtils.random(3.5f, 7.5f),
+                    -24f,
+                    MathUtils.random(0.18f, 0.32f),
+                    new Color(0.66f, 0.52f, 0.34f, 0.56f),
+                    -280f);
+        }
+    }
+
+    public void spawnLandingDust(float x, float y) {
+        for (int i = 0; i < 16; i++) {
+            float direction = MathUtils.randomBoolean() ? 1f : -1f;
+            float speed = MathUtils.random(38f, 170f);
+            add(x + MathUtils.random(-20f, 20f),
+                    y + MathUtils.random(-2f, 5f),
+                    direction * speed,
+                    MathUtils.random(18f, 92f),
+                    MathUtils.random(3f, 8f),
+                    -26f,
+                    MathUtils.random(0.22f, 0.38f),
+                    new Color(0.64f, 0.50f, 0.34f, 0.58f),
+                    -300f);
+        }
     }
 
     public void spawnMuzzle(float x, float y, int direction, boolean special) {

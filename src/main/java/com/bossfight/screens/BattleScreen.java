@@ -52,6 +52,9 @@ public class BattleScreen extends ScreenAdapter {
     private static final float SPECIAL_CLOCK_SIZE = 70f;
     private static final float SPECIAL_CLOCK_X = PLAYER_HUD_X + HP_BOX_WIDTH + PLAYER_HUD_GAP;
     private static final float SPECIAL_CLOCK_Y = PLAYER_HUD_Y + (HP_BOX_HEIGHT - SPECIAL_CLOCK_SIZE) * 0.5f;
+    private static final float PLAYER_SPRITE_FOOT_OFFSET = 11f;
+    private static final float PLAYER_RUN_BOB = 1.45f;
+    private static final float HITSTOP_INPUT_BUFFER = 0.14f;
     private static final int MAX_PHASE_SHOCKWAVES = 8;
     private static final float PHASE_SHOCKWAVE_DURATION = 0.72f;
     private static final float PHASE_SHOCKWAVE_START_RADIUS_X = 48f;
@@ -110,6 +113,9 @@ public class BattleScreen extends ScreenAdapter {
     private float shakeMagnitude;
     private float knockoutTimer;
     private float knockoutParticleTimer;
+    private float bufferedJumpTimer;
+    private float bufferedDashTimer;
+    private float bufferedSpecialTimer;
     private boolean introVoicePlayed;
     private boolean fightStarted;
     private boolean introPausedForTransition;
@@ -235,23 +241,18 @@ public class BattleScreen extends ScreenAdapter {
             return updateKnockoutSequence(delta);
         }
 
-        if (hitstopTimer > 0f) {
-            hitstopTimer = Math.max(0f, hitstopTimer - delta);
-            return true;
-        }
-
         boolean moveLeft = Gdx.input.isKeyPressed(Input.Keys.A) || Gdx.input.isKeyPressed(Input.Keys.LEFT);
         boolean moveRight = Gdx.input.isKeyPressed(Input.Keys.D) || Gdx.input.isKeyPressed(Input.Keys.RIGHT);
-        boolean jump = Gdx.input.isKeyJustPressed(Input.Keys.W)
+        boolean jumpPressed = Gdx.input.isKeyJustPressed(Input.Keys.W)
                 || Gdx.input.isKeyJustPressed(Input.Keys.UP)
                 || Gdx.input.isKeyJustPressed(Input.Keys.SPACE);
-        boolean dash = Gdx.input.isKeyJustPressed(Input.Keys.K)
+        boolean dashPressed = Gdx.input.isKeyJustPressed(Input.Keys.K)
                 || Gdx.input.isKeyJustPressed(Input.Keys.SHIFT_LEFT)
                 || Gdx.input.isKeyJustPressed(Input.Keys.SHIFT_RIGHT);
         boolean shoot = Gdx.input.isKeyPressed(Input.Keys.F)
                 || Gdx.input.isKeyPressed(Input.Keys.CONTROL_LEFT)
                 || Gdx.input.isKeyPressed(Input.Keys.CONTROL_RIGHT);
-        boolean special = Gdx.input.isKeyJustPressed(Input.Keys.G)
+        boolean specialPressed = Gdx.input.isKeyJustPressed(Input.Keys.G)
                 || Gdx.input.isKeyJustPressed(Input.Keys.ALT_LEFT)
                 || Gdx.input.isKeyJustPressed(Input.Keys.ALT_RIGHT);
 
@@ -260,10 +261,26 @@ public class BattleScreen extends ScreenAdapter {
             return true;
         }
 
+        updateInputBuffers(delta, jumpPressed, dashPressed, specialPressed);
+
+        if (hitstopTimer > 0f) {
+            hitstopTimer = Math.max(0f, hitstopTimer - delta);
+            return true;
+        }
+
+        boolean jump = consumeBufferedJump();
+        boolean dash = consumeBufferedDash();
+        boolean special = consumeBufferedSpecial();
+
         player.update(delta, moveLeft, moveRight, jump, dash);
         if (player.consumeDashStarted()) {
             particleSystem.spawnDash(player.getCenterX(), player.getCenterY(), player.getFacingDirection());
             game.getAudioManager().playCue(AudioManager.Cue.DASH);
+            requestShake(2.4f, 0.09f);
+        }
+        if (player.consumeLanded()) {
+            particleSystem.spawnLandingDust(player.getCenterX(), Constants.FLOOR_Y + 5f);
+            requestShake(1.35f, 0.08f);
         }
 
         if (special) {
@@ -323,6 +340,7 @@ public class BattleScreen extends ScreenAdapter {
             drawIntroSpotlight(shapeRenderer);
         }
 
+        drawPlayerShadow(shapeRenderer);
         drawBossShadow(shapeRenderer);
         drawBossTelegraphGlow(shapeRenderer);
         projectileSystem.renderWarnings(shapeRenderer);
@@ -425,27 +443,25 @@ public class BattleScreen extends ScreenAdapter {
         float poseHeight = heightForPlayerPose(pose);
 
         float poseWidth = poseHeight * frame.getRegionWidth() / frame.getRegionHeight();
-        float idleBreath = pose == PlayerPose.IDLE ? MathUtils.sin(player.getAnimationTime() * 3f) : 0f;
+        float idleBreath = pose == PlayerPose.IDLE ? MathUtils.sin(player.getAnimationTime() * 2.2f) : 0f;
         boolean groundStepPose = isGroundStepPose(pose) && player.isGrounded();
         float step = groundStepPose ? MathUtils.sin(player.getAnimationTime() * 13f) : 0f;
         float stepBounce = groundStepPose ? Math.abs(step) : 0f;
-        float runBob = groundStepPose
-                ? stepBounce * 2.2f
-                : MathUtils.sin(player.getAnimationTime() * 3.4f) * (pose == PlayerPose.IDLE ? 1.8f : 1.2f);
+        float runBob = groundStepPose ? stepBounce * PLAYER_RUN_BOB : 0f;
         float squashX = pose == PlayerPose.DASH
                 ? 1.06f
-                : (groundStepPose ? 1f + stepBounce * 0.014f : 1f + idleBreath * 0.015f);
+                : (groundStepPose ? 1f + stepBounce * 0.014f : 1f + idleBreath * 0.004f);
         float squashY = pose == PlayerPose.DASH
                 ? 0.96f
-                : (groundStepPose ? 1f - stepBounce * 0.01f : 1f - idleBreath * 0.01f);
+                : (groundStepPose ? 1f - stepBounce * 0.01f : 1f - idleBreath * 0.003f);
         float rotation = pose == PlayerPose.HURT
                 ? -player.getFacingDirection() * 5f
                 : (groundStepPose
                 ? step * 0.6f
-                : idleBreath * 0.6f);
+                : 0f);
 
         float drawX = player.getCenterX() - poseWidth * 0.5f;
-        float drawY = player.getY() - 11f + runBob;
+        float drawY = player.getY() - PLAYER_SPRITE_FOOT_OFFSET + runBob;
         boolean flipX = shouldFlipPlayerPose(pose);
 
         game.getBatch().setProjectionMatrix(camera.combined);
@@ -457,7 +473,7 @@ public class BattleScreen extends ScreenAdapter {
                 drawX,
                 drawY,
                 poseWidth * 0.5f,
-                18f,
+                PLAYER_SPRITE_FOOT_OFFSET,
                 poseWidth,
                 poseHeight,
                 squashX,
@@ -526,6 +542,16 @@ public class BattleScreen extends ScreenAdapter {
             case RUN -> 122f;
             case IDLE -> 126f;
         };
+    }
+
+    private void drawPlayerShadow(ShapeRenderer shapeRenderer) {
+        float airHeight = Math.max(0f, player.getY() - Constants.FLOOR_Y);
+        float groundCloseness = MathUtils.clamp(1f - airHeight / 280f, 0.34f, 1f);
+        float width = 72f * groundCloseness;
+        float height = 15f * groundCloseness;
+        float alpha = 0.28f * groundCloseness;
+        shapeRenderer.setColor(0.04f, 0.025f, 0.018f, alpha);
+        shapeRenderer.ellipse(player.getCenterX() - width * 0.5f, Constants.FLOOR_Y - 9f, width, height);
     }
 
     private boolean shouldFlipPlayerPose(PlayerPose pose) {
@@ -832,9 +858,54 @@ public class BattleScreen extends ScreenAdapter {
     }
 
     private void requestShake(float magnitude, float duration) {
-        shakeMagnitude = Math.max(shakeMagnitude, magnitude);
+        float activeAlpha = shakeDuration <= 0f ? 0f : MathUtils.clamp(shakeTimer / shakeDuration, 0f, 1f);
+        if (magnitude < shakeMagnitude * activeAlpha) {
+            return;
+        }
+
+        shakeMagnitude = magnitude;
         shakeDuration = Math.max(0.01f, duration);
-        shakeTimer = Math.max(shakeTimer, duration);
+        shakeTimer = shakeDuration;
+    }
+
+    private void updateInputBuffers(float delta, boolean jumpPressed, boolean dashPressed, boolean specialPressed) {
+        bufferedJumpTimer = Math.max(0f, bufferedJumpTimer - delta);
+        bufferedDashTimer = Math.max(0f, bufferedDashTimer - delta);
+        bufferedSpecialTimer = Math.max(0f, bufferedSpecialTimer - delta);
+
+        if (jumpPressed) {
+            bufferedJumpTimer = HITSTOP_INPUT_BUFFER;
+        }
+        if (dashPressed) {
+            bufferedDashTimer = HITSTOP_INPUT_BUFFER;
+        }
+        if (specialPressed) {
+            bufferedSpecialTimer = HITSTOP_INPUT_BUFFER;
+        }
+    }
+
+    private boolean consumeBufferedJump() {
+        if (bufferedJumpTimer <= 0f) {
+            return false;
+        }
+        bufferedJumpTimer = 0f;
+        return true;
+    }
+
+    private boolean consumeBufferedDash() {
+        if (bufferedDashTimer <= 0f) {
+            return false;
+        }
+        bufferedDashTimer = 0f;
+        return true;
+    }
+
+    private boolean consumeBufferedSpecial() {
+        if (bufferedSpecialTimer <= 0f) {
+            return false;
+        }
+        bufferedSpecialTimer = 0f;
+        return true;
     }
 
     private void updatePhaseShockwaves(float delta) {
@@ -897,12 +968,20 @@ public class BattleScreen extends ScreenAdapter {
 
     private void applyCameraShake() {
         float shakeAlpha = shakeDuration <= 0f ? 0f : MathUtils.clamp(shakeTimer / shakeDuration, 0f, 1f);
-        float offsetX = shakeAlpha > 0f ? MathUtils.random(-shakeMagnitude, shakeMagnitude) * shakeAlpha : 0f;
-        float offsetY = shakeAlpha > 0f ? MathUtils.random(-shakeMagnitude, shakeMagnitude) * shakeAlpha : 0f;
+        float easedAlpha = shakeAlpha * shakeAlpha;
+        float shakeTime = elapsed * 46f;
+        float offsetX = shakeAlpha > 0f ? smoothShake(shakeTime, 0.3f) * shakeMagnitude * easedAlpha : 0f;
+        float offsetY = shakeAlpha > 0f ? smoothShake(shakeTime, 2.1f) * shakeMagnitude * easedAlpha : 0f;
         camera.position.set(Constants.WORLD_WIDTH * 0.5f + offsetX, Constants.WORLD_HEIGHT * 0.5f + offsetY, 0f);
         camera.update();
         if (shakeTimer <= 0f) {
             shakeMagnitude = 0f;
         }
+    }
+
+    private float smoothShake(float time, float phase) {
+        return (MathUtils.sin(time + phase)
+                + MathUtils.sin(time * 1.73f + phase * 1.9f) * 0.5f
+                + MathUtils.sin(time * 2.41f + phase * 0.7f) * 0.25f) / 1.75f;
     }
 }

@@ -7,6 +7,9 @@ public class Player {
     private static final float SHOOT_POSE_HOLD = Constants.PLAYER_SHOOT_COOLDOWN + 0.08f;
     private static final float SPECIAL_SHOOT_POSE_HOLD = 0.36f;
     private static final float SHOT_MUZZLE_Y_FACTOR = 0.70f;
+    private static final float JUMP_BUFFER_DURATION = 0.11f;
+    private static final float DASH_BUFFER_DURATION = 0.12f;
+    private static final float COYOTE_TIME_DURATION = 0.10f;
 
     private final Hitbox hitbox;
     private int health;
@@ -26,8 +29,12 @@ public class Player {
     private float shootPoseTimer;
     private float specialPoseTimer;
     private float animationTime;
+    private float jumpBufferTimer;
+    private float dashBufferTimer;
+    private float coyoteTimer;
     private int dashDirection = 1;
     private boolean dashStartedThisFrame;
+    private boolean landedThisFrame;
     private boolean movingHorizontally;
 
     public Player() {
@@ -40,6 +47,8 @@ public class Player {
 
     public void update(float delta, boolean moveLeft, boolean moveRight, boolean jumpPressed, boolean dashPressed) {
         dashStartedThisFrame = false;
+        landedThisFrame = false;
+        boolean wasGrounded = isOnGround();
         shootCooldown = Math.max(0f, shootCooldown - delta);
         specialCooldown = Math.max(0f, specialCooldown - delta);
         dashCooldown = Math.max(0f, dashCooldown - delta);
@@ -47,6 +56,10 @@ public class Player {
         hurtFlashTimer = Math.max(0f, hurtFlashTimer - delta);
         shootPoseTimer = Math.max(0f, shootPoseTimer - delta);
         specialPoseTimer = Math.max(0f, specialPoseTimer - delta);
+        jumpBufferTimer = Math.max(0f, jumpBufferTimer - delta);
+        dashBufferTimer = Math.max(0f, dashBufferTimer - delta);
+        updateCoyoteTimer(delta, wasGrounded);
+        queueBufferedInputs(jumpPressed, dashPressed);
         animationTime += delta;
         specialEnergy = Math.min(Constants.PLAYER_SPECIAL_MAX,
                 specialEnergy + Constants.PLAYER_SPECIAL_PASSIVE_CHARGE * delta);
@@ -62,11 +75,12 @@ public class Player {
             updateJumpAndGravity(delta, false);
         } else {
             updateHorizontalMovement(delta, moveLeft, moveRight);
-            updateJumpAndGravity(delta, jumpPressed);
-            tryStartDash(dashPressed);
+            updateJumpAndGravity(delta, true);
+            tryStartDash();
         }
 
         keepInsideArena();
+        landedThisFrame = !wasGrounded && isOnGround();
         hitbox.setPosition(x, y);
     }
 
@@ -162,6 +176,12 @@ public class Player {
         return started;
     }
 
+    public boolean consumeLanded() {
+        boolean landed = landedThisFrame;
+        landedThisFrame = false;
+        return landed;
+    }
+
     public int getFacingDirection() {
         return facingDirection;
     }
@@ -230,21 +250,40 @@ public class Player {
         movingHorizontally = velocityX != 0f;
     }
 
+    private void updateCoyoteTimer(float delta, boolean wasGrounded) {
+        if (wasGrounded) {
+            coyoteTimer = COYOTE_TIME_DURATION;
+        } else {
+            coyoteTimer = Math.max(0f, coyoteTimer - delta);
+        }
+    }
+
+    private void queueBufferedInputs(boolean jumpPressed, boolean dashPressed) {
+        if (jumpPressed) {
+            jumpBufferTimer = JUMP_BUFFER_DURATION;
+        }
+        if (dashPressed) {
+            dashBufferTimer = DASH_BUFFER_DURATION;
+        }
+    }
+
     private float getShotOriginY(float projectileHeight) {
         return y + Constants.PLAYER_HEIGHT * SHOT_MUZZLE_Y_FACTOR - projectileHeight * 0.5f;
     }
 
-    private void updateJumpAndGravity(float delta, boolean jumpPressed) {
-        if (jumpPressed && isOnGround()) {
+    private void updateJumpAndGravity(float delta, boolean allowBufferedJump) {
+        if (allowBufferedJump && jumpBufferTimer > 0f && coyoteTimer > 0f) {
             velocityY = Constants.PLAYER_JUMP_SPEED;
+            jumpBufferTimer = 0f;
+            coyoteTimer = 0f;
         }
 
         velocityY += Constants.GRAVITY * delta;
         y += velocityY * delta;
     }
 
-    private void tryStartDash(boolean dashPressed) {
-        if (!dashPressed || dashCooldown > 0f) {
+    private void tryStartDash() {
+        if (dashBufferTimer <= 0f || dashCooldown > 0f) {
             return;
         }
 
@@ -253,6 +292,7 @@ public class Player {
         dashDirection = facingDirection;
         dashStartedThisFrame = true;
         movingHorizontally = true;
+        dashBufferTimer = 0f;
     }
 
     private void keepInsideArena() {
