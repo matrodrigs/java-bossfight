@@ -8,7 +8,8 @@ Este build não copia sprites, músicas, efeitos, logos, fontes ou arquivos ofic
 - `sprites/ui/player_hp_box.png`: imagem original fornecida pelo usuário para uso como caixa de HP do jogador.
 - `sprites/ui/special_clock.png`: imagem original fornecida pelo usuário para uso como indicador de carregamento do ataque especial.
 - `sprites/boss/flower_boss_sheet.png` e `sprites/boss/flower_boss_inbetweens.png`: sprite sheets originais 4x2 geradas com OpenAI imagegen e preparadas localmente como PNG transparente. Preservam as poses de introdução, idle, roar, ataques e derrota; a direção de arte usa a paleta envelhecida, as pétalas pontilhadas e o acabamento de cel/papel da planta de `menu_background.png`.
-- `sprites/player/clock_player_sheet.png`: sprite sheet original gerada com OpenAI imagegen para o personagem relógio, com poses de idle, andar, pulo, dano, tiro, tiro andando, tiro pulando e especial.
+- `sprites/player/clock_player_sheet.png`: sprite sheet original gerada com OpenAI imagegen para o personagem relógio, compactada sem reamostragem para manter apenas as poses de idle, pulo, dano, tiro parado, tiro pulando e especial.
+- `sprites/player/clock_player_movement_sheet.png`: sprite sheet complementar gerada com OpenAI imagegen a partir do personagem relógio original, com quatro quadros de corrida e quatro quadros de corrida atirando; preparada localmente como PNG transparente.
 - `sprites/projectiles/player_pea.png`, `player_special.png`, `boss_seed.png`, `boss_acorn.png`, `boss_pollen.png`, `boss_thorn.png` e `boss_petal_bomb.png`: sprites finais de projéteis, derivados de gerações originais e recortados para uso em runtime.
 - `sprites/background/floral_vintage/**/*.png`: camadas finais de cenário floral vintage, geradas com OpenAI imagegen e recortadas localmente para montagem em parallax.
 - `audio/voice/narrator_intro.wav`: locução gerada pelo Google AI Studio para a abertura da luta, sincronizada com os textos READY?/GO!.
