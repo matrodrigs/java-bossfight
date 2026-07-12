@@ -23,7 +23,7 @@ public final class Constants {
     public static final float PLAYER_DASH_SPEED = 960f;
     public static final float PLAYER_DASH_DURATION = 0.14f;
     public static final float PLAYER_DASH_COOLDOWN = 0.55f;
-    public static final float PLAYER_SHOOT_COOLDOWN = 0.18f;
+    public static final float PLAYER_SHOOT_COOLDOWN = 0.20f;
     public static final float PLAYER_INVULNERABILITY_DURATION = 0.95f;
     public static final float PLAYER_SPECIAL_MAX = 100f;
     public static final float PLAYER_SPECIAL_HIT_CHARGE = 2.5f;

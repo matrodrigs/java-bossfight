@@ -6,6 +6,9 @@ import com.bossfight.entities.Player;
 import com.bossfight.entities.Projectile;
 
 public class CollisionSystem {
+    private static final float BASIC_BOSS_HIT_SHAKE = 0.75f;
+    private static final float SPECIAL_BOSS_HIT_SHAKE = 5f;
+
     public interface Feedback {
         void onBossHit(float x, float y, boolean special, boolean defeated);
 
@@ -53,7 +56,8 @@ public class CollisionSystem {
                     if (special) {
                         requestedHitstop = Math.max(requestedHitstop, 0.08f);
                     }
-                    requestedShake = Math.max(requestedShake, special ? 5f : 2f);
+                    requestedShake = Math.max(requestedShake,
+                            special ? SPECIAL_BOSS_HIT_SHAKE : BASIC_BOSS_HIT_SHAKE);
                 }
                 return true;
             }

@@ -10,7 +10,7 @@ import java.util.ArrayDeque;
 
 public class Boss {
     private static final float ACTION_IMPULSE_DURATION = 0.30f;
-    private static final float HIT_REACTION_DURATION = 0.22f;
+    private static final float HIT_REACTION_DURATION = 0.18f;
     private static final float SPECIAL_HIT_REACTION_DURATION = 0.36f;
     private static final float PHASE_ONE_RECOVERY_DURATION = 0.90f;
     private static final float PHASE_TWO_RECOVERY_DURATION = 0.42f;
@@ -139,7 +139,7 @@ public class Boss {
         } else {
             do {
                 nextAttackIndex = MathUtils.random(attackCount - 1);
-            } while (attackCount > 1 && nextAttackIndex == lastAttackIndex);
+            } while (nextAttackIndex == lastAttackIndex);
         }
 
         lastAttackIndex = nextAttackIndex;

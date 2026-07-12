@@ -36,6 +36,10 @@ public final class BossRenderer implements Disposable {
     private static final float POLLEN_RAIN_VERTICAL_SWAY = 4f;
     private static final float POLLEN_RAIN_ATTACK_LIFT = 3.5f;
     private static final float ENRAGE_VERTICAL_SWAY = 4f;
+    private static final float BASIC_RECOIL_X = 8f;
+    private static final float BASIC_SQUASH_X = 0.014f;
+    private static final float BASIC_STRETCH_Y = 0.020f;
+    private static final float BASIC_REACTION_ROTATION = 1.5f;
     private static final float SPECIAL_RECOIL_X = 28f;
     private static final float SPECIAL_SQUASH_Y = 16f;
     private static final float SPECIAL_REACTION_ROTATION = 5.5f;
@@ -229,7 +233,7 @@ public final class BossRenderer implements Disposable {
             x += -signals.windup() * 18f + signals.attackPulse() * 4f * CONTINUOUS_MOTION_SCALE
                     - signals.actionKick() * 18f + signals.actionFollowThrough() * 8f;
         }
-        return x + signals.hitKick() * 14f + signals.specialKick() * SPECIAL_RECOIL_X;
+        return x + signals.hitKick() * BASIC_RECOIL_X + signals.specialKick() * SPECIAL_RECOIL_X;
     }
 
     private boolean isForwardIdleFrame(TextureRegion frame) {
@@ -260,7 +264,7 @@ public final class BossRenderer implements Disposable {
                 + signals.actionKick() * (signals.is(BossVisualState.VINE_STRIKE)
                 || signals.is(BossVisualState.POLLEN_BREATH) ? 0.035f : 0.018f)
                 + signals.actionFollowThrough() * 0.012f
-                - signals.hitKick() * 0.025f
+                - signals.hitKick() * BASIC_SQUASH_X
                 + signals.specialKick() * 0.07f;
     }
 
@@ -271,7 +275,7 @@ public final class BossRenderer implements Disposable {
                 - signals.actionKick() * (signals.is(BossVisualState.VINE_STRIKE)
                 || signals.is(BossVisualState.POLLEN_BREATH) ? 0.045f : 0.018f)
                 - signals.actionFollowThrough() * 0.01f
-                + signals.hitKick() * 0.035f
+                + signals.hitKick() * BASIC_STRETCH_Y
                 - signals.specialKick() * 0.09f;
     }
 
@@ -281,7 +285,7 @@ public final class BossRenderer implements Disposable {
                 || signals.is(BossVisualState.ENRAGING) ? 1.4f : 0.45f) * CONTINUOUS_MOTION_SCALE
                 + signals.actionKick() * (signals.is(BossVisualState.VINE_STRIKE) ? -2.4f : 1.2f)
                 + signals.actionFollowThrough() * (signals.is(BossVisualState.VINE_STRIKE) ? 2.2f : -1.4f)
-                + signals.hitKick() * 2.8f
+                + signals.hitKick() * BASIC_REACTION_ROTATION
                 + signals.specialKick() * SPECIAL_REACTION_ROTATION;
     }
 
