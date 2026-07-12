@@ -31,39 +31,70 @@ public class RetroTextFactory implements Disposable {
         }
     }
 
+    private record TextStyle(
+            FontRole fontRole,
+            int fontSize,
+            int strokeWidth,
+            int fillRgb,
+            int strokeRgb,
+            int shadowRgb,
+            int padding
+    ) {
+    }
+
+    private record CartoonTextStyle(TextStyle textStyle, float tiltStep) {
+    }
+
+    private static final CartoonTextStyle TITLE_STYLE = cartoon(
+            FontRole.TITLE, 92, 11, 0xffd64a, 0x672014, 0x050405, 16, 0.048f);
+    private static final TextStyle SUBTITLE_STYLE = style(
+            FontRole.UI, 34, 7, 0xf8eed2, 0x4b2018, 0x080707, 8);
+    private static final CartoonTextStyle MENU_STYLE = cartoon(
+            FontRole.UI, 34, 6, 0xf7e5b6, 0x3d2518, 0x130d0a, 9, 0.026f);
+    private static final CartoonTextStyle SELECTED_MENU_STYLE = cartoon(
+            FontRole.UI, 38, 7, 0xffd84a, 0x572012, 0x130d0a, 9, 0.038f);
+    private static final CartoonTextStyle READY_STYLE = cartoon(
+            FontRole.UI, 96, 12, 0xffef79, 0x612416, 0x060506, 18, 0.08f);
+    private static final CartoonTextStyle GO_STYLE = cartoon(
+            FontRole.UI, 96, 12, 0xffdc45, 0x612416, 0x060506, 18, 0.08f);
+    private static final CartoonTextStyle KNOCKOUT_STYLE = cartoon(
+            FontRole.UI, 88, 13, 0xffdd55, 0x5a1d12, 0x050405, 18, 0.055f);
+    private static final CartoonTextStyle VICTORY_STYLE = cartoon(
+            FontRole.UI, 92, 12, 0xffdf58, 0x5b2014, 0x050405, 18, 0.055f);
+    private static final CartoonTextStyle DEFEAT_STYLE = cartoon(
+            FontRole.UI, 92, 12, 0xf8efe1, 0x201815, 0x050405, 18, 0.055f);
+    private static final TextStyle INSTRUCTION_STYLE = style(
+            FontRole.UI, 28, 5, 0xf6e5b8, 0x312017, 0x050405, 8);
+    private static final TextStyle INSTRUCTION_KEY_STYLE = style(
+            FontRole.UI, 31, 6, 0xffd24a, 0x5b2014, 0x050405, 9);
+    private static final TextStyle PLAYER_HEALTH_STYLE = style(
+            FontRole.UI, 35, 5, 0xffdf55, 0x5a2118, 0x050405, 6);
+
     private final ObjectSet<Texture> textures = new ObjectSet<>();
     private final EnumMap<FontRole, Font> baseFonts = new EnumMap<>(FontRole.class);
 
     public Texture createTitle(String text) {
-        return createCartoonText(text, FontRole.TITLE, 92, 11, 0xffd64a, 0x672014, 0x050405, 16, 0.048f);
+        return createCartoonText(text, TITLE_STYLE);
     }
 
     public Texture createSubtitle(String text) {
-        return createText(text, FontRole.UI, 34, 7, 0xf8eed2, 0x4b2018, 0x080707, 8);
+        return createText(text, SUBTITLE_STYLE);
     }
 
     public Texture createMenuOption(String text, boolean selected) {
-        return createCartoonText(text, FontRole.UI, selected ? 38 : 34, selected ? 7 : 6,
-                selected ? 0xffd84a : 0xf7e5b6,
-                selected ? 0x572012 : 0x3d2518,
-                0x130d0a,
-                9,
-                selected ? 0.038f : 0.026f);
+        return createCartoonText(text, selected ? SELECTED_MENU_STYLE : MENU_STYLE);
     }
 
     public Texture createFightCue(String text, boolean goCue) {
-        int fill = goCue ? 0xffdc45 : 0xffef79;
-        return createCartoonText(text, FontRole.UI, 96, 12, fill, 0x612416, 0x060506, 18, 0.08f);
+        return createCartoonText(text, goCue ? GO_STYLE : READY_STYLE);
     }
 
     public Texture createKnockout(String text) {
-        return createCartoonText(text, FontRole.UI, 88, 13, 0xffdd55, 0x5a1d12, 0x050405, 18, 0.055f);
+        return createCartoonText(text, KNOCKOUT_STYLE);
     }
 
     public Texture createResultTitle(String text, boolean victory) {
-        int fill = victory ? 0xffdf58 : 0xf8efe1;
-        int stroke = victory ? 0x5b2014 : 0x201815;
-        return createCartoonText(text, FontRole.UI, 92, 12, fill, stroke, 0x050405, 18, 0.055f);
+        return createCartoonText(text, victory ? VICTORY_STYLE : DEFEAT_STYLE);
     }
 
     public Texture createPlayerHealthHud(int health) {
@@ -71,22 +102,23 @@ public class RetroTextFactory implements Disposable {
     }
 
     public Texture createInstruction(String text) {
-        return createText(text, FontRole.UI, 28, 5, 0xf6e5b8, 0x312017, 0x050405, 8);
+        return createText(text, INSTRUCTION_STYLE);
     }
 
     public Texture createInstructionKey(String text) {
-        return createText(text, FontRole.UI, 31, 6, 0xffd24a, 0x5b2014, 0x050405, 9);
+        return createText(text, INSTRUCTION_KEY_STYLE);
     }
 
-    private Texture createText(String text, FontRole fontRole, int fontSize, int strokeWidth, int fillRgb,
-                               int strokeRgb, int shadowRgb, int padding) {
-        Font font = font(fontRole, fontSize);
+    private Texture createText(String text, TextStyle style) {
+        Font font = font(style.fontRole(), style.fontSize());
         BufferedImage probe = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D probeGraphics = probe.createGraphics();
         applyHints(probeGraphics);
         FontMetrics metrics = probeGraphics.getFontMetrics(font);
-        int width = Math.max(32, metrics.stringWidth(text) + padding * 2 + strokeWidth * 8);
-        int height = Math.max(32, metrics.getHeight() + padding * 2 + strokeWidth * 8);
+        int width = Math.max(32,
+                metrics.stringWidth(text) + style.padding() * 2 + style.strokeWidth() * 8);
+        int height = Math.max(32,
+                metrics.getHeight() + style.padding() * 2 + style.strokeWidth() * 8);
         probeGraphics.dispose();
 
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -96,45 +128,42 @@ public class RetroTextFactory implements Disposable {
 
         GlyphVector glyphs = font.createGlyphVector(graphics.getFontRenderContext(), text);
         Shape outline = glyphs.getOutline(
-                padding + strokeWidth * 4f,
-                padding + strokeWidth * 4f + metrics.getAscent()
+                style.padding() + style.strokeWidth() * 4f,
+                style.padding() + style.strokeWidth() * 4f + metrics.getAscent()
         );
 
-        Shape shadow = AffineTransform.getTranslateInstance(strokeWidth * 1.3, strokeWidth * 1.5)
+        Shape shadow = AffineTransform.getTranslateInstance(
+                        style.strokeWidth() * 1.3, style.strokeWidth() * 1.5)
                 .createTransformedShape(outline);
-        graphics.setColor(toAwtColor(shadowRgb, 180));
+        graphics.setColor(toAwtColor(style.shadowRgb(), 180));
         graphics.fill(shadow);
 
-        graphics.setStroke(new BasicStroke(strokeWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        graphics.setColor(toAwtColor(strokeRgb, 255));
+        graphics.setStroke(new BasicStroke(
+                style.strokeWidth(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        graphics.setColor(toAwtColor(style.strokeRgb(), 255));
         graphics.draw(outline);
-        graphics.setColor(toAwtColor(fillRgb, 255));
+        graphics.setColor(toAwtColor(style.fillRgb(), 255));
         graphics.fill(outline);
 
-        Shape shine = AffineTransform.getTranslateInstance(0, -fontSize * 0.08f).createTransformedShape(outline);
+        Shape shine = AffineTransform.getTranslateInstance(0, -style.fontSize() * 0.08f)
+                .createTransformedShape(outline);
         graphics.setColor(new java.awt.Color(255, 255, 255, 42));
         graphics.draw(shine);
         graphics.dispose();
 
-        Texture texture = toTexture(image);
-        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        textures.add(texture);
-        return texture;
+        return registerTexture(image);
     }
 
     private Texture createPlayerHealthHudText(String label, String value) {
-        int strokeWidth = 5;
-        int padding = 6;
-        int fillRgb = 0xffdf55;
-        int strokeRgb = 0x5a2118;
-        int shadowRgb = 0x050405;
-        int fontSize = 35;
+        int strokeWidth = PLAYER_HEALTH_STYLE.strokeWidth();
+        int padding = PLAYER_HEALTH_STYLE.padding();
+        int fontSize = PLAYER_HEALTH_STYLE.fontSize();
         int valueFontSize = 38;
         int gap = 4;
         int edge = padding + strokeWidth * 2;
 
-        Font labelFont = font(FontRole.UI, fontSize);
-        Font valueFont = font(FontRole.UI, valueFontSize);
+        Font labelFont = font(PLAYER_HEALTH_STYLE.fontRole(), fontSize);
+        Font valueFont = font(PLAYER_HEALTH_STYLE.fontRole(), valueFontSize);
         BufferedImage probe = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D probeGraphics = probe.createGraphics();
         applyHints(probeGraphics);
@@ -153,17 +182,14 @@ public class RetroTextFactory implements Disposable {
         float baseline = edge + Math.max(labelMetrics.getAscent(), valueMetrics.getAscent());
         float labelX = edge;
         Shape labelOutline = createTextOutline(graphics, labelFont, label, labelX, baseline);
-        drawOutlinedText(graphics, labelOutline, strokeWidth, fillRgb, strokeRgb, shadowRgb, fontSize);
+        drawOutlinedText(graphics, labelOutline, PLAYER_HEALTH_STYLE, fontSize);
 
         float valueX = labelX + labelMetrics.stringWidth(label) + gap;
         Shape valueOutline = createTextOutline(graphics, valueFont, value, valueX, baseline - 1f);
-        drawOutlinedText(graphics, valueOutline, strokeWidth, fillRgb, strokeRgb, shadowRgb, valueFontSize);
+        drawOutlinedText(graphics, valueOutline, PLAYER_HEALTH_STYLE, valueFontSize);
         graphics.dispose();
 
-        Texture texture = toTexture(image);
-        texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
-        textures.add(texture);
-        return texture;
+        return registerTexture(image);
     }
 
     private Shape createTextOutline(Graphics2D graphics, Font font, String text, float x, float baseline) {
@@ -171,17 +197,18 @@ public class RetroTextFactory implements Disposable {
         return glyphs.getOutline(x, baseline);
     }
 
-    private void drawOutlinedText(Graphics2D graphics, Shape outline, int strokeWidth, int fillRgb, int strokeRgb,
-                                  int shadowRgb, int fontSize) {
-        Shape shadow = AffineTransform.getTranslateInstance(strokeWidth * 1.3, strokeWidth * 1.5)
+    private void drawOutlinedText(Graphics2D graphics, Shape outline, TextStyle style, int fontSize) {
+        Shape shadow = AffineTransform.getTranslateInstance(
+                        style.strokeWidth() * 1.3, style.strokeWidth() * 1.5)
                 .createTransformedShape(outline);
-        graphics.setColor(toAwtColor(shadowRgb, 180));
+        graphics.setColor(toAwtColor(style.shadowRgb(), 180));
         graphics.fill(shadow);
 
-        graphics.setStroke(new BasicStroke(strokeWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-        graphics.setColor(toAwtColor(strokeRgb, 255));
+        graphics.setStroke(new BasicStroke(
+                style.strokeWidth(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+        graphics.setColor(toAwtColor(style.strokeRgb(), 255));
         graphics.draw(outline);
-        graphics.setColor(toAwtColor(fillRgb, 255));
+        graphics.setColor(toAwtColor(style.fillRgb(), 255));
         graphics.fill(outline);
 
         Shape shine = AffineTransform.getTranslateInstance(0, -fontSize * 0.08f).createTransformedShape(outline);
@@ -189,21 +216,22 @@ public class RetroTextFactory implements Disposable {
         graphics.draw(shine);
     }
 
-    private Texture createCartoonText(String text, FontRole fontRole, int fontSize, int strokeWidth, int fillRgb,
-                                      int strokeRgb, int shadowRgb, int padding, float tiltStep) {
-        Font font = font(fontRole, fontSize);
+    private Texture createCartoonText(String text, CartoonTextStyle cartoonStyle) {
+        TextStyle style = cartoonStyle.textStyle();
+        Font font = font(style.fontRole(), style.fontSize());
         BufferedImage probe = new BufferedImage(1, 1, BufferedImage.TYPE_INT_ARGB);
         Graphics2D probeGraphics = probe.createGraphics();
         applyHints(probeGraphics);
         FontMetrics metrics = probeGraphics.getFontMetrics(font);
-        int tracking = Math.max(2, fontSize / 18);
+        int tracking = Math.max(2, style.fontSize() / 18);
         int textWidth = 0;
         for (int i = 0; i < text.length(); i++) {
             textWidth += metrics.charWidth(text.charAt(i)) + tracking;
         }
-        int sidePadding = padding + strokeWidth * 7;
+        int sidePadding = style.padding() + style.strokeWidth() * 7;
         int width = Math.max(32, textWidth + sidePadding * 2);
-        int height = Math.max(32, metrics.getHeight() + padding * 2 + strokeWidth * 12);
+        int height = Math.max(32,
+                metrics.getHeight() + style.padding() * 2 + style.strokeWidth() * 12);
         probeGraphics.dispose();
 
         BufferedImage image = new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB);
@@ -212,7 +240,7 @@ public class RetroTextFactory implements Disposable {
         graphics.setFont(font);
 
         float x = sidePadding;
-        float baseline = padding + strokeWidth * 4f + metrics.getAscent();
+        float baseline = style.padding() + style.strokeWidth() * 4f + metrics.getAscent();
         for (int i = 0; i < text.length(); i++) {
             String letter = String.valueOf(text.charAt(i));
             int advance = metrics.charWidth(text.charAt(i));
@@ -223,26 +251,30 @@ public class RetroTextFactory implements Disposable {
 
             GlyphVector glyphs = font.createGlyphVector(graphics.getFontRenderContext(), letter);
             Shape outline = glyphs.getOutline();
-            float bounce = (float) Math.sin(i * 1.71f) * fontSize * 0.035f;
-            float angle = ((i % 3) - 1) * tiltStep + (float) Math.sin(i * 0.9f) * tiltStep * 0.35f;
+            float bounce = (float) Math.sin(i * 1.71f) * style.fontSize() * 0.035f;
+            float angle = ((i % 3) - 1) * cartoonStyle.tiltStep()
+                    + (float) Math.sin(i * 0.9f) * cartoonStyle.tiltStep() * 0.35f;
             AffineTransform transform = new AffineTransform();
             transform.translate(x, baseline + bounce);
             transform.rotate(angle, advance * 0.5, -metrics.getAscent() * 0.45);
             Shape placed = transform.createTransformedShape(outline);
 
-            Shape shadow = AffineTransform.getTranslateInstance(strokeWidth * 1.55, strokeWidth * 1.75)
+            Shape shadow = AffineTransform.getTranslateInstance(
+                            style.strokeWidth() * 1.55, style.strokeWidth() * 1.75)
                     .createTransformedShape(placed);
-            graphics.setColor(toAwtColor(shadowRgb, 218));
+            graphics.setColor(toAwtColor(style.shadowRgb(), 218));
             graphics.fill(shadow);
 
-            graphics.setStroke(new BasicStroke(strokeWidth, BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
-            graphics.setColor(toAwtColor(strokeRgb, 255));
+            graphics.setStroke(new BasicStroke(
+                    style.strokeWidth(), BasicStroke.CAP_ROUND, BasicStroke.JOIN_ROUND));
+            graphics.setColor(toAwtColor(style.strokeRgb(), 255));
             graphics.draw(placed);
-            graphics.setColor(toAwtColor(fillRgb, 255));
+            graphics.setColor(toAwtColor(style.fillRgb(), 255));
             graphics.fill(placed);
 
-            Shape shine = AffineTransform.getTranslateInstance(0, -fontSize * 0.07f).createTransformedShape(placed);
-            graphics.setStroke(new BasicStroke(Math.max(2f, strokeWidth * 0.18f), BasicStroke.CAP_ROUND,
+            Shape shine = AffineTransform.getTranslateInstance(0, -style.fontSize() * 0.07f)
+                    .createTransformedShape(placed);
+            graphics.setStroke(new BasicStroke(Math.max(2f, style.strokeWidth() * 0.18f), BasicStroke.CAP_ROUND,
                     BasicStroke.JOIN_ROUND));
             graphics.setColor(new java.awt.Color(255, 255, 255, 58));
             graphics.draw(shine);
@@ -251,6 +283,22 @@ public class RetroTextFactory implements Disposable {
         }
         graphics.dispose();
 
+        return registerTexture(image);
+    }
+
+    private static TextStyle style(FontRole fontRole, int fontSize, int strokeWidth, int fillRgb,
+                                   int strokeRgb, int shadowRgb, int padding) {
+        return new TextStyle(fontRole, fontSize, strokeWidth, fillRgb, strokeRgb, shadowRgb, padding);
+    }
+
+    private static CartoonTextStyle cartoon(FontRole fontRole, int fontSize, int strokeWidth, int fillRgb,
+                                             int strokeRgb, int shadowRgb, int padding, float tiltStep) {
+        return new CartoonTextStyle(
+                style(fontRole, fontSize, strokeWidth, fillRgb, strokeRgb, shadowRgb, padding),
+                tiltStep);
+    }
+
+    private Texture registerTexture(BufferedImage image) {
         Texture texture = toTexture(image);
         texture.setFilter(Texture.TextureFilter.Linear, Texture.TextureFilter.Linear);
         textures.add(texture);
