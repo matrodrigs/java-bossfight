@@ -155,7 +155,7 @@ public class BattleScreen extends ScreenAdapter {
             return true;
         }
 
-        battleInput.poll(delta);
+        battleInput.poll();
         if (updateHitstop(delta)) {
             return true;
         }
