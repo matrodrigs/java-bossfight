@@ -22,12 +22,10 @@ public class AttackFiveState implements BossState {
     private static final float MIN_SPORE_DISTANCE_FROM_VINE = 100f;
     private static final float MIN_DURATION = 2.85f;
 
-    private final float[] pendingTimers = new float[MAX_PENDING_VINES];
-    private final float[] pendingXs = new float[MAX_PENDING_VINES];
+    private final PendingTelegraphs pendingVines = new PendingTelegraphs(MAX_PENDING_VINES);
     private float elapsed;
     private float vineTimer;
     private float sporeTimer;
-    private int pendingCount;
     private int vinesQueued;
     private int sporesSpawned;
     private int lastLane;
@@ -42,7 +40,7 @@ public class AttackFiveState implements BossState {
         elapsed = 0f;
         vineTimer = FIRST_VINE_DELAY;
         sporeTimer = 0.16f;
-        pendingCount = 0;
+        pendingVines.clear();
         vinesQueued = 0;
         sporesSpawned = 0;
         lastLane = -1;
@@ -58,7 +56,7 @@ public class AttackFiveState implements BossState {
 
         updatePendingVines(boss, delta, projectileSpawner);
 
-        if (vineTimer <= 0f && vinesQueued < TOTAL_VINES && pendingCount < MAX_PENDING_VINES) {
+        if (vineTimer <= 0f && vinesQueued < TOTAL_VINES && !pendingVines.isFull()) {
             queueVineWarning(boss, projectileSpawner, player);
             vinesQueued++;
             vineTimer = VINE_INTERVAL;
@@ -70,21 +68,16 @@ public class AttackFiveState implements BossState {
             sporeTimer = SPORE_INTERVAL;
         }
 
-        if (vinesQueued >= TOTAL_VINES && pendingCount == 0 && elapsed >= MIN_DURATION) {
+        if (vinesQueued >= TOTAL_VINES && pendingVines.isEmpty() && elapsed >= MIN_DURATION) {
             boss.finishCurrentAttack();
         }
     }
 
     private void updatePendingVines(Boss boss, float delta, ProjectileSpawner projectileSpawner) {
-        for (int i = pendingCount - 1; i >= 0; i--) {
-            pendingTimers[i] -= delta;
-            if (pendingTimers[i] <= 0f) {
-                float x = pendingXs[i];
-                pendingCount--;
-                pendingTimers[i] = pendingTimers[pendingCount];
-                pendingXs[i] = pendingXs[pendingCount];
-                spawnVine(boss, projectileSpawner, x);
-            }
+        pendingVines.update(delta);
+        float expiredPosition;
+        while (!Float.isNaN(expiredPosition = pendingVines.pollExpiredPosition())) {
+            spawnVine(boss, projectileSpawner, expiredPosition);
         }
     }
 
@@ -92,12 +85,10 @@ public class AttackFiveState implements BossState {
         int lane = chooseLane(player);
         float x = laneCenterX(lane);
 
-        pendingXs[pendingCount] = x;
-        pendingTimers[pendingCount] = VINE_WARNING_TIME;
-        pendingCount++;
+        pendingVines.add(x, VINE_WARNING_TIME);
         boss.showTelegraph(new Color(0.48f, 1f, 0.18f, 1f), VINE_WARNING_TIME);
 
-        projectileSpawner.addProjectile(Projectile.bossWarning(
+        projectileSpawner.addProjectile(Projectile.bossVineWarning(
                 x - WARNING_WIDTH * 0.5f,
                 Constants.FLOOR_Y,
                 WARNING_WIDTH,
@@ -177,12 +168,6 @@ public class AttackFiveState implements BossState {
     }
 
     private boolean isNearPendingVine(float x) {
-        for (int i = 0; i < pendingCount; i++) {
-            if (Math.abs(x - pendingXs[i]) < MIN_SPORE_DISTANCE_FROM_VINE) {
-                return true;
-            }
-        }
-
-        return false;
+        return pendingVines.hasPositionWithin(x, MIN_SPORE_DISTANCE_FROM_VINE);
     }
 }

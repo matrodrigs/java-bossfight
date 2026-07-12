@@ -23,7 +23,8 @@ public class Projectile {
         BOSS_POLLEN,
         BOSS_THORN,
         BOSS_PETAL_BOMB,
-        BOSS_WARNING
+        BOSS_VINE_WARNING,
+        BOSS_IMPACT_WARNING
     }
 
     private final Owner owner;
@@ -53,8 +54,16 @@ public class Projectile {
                 velocityX, 0f, Constants.PLAYER_SPECIAL_DAMAGE, -1f, 0f, true);
     }
 
-    public static Projectile bossWarning(float x, float y, float width, float height, float lifetime) {
-        return new Projectile(Owner.BOSS, Kind.BOSS_WARNING, x, y, width, height,
+    public static Projectile bossVineWarning(float x, float y, float width, float height, float lifetime) {
+        return bossWarning(Kind.BOSS_VINE_WARNING, x, y, width, height, lifetime);
+    }
+
+    public static Projectile bossImpactWarning(float x, float y, float width, float height, float lifetime) {
+        return bossWarning(Kind.BOSS_IMPACT_WARNING, x, y, width, height, lifetime);
+    }
+
+    private static Projectile bossWarning(Kind kind, float x, float y, float width, float height, float lifetime) {
+        return new Projectile(Owner.BOSS, kind, x, y, width, height,
                 0f, 0f, 0, lifetime, 0f, true);
     }
 

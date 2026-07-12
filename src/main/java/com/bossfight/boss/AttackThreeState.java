@@ -10,11 +10,9 @@ public class AttackThreeState implements BossState {
     private static final float COLUMN_WARNING_TIME = 0.36f;
     private static final int MAX_PENDING_COLUMNS = 5;
 
-    private final float[] pendingTimers = new float[MAX_PENDING_COLUMNS];
-    private final float[] pendingXs = new float[MAX_PENDING_COLUMNS];
+    private final PendingTelegraphs pendingColumns = new PendingTelegraphs(MAX_PENDING_COLUMNS);
     private float elapsed;
     private float spawnTimer;
-    private int pendingCount;
     private int nextSafeLane;
     private int safeLaneStep;
     private boolean gardenPatternNext;
@@ -28,7 +26,7 @@ public class AttackThreeState implements BossState {
     public void enter(Boss boss) {
         elapsed = 0f;
         spawnTimer = 0.12f;
-        pendingCount = 0;
+        pendingColumns.clear();
         safeLaneStep = MathUtils.randomBoolean() ? 1 : -1;
         nextSafeLane = safeLaneStep > 0 ? 0 : 3;
         gardenPatternNext = true;
@@ -44,7 +42,7 @@ public class AttackThreeState implements BossState {
         updatePendingColumns(boss, delta, projectileSpawner);
 
         float duration = boss.isPhaseTwo() ? 3.2f : 2.65f;
-        if (elapsed < duration && spawnTimer <= 0f && pendingCount == 0) {
+        if (elapsed < duration && spawnTimer <= 0f && pendingColumns.isEmpty()) {
             boolean gardenPattern = boss.isPhaseTwo() && elapsed > 0.7f && gardenPatternNext;
             if (boss.isPhaseTwo() && elapsed > 0.7f) {
                 gardenPatternNext = !gardenPatternNext;
@@ -63,7 +61,7 @@ public class AttackThreeState implements BossState {
             }
         }
 
-        if (elapsed >= duration && pendingCount == 0) {
+        if (elapsed >= duration && pendingColumns.isEmpty()) {
             if (boss.isPhaseTwo()) {
                 boss.finishCurrentAttack(new SeedFollowUpState());
             } else {
@@ -73,15 +71,10 @@ public class AttackThreeState implements BossState {
     }
 
     private void updatePendingColumns(Boss boss, float delta, ProjectileSpawner projectileSpawner) {
-        for (int i = pendingCount - 1; i >= 0; i--) {
-            pendingTimers[i] -= delta;
-            if (pendingTimers[i] <= 0f) {
-                float x = pendingXs[i];
-                pendingCount--;
-                pendingTimers[i] = pendingTimers[pendingCount];
-                pendingXs[i] = pendingXs[pendingCount];
-                spawnFallingProjectile(boss, projectileSpawner, x);
-            }
+        pendingColumns.update(delta);
+        float expiredPosition;
+        while (!Float.isNaN(expiredPosition = pendingColumns.pollExpiredPosition())) {
+            spawnFallingProjectile(boss, projectileSpawner, expiredPosition);
         }
     }
 
@@ -110,14 +103,12 @@ public class AttackThreeState implements BossState {
     }
 
     private void addPendingColumn(ProjectileSpawner projectileSpawner, float x) {
-        if (pendingCount >= MAX_PENDING_COLUMNS) {
+        if (pendingColumns.isFull()) {
             return;
         }
 
-        pendingXs[pendingCount] = x;
-        pendingTimers[pendingCount] = COLUMN_WARNING_TIME;
-        pendingCount++;
-        projectileSpawner.addProjectile(Projectile.bossWarning(
+        pendingColumns.add(x, COLUMN_WARNING_TIME);
+        projectileSpawner.addProjectile(Projectile.bossImpactWarning(
                 x - 12f,
                 Constants.FLOOR_Y,
                 34f,

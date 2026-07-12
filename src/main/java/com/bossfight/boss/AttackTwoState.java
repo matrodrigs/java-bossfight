@@ -125,7 +125,7 @@ public class AttackTwoState implements BossState {
         float originY = Constants.FLOOR_Y + 346f;
         float landingX = obstacleLandingX(boss, player);
 
-        projectileSpawner.addProjectile(Projectile.bossWarning(
+        projectileSpawner.addProjectile(Projectile.bossImpactWarning(
                 landingX - OBSTACLE_WARNING_WIDTH * 0.5f,
                 Constants.FLOOR_Y,
                 OBSTACLE_WARNING_WIDTH,

@@ -10,6 +10,10 @@ public interface BossState {
 
     void update(Boss boss, float delta, ProjectileSpawner projectileSpawner, Player player);
 
+    default boolean isInvulnerable() {
+        return false;
+    }
+
     default void exit(Boss boss) {
     }
 }

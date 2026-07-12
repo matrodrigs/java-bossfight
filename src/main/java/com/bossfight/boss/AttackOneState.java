@@ -51,7 +51,7 @@ public class AttackOneState implements BossState {
     public void update(Boss boss, float delta, ProjectileSpawner projectileSpawner, Player player) {
         if (!warningSpawned) {
             warningSpawned = true;
-            projectileSpawner.addProjectile(Projectile.bossWarning(
+            projectileSpawner.addProjectile(Projectile.bossVineWarning(
                     Constants.ARENA_LEFT,
                     getLaneY(),
                     getThornHitboxWidth(),

@@ -13,7 +13,6 @@ import com.bossfight.gameplay.ProjectileSystem;
 import java.util.EnumMap;
 
 public final class ProjectileRenderer implements Disposable {
-    private static final float WARNING_VERTICAL_THRESHOLD = 2f;
     private static final float IMPACT_SHADOW_MIN_WIDTH = 50f;
     private static final float IMPACT_SHADOW_MAX_WIDTH = 82f;
     private static final float IMPACT_SHADOW_MIN_HEIGHT = 13f;
@@ -125,7 +124,7 @@ public final class ProjectileRenderer implements Disposable {
                 case BOSS_PETAL_BOMB -> drawTextureWithTrail(batch,
                         textureFor(projectile.getKind()), projectile,
                         MathUtils.sin(projectile.getAge() * 9f) * 12f, PETAL_BOMB_TRAIL);
-                case BOSS_WARNING -> {
+                case BOSS_VINE_WARNING, BOSS_IMPACT_WARNING -> {
                 }
             }
         }
@@ -134,12 +133,10 @@ public final class ProjectileRenderer implements Disposable {
 
     private void renderWarnings(ShapeRenderer shapeRenderer, Iterable<Projectile> projectileList) {
         for (Projectile projectile : projectileList) {
-            if (projectile.getKind() == Projectile.Kind.BOSS_WARNING) {
-                if (isVineWarning(projectile)) {
-                    drawVineWarning(shapeRenderer, projectile);
-                } else {
-                    drawPollenWarningShadow(shapeRenderer, projectile);
-                }
+            if (projectile.getKind() == Projectile.Kind.BOSS_VINE_WARNING) {
+                drawVineWarning(shapeRenderer, projectile);
+            } else if (projectile.getKind() == Projectile.Kind.BOSS_IMPACT_WARNING) {
+                drawPollenWarningShadow(shapeRenderer, projectile);
             } else if (projectile.getKind() == Projectile.Kind.BOSS_ACORN_OBSTACLE
                     && projectile.isGrounded()) {
                 drawImpactShadow(shapeRenderer, projectile.getCenterX(), Constants.FLOOR_Y - 7f,
@@ -309,15 +306,6 @@ public final class ProjectileRenderer implements Disposable {
                 (projectile.getY() - Constants.FLOOR_Y) / -projectile.getVelocityY());
         float projectedX = projectile.getCenterX() + projectile.getVelocityX() * timeToFloor;
         return MathUtils.clamp(projectedX, Constants.ARENA_LEFT, Constants.ARENA_RIGHT);
-    }
-
-    private boolean isVerticalWarning(Projectile projectile) {
-        return projectile.getHeight() > projectile.getWidth() * WARNING_VERTICAL_THRESHOLD;
-    }
-
-    private boolean isVineWarning(Projectile projectile) {
-        return !isVerticalWarning(projectile)
-                || (projectile.getWidth() >= 60f && projectile.getHeight() <= 360f);
     }
 
     private boolean isVerticalThorn(Projectile projectile) {

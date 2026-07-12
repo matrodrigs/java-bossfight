@@ -16,6 +16,11 @@ public class FinalRageState implements BossState {
     }
 
     @Override
+    public boolean isInvulnerable() {
+        return true;
+    }
+
+    @Override
     public void enter(Boss boss) {
         elapsed = 0f;
         shockwavesPlayed = 0;

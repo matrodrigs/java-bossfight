@@ -18,11 +18,18 @@ public class Boss {
     private static final float CHAIN_RECOVERY_DURATION = 0.20f;
     private static final float FINAL_RAGE_HEALTH_RATIO = 0.20f;
 
+    private enum Phase {
+        ONE,
+        TWO,
+        FINAL_RAGE
+    }
+
     private final Hitbox hitbox;
     private final ArrayDeque<BossSoundEvent> soundEvents = new ArrayDeque<>();
     private final int maxHealth;
     private final Color telegraphColor = new Color(1f, 0.24f, 0.1f, 1f);
     private BossState currentState;
+    private Phase phase = Phase.ONE;
     private int health;
     private int lastAttackIndex = -1;
     private int phaseTwoAttackCount;
@@ -35,8 +42,6 @@ public class Boss {
     private float actionImpulseTimer;
     private float hitReactionTimer;
     private float specialHitReactionTimer;
-    private boolean phaseTwoTransitionPlayed;
-    private boolean finalRageTransitionPlayed;
 
     public Boss() {
         x = Constants.BOSS_START_X;
@@ -54,21 +59,11 @@ public class Boss {
         hitReactionTimer = Math.max(0f, hitReactionTimer - delta);
         specialHitReactionTimer = Math.max(0f, specialHitReactionTimer - delta);
 
-        if (health <= 0 && !(currentState instanceof DefeatedState)) {
-            setState(new DefeatedState());
-        }
-
-        if (isPhaseTwo()
-                && !phaseTwoTransitionPlayed
-                && !(currentState instanceof PhaseTwoTransitionState)
-                && !(currentState instanceof DefeatedState)) {
-            phaseTwoTransitionPlayed = true;
+        if (phase == Phase.ONE && reachedPhaseTwoHealth()) {
+            phase = Phase.TWO;
             setState(new PhaseTwoTransitionState());
-        } else if (isFinalRage()
-                && !finalRageTransitionPlayed
-                && !(currentState instanceof FinalRageState)
-                && !(currentState instanceof DefeatedState)) {
-            finalRageTransitionPlayed = true;
+        } else if (phase == Phase.TWO && reachedFinalRageHealth()) {
+            phase = Phase.FINAL_RAGE;
             setState(new FinalRageState());
         }
 
@@ -185,11 +180,11 @@ public class Boss {
     }
 
     public boolean isPhaseTwo() {
-        return health <= maxHealth * 0.5f && health > 0;
+        return phase != Phase.ONE && !isDefeated();
     }
 
     public boolean isFinalRage() {
-        return health <= maxHealth * FINAL_RAGE_HEALTH_RATIO && health > 0;
+        return phase == Phase.FINAL_RAGE && !isDefeated();
     }
 
     public boolean isDefeated() {
@@ -197,8 +192,15 @@ public class Boss {
     }
 
     public boolean isInvulnerable() {
-        return currentState instanceof PhaseTwoTransitionState
-                || currentState instanceof FinalRageState;
+        return currentState.isInvulnerable();
+    }
+
+    private boolean reachedPhaseTwoHealth() {
+        return health <= maxHealth * 0.5f && !isDefeated();
+    }
+
+    private boolean reachedFinalRageHealth() {
+        return health <= maxHealth * FINAL_RAGE_HEALTH_RATIO && !isDefeated();
     }
 
     public float getCenterX() {
