@@ -2,11 +2,9 @@
 
 Boss fight 2D em Java, com estética inspirada no Cuphead, arena floral e uma flor-chefe bem pouco amigável. O projeto usa LibGDX + LWJGL3 para entregar uma experiência desktop com movimento rápido, projéteis, dash, ataque especial, efeitos de tela e áudio.
 
-## Screenshots
+## Gameplay
 
-| Menu | Batalha | Derrota |
-| --- | --- | --- |
-| ![Menu inicial de Fúria Botânica](docs/screenshots/menu.png) | ![Arena de batalha de Fúria Botânica](docs/screenshots/battle.png) | ![Tela de derrota de Fúria Botânica](docs/screenshots/defeat.png) |
+https://github.com/user-attachments/assets/0798e6e3-3911-4118-8fe1-a1ccaabd6469
 
 ## Sobre o jogo
 
