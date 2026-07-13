@@ -1,34 +1,104 @@
-# Fúria Botânica
+<div align="center">
 
-Boss fight 2D em Java, com estética inspirada no Cuphead, arena floral e uma flor-chefe bem pouco amigável. O projeto usa LibGDX + LWJGL3 para entregar uma experiência desktop com movimento rápido, projéteis, dash, ataque especial, efeitos de tela e áudio.
+# 🌻 Fúria Botânica
+
+Um boss fight 2D feito em Java, com combate rápido, padrões progressivos e uma estética de animação vintage.
+
+[![Java 21](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
+[![libGDX 1.14.1](https://img.shields.io/badge/libGDX-1.14.1-E74A21?style=for-the-badge&logo=libgdx&logoColor=white)](https://libgdx.com/)
+[![Gradle 8.14.3](https://img.shields.io/badge/Gradle-8.14.3-02303A?style=for-the-badge&logo=gradle&logoColor=white)](https://gradle.org/)
+[![Licença MIT](https://img.shields.io/badge/Licen%C3%A7a-MIT-2EA44F?style=for-the-badge)](LICENSE)
+
+[Gameplay](#gameplay) · [Destaques](#destaques) · [Controles](#controles) · [Como executar](#como-executar) · [Arquitetura](#arquitetura)
+
+</div>
+
+![Batalha contra o boss floral em Fúria Botânica](docs/screenshots/battle.png)
+
+## Sobre o jogo
+
+Em **Fúria Botânica: O Jardim Maldito**, você controla um pequeno herói preso em uma arena. Para sobreviver, é preciso ler os avisos do boss, atravessar sequências de espinhos e projéteis e encontrar espaço para contra-atacar.
+
+A luta começa simples, mas ganha novos padrões, encadeamentos e ritmo conforme a vida da flor diminui. Tiros certeiros carregam o relógio especial. Quando ele estiver completo, um ataque mais poderoso pode mudar o rumo do duelo.
 
 ## Gameplay
 
 https://github.com/user-attachments/assets/0798e6e3-3911-4118-8fe1-a1ccaabd6469
 
-## Sobre o jogo
+O combate foi pensado em torno de quatro ações:
 
-Em **Fúria Botânica: O Jardim Maldito**, você controla um pequeno personagem-relógio em uma luta contra um boss floral. A batalha mistura movimentação precisa, leitura de padrões, ataques à distância e um especial carregável.
+1. **Observar** os avisos visuais e reconhecer o próximo padrão.
+2. **Desviar** com movimento, pulo e um dash com breve invencibilidade.
+3. **Atacar** continuamente para causar dano e carregar o especial.
+4. **Adaptar-se** quando o boss muda de fase e combina novos ataques.
 
 ## Destaques
 
-- Boss floral com máquina de estados, múltiplos ataques, avisos visuais e segunda fase.
-- Jogador com pulo, dash, tiro contínuo, ataque especial, invencibilidade temporária, knockback e hitstop.
-- Arena 2D com camadas de fundo vintage, partículas, camera shake, transição em íris e efeito de filme antigo.
-- Menu, tela de vitória/derrota, sequência `READY?` / `GO!` e locuções de abertura/knockout.
-- HUD com vida do jogador e relógio de carregamento do especial.
+- **Boss em múltiplas fases:** máquina de estados com padrões sorteados sem repetição imediata, transições próprias e uma etapa final mais agressiva.
+- **Combate responsivo:** pulo com coyote time e input buffer, dash, tiro contínuo, especial carregável, knockback e hitstop.
+- **Ataques legíveis:** telegraphs antecipam espinhos, sementes, bolotas, pólen e zonas de impacto.
+- **Direção de arte vintage:** cenário em camadas, animações desenhadas, textura de filme antigo e transições em íris.
+- **Feedback audiovisual:** partículas, camera shake, reações a acertos, locuções e trilhas que acompanham as fases da batalha.
+- **Experiência completa:** menu, introdução `READY? / GO!`, HUD, vitória, derrota e revanche rápida.
 
-## Requisitos técnicos
+<details>
+<summary><strong>Como a batalha evolui (contém spoilers de gameplay)</strong></summary>
 
-- JDK 21 instalado e configurado no `JAVA_HOME`.
-- Gradle Wrapper incluso no projeto.
-- LibGDX `1.14.1`.
-- Backend desktop LWJGL3.
-- Sistema com suporte a OpenGL compatível com LibGDX/LWJGL3.
+### Fase inicial
 
-O jogo usa resolução interna de `1280x720` e abre em fullscreen pelo launcher desktop.
+O boss alterna entre golpes de espinhos em diferentes alturas, rajadas direcionadas e chuva de pólen com áreas de queda sinalizadas.
+
+### Segunda fase
+
+Ao chegar à metade da vida, a flor altera a arena e acelera o ritmo. Novos padrões incluem corredores de esporos, vinhas verticais, obstáculos em arco e ataques encadeados.
+
+### Fúria final
+
+Nos últimos 20% de vida, o tempo de recuperação diminui e as sequências ficam mais intensas até o knockout.
+
+</details>
+
+## Controles
+
+### Durante a batalha
+
+| Ação | Controle |
+| --- | --- |
+| Mover | `A` / `D` |
+| Pular | `Espaço` |
+| Dash | `Shift esquerdo` |
+| Atirar | Segurar `botão esquerdo do mouse` |
+| Ataque especial | `Botão direito do mouse` |
+| Voltar ao menu | `Esc` |
+| Alternar tela cheia | `F11` |
+
+### Nos menus
+
+| Ação | Controle |
+| --- | --- |
+| Navegar | `W` / `S` ou `↑` / `↓` |
+| Confirmar | `Enter` ou `Espaço` |
+| Jogar novamente | `R` na tela final |
+| Voltar ao menu | `Esc` ou `Enter` na tela final |
 
 ## Como executar
+
+### Requisitos
+
+- [JDK 21](https://adoptium.net/temurin/releases/?version=21) instalado e configurado no `JAVA_HOME`.
+- Windows, Linux ou macOS com suporte a OpenGL compatível com LWJGL3.
+- Git para clonar o repositório.
+
+O Gradle Wrapper já está incluído; não é necessário instalar o Gradle separadamente.
+
+### 1. Clone o projeto
+
+```bash
+git clone https://github.com/matrodrigs/java-bossfight.git
+cd java-bossfight
+```
+
+### 2. Inicie o jogo
 
 No Windows:
 
@@ -36,55 +106,72 @@ No Windows:
 .\gradlew.bat run
 ```
 
-No Linux/macOS:
+No Linux ou macOS:
 
 ```bash
+chmod +x gradlew
 ./gradlew run
 ```
 
-Pelo IntelliJ IDEA:
+Na primeira execução, o Gradle baixa as dependências automaticamente. O launcher abre o jogo em tela cheia, usando uma resolução interna de `1280 × 720`.
 
-1. Abra o projeto como um projeto Gradle.
-2. Use o JDK 21.
-3. Execute a task `run` ou a classe `com.bossfight.desktop.DesktopLauncher`.
+### IntelliJ IDEA
 
-Se o Gradle reclamar de JVM antiga, confira se `JAVA_HOME` aponta para um JDK 21 antes de rodar o wrapper.
+1. Abra a pasta do repositório como um projeto Gradle.
+2. Selecione o JDK 21 para o projeto.
+3. Execute a task Gradle `run` ou a classe `com.bossfight.desktop.DesktopLauncher`.
 
-## Controles
+## Tecnologias
 
-| Ação | Teclas |
+| Tecnologia | Uso no projeto |
 | --- | --- |
-| Mover para a esquerda | `A` |
-| Mover para a direita | `D` |
-| Pular | `Espaço` |
-| Atirar | `Botão esquerdo do mouse` |
-| Dash | `Shift esquerdo` |
-| Ataque especial | `Botão direito do mouse` |
-| Voltar ao menu | `Esc` |
-| Tela final | `R` para lutar de novo, `Esc`/`Enter` para voltar ao menu |
-| Alternar fullscreen | `F11` |
+| **Java 21** | Código do jogo e recursos modernos da linguagem |
+| **libGDX 1.14.1** | Loop principal, input, áudio, câmera e renderização 2D |
+| **LWJGL3** | Backend desktop e integração com OpenGL |
+| **Gradle 8.14.3** | Build, dependências e execução |
+| **Java2D** | Geração das texturas de texto com as fontes do projeto |
 
-## Organização do projeto
+## Arquitetura
+
+O código separa regras de combate, apresentação e fluxo de telas para manter a luta fácil de evoluir:
 
 ```text
-src/main/java/com/bossfight
-|-- desktop/   # Launcher LWJGL3
-|-- screens/   # Menu, batalha e telas finais
-|-- rendering/ # Renderização, texto, cenário e HUD da batalha
-|-- boss/      # Boss, estados e eventos da máquina de estados
-|-- entities/  # Jogador, projéteis e hitboxes
-|-- input/     # Leitura e buffer dos controles da batalha
-|-- gameplay/  # Colisão e ciclo de vida dos projéteis
-|-- effects/   # Partículas, câmera, transições e pós-processamento
-|-- audio/     # Música, voz, ambiência e efeitos sonoros
-`-- config/    # Configuração estável do mundo e regras de gameplay
+src/main/java/com/bossfight/
+├── audio/       # Música, locuções e efeitos sonoros
+├── boss/        # Boss, fases, ataques e telegraphs
+├── config/      # Constantes de gameplay e da arena
+├── desktop/     # Launcher LWJGL3
+├── effects/     # Partículas, câmera, filme antigo e transições
+├── entities/    # Jogador, projéteis e hitboxes
+├── gameplay/    # Colisões e ciclo de vida dos projéteis
+├── input/       # Leitura e buffer dos controles
+├── rendering/   # Cenário, sprites, textos e HUD
+└── screens/     # Menu, batalha e telas finais
 
 assets/
-|-- audio/     # Música, ambiência e locuções
-|-- fonts/     # Fontes empacotadas e suas licenças
-`-- sprites/   # UI, boss, jogador, projéteis e cenário
+├── audio/       # Músicas, ambiência, efeitos e locuções
+├── fonts/       # Fontes empacotadas e suas licenças
+└── sprites/     # Cenário, personagens, projéteis e interface
 ```
 
-## Assets e licenças
+A lógica do boss usa o padrão **State**: cada ataque implementa seu próprio comportamento, telegraph e encerramento, enquanto `Boss` decide transições, fases e encadeamentos.
 
-A documentação de origem e licenças dos assets está em [`docs/ASSETS_LICENSES.md`](docs/ASSETS_LICENSES.md). Os arquivos do jogo foram preparados para este projeto e não incluem assets oficiais de Cuphead.
+## Build de verificação
+
+Para compilar o projeto sem iniciar o jogo:
+
+```bash
+./gradlew build
+```
+
+No Windows, use `.\gradlew.bat build`.
+
+## Assets e créditos
+
+Este projeto não inclui sprites, músicas, efeitos, logos ou fontes oficiais de *Cuphead*. A inspiração está na linguagem visual das animações clássicas. Os arquivos usados pelo jogo foram criados ou obtidos separadamente.
+
+As origens e licenças de imagens, áudios e fontes estão documentadas em [`docs/ASSETS_LICENSES.md`](docs/ASSETS_LICENSES.md). Assets de terceiros permanecem sob suas licenças originais e não são relicenciados pela MIT.
+
+## Licença
+
+O código-fonte deste projeto está disponível sob a [Licença MIT](LICENSE).

@@ -1,5 +1,7 @@
 # Assets e licenças
 
+O código-fonte do projeto é distribuído sob a [Licença MIT](../LICENSE). Os assets de terceiros listados abaixo permanecem sob suas licenças originais e não são relicenciados pela MIT.
+
 Não usei sprites, músicas, efeitos, logos, fontes ou outros arquivos oficiais de Cuphead neste projeto.
 
 ## Imagens
