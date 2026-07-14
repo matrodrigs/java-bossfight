@@ -2,7 +2,7 @@
 
 # 🌻 Fúria Botânica
 
-Um boss fight 2D feito em Java, com combate rápido, padrões progressivos e uma estética de animação vintage.
+Um boss fight 2D feito em Java, com combate rápido, padrões progressivos e uma estética de animação vintage. O projeto foi criado como trabalho da disciplina de **Programação Orientada a Objetos (POO)**.
 
 [![Java 21](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
 [![libGDX 1.14.1](https://img.shields.io/badge/libGDX-1.14.1-E74A21?style=for-the-badge&logo=libgdx&logoColor=white)](https://libgdx.com/)
