@@ -9,16 +9,9 @@ Desenvolvido como trabalho da disciplina de **Programação Orientada a Objetos 
 
 ![Batalha contra o boss floral em Fúria Botânica](docs/screenshots/battle.png)
 
-Em **Fúria Botânica: O Jardim Maldito**, um pequeno herói enfrenta uma flor que transforma a
-arena a cada fase. Leia os avisos, atravesse espinhos e projéteis e encontre espaço para
-contra-atacar. Tiros certeiros carregam o relógio especial para um ataque mais poderoso.
-
 ## Gameplay
 
 https://github.com/user-attachments/assets/0798e6e3-3911-4118-8fe1-a1ccaabd6469
-
-**Observe → desvie → ataque → adapte-se.** A luta ganha novos padrões e ritmo conforme a vida
-da flor diminui. Movimento, pulo e um dash com breve invencibilidade ajudam a sobreviver.
 
 ## Como executar
 
