@@ -1,85 +1,24 @@
-<div align="center">
+# Fúria Botânica
 
-# 🌻 Fúria Botânica
+<p><samp>Java · libGDX · Programação Orientada a Objetos</samp></p>
 
-Um boss fight 2D feito em Java, com combate rápido, padrões progressivos e uma estética de animação vintage. O projeto foi criado como trabalho da disciplina de **Programação Orientada a Objetos (POO)**.
+Um boss fight 2D com combate rápido, padrões progressivos e estética de animação vintage.
+Desenvolvido como trabalho da disciplina de **Programação Orientada a Objetos (POO)**.
 
-[![Java 21](https://img.shields.io/badge/Java-21-ED8B00?style=for-the-badge&logo=openjdk&logoColor=white)](https://openjdk.org/projects/jdk/21/)
-[![libGDX 1.14.1](https://img.shields.io/badge/libGDX-1.14.1-E74A21?style=for-the-badge&logo=libgdx&logoColor=white)](https://libgdx.com/)
-[![Gradle 8.14.3](https://img.shields.io/badge/Gradle-8.14.3-02303A?style=for-the-badge&logo=gradle&logoColor=white)](https://gradle.org/)
-[![Licença MIT](https://img.shields.io/badge/Licen%C3%A7a-MIT-2EA44F?style=for-the-badge)](LICENSE)
-
-[Gameplay](#gameplay) · [Destaques](#destaques) · [Controles](#controles) · [Como executar](#como-executar) · [Arquitetura](#arquitetura)
-
-</div>
+[Gameplay](#gameplay) · [Como executar](#como-executar) · [Controles](#controles) · [Arquitetura](#arquitetura)
 
 ![Batalha contra o boss floral em Fúria Botânica](docs/screenshots/battle.png)
 
-## Sobre o jogo
-
-Em **Fúria Botânica: O Jardim Maldito**, você controla um pequeno herói preso em uma arena. Para sobreviver, é preciso ler os avisos do boss, atravessar sequências de espinhos e projéteis e encontrar espaço para contra-atacar.
-
-A luta começa simples, mas ganha novos padrões, encadeamentos e ritmo conforme a vida da flor diminui. Tiros certeiros carregam o relógio especial. Quando ele estiver completo, um ataque mais poderoso pode mudar o rumo do duelo.
+Em **Fúria Botânica: O Jardim Maldito**, um pequeno herói enfrenta uma flor que transforma a
+arena a cada fase. Leia os avisos, atravesse espinhos e projéteis e encontre espaço para
+contra-atacar. Tiros certeiros carregam o relógio especial para um ataque mais poderoso.
 
 ## Gameplay
 
 https://github.com/user-attachments/assets/0798e6e3-3911-4118-8fe1-a1ccaabd6469
 
-O combate foi pensado em torno de quatro ações:
-
-1. **Observar** os avisos visuais e reconhecer o próximo padrão.
-2. **Desviar** com movimento, pulo e um dash com breve invencibilidade.
-3. **Atacar** continuamente para causar dano e carregar o especial.
-4. **Adaptar-se** quando o boss muda de fase e combina novos ataques.
-
-## Destaques
-
-- **Boss em múltiplas fases:** máquina de estados com padrões sorteados sem repetição imediata, transições próprias e uma etapa final mais agressiva.
-- **Combate responsivo:** pulo com coyote time e input buffer, dash, tiro contínuo, especial carregável, knockback e hitstop.
-- **Ataques legíveis:** telegraphs antecipam espinhos, sementes, bolotas, pólen e zonas de impacto.
-- **Direção de arte vintage:** cenário em camadas, animações desenhadas, textura de filme antigo e transições em íris.
-- **Feedback audiovisual:** partículas, camera shake, reações a acertos, locuções e trilhas que acompanham as fases da batalha.
-- **Experiência completa:** menu, introdução `READY? / GO!`, HUD, vitória, derrota e revanche rápida.
-
-<details>
-<summary><strong>Como a batalha evolui (contém spoilers de gameplay)</strong></summary>
-
-### Fase inicial
-
-O boss alterna entre golpes de espinhos em diferentes alturas, rajadas direcionadas e chuva de pólen com áreas de queda sinalizadas.
-
-### Segunda fase
-
-Ao chegar à metade da vida, a flor altera a arena e acelera o ritmo. Novos padrões incluem corredores de esporos, vinhas verticais, obstáculos em arco e ataques encadeados.
-
-### Fúria final
-
-Nos últimos 20% de vida, o tempo de recuperação diminui e as sequências ficam mais intensas até o knockout.
-
-</details>
-
-## Controles
-
-### Durante a batalha
-
-| Ação | Controle |
-| --- | --- |
-| Mover | `A` / `D` |
-| Pular | `Espaço` |
-| Dash | `Shift esquerdo` |
-| Atirar | Segurar `botão esquerdo do mouse` |
-| Ataque especial | `Botão direito do mouse` |
-| Voltar ao menu | `Esc` |
-| Alternar tela cheia | `F11` |
-
-### Nos menus
-
-| Ação | Controle |
-| --- | --- |
-| Navegar | `W` / `S` ou `↑` / `↓` |
-| Confirmar | `Enter` ou `Espaço` |
-| Jogar novamente | `R` na tela final |
-| Voltar ao menu | `Esc` ou `Enter` na tela final |
+**Observe → desvie → ataque → adapte-se.** A luta ganha novos padrões e ritmo conforme a vida
+da flor diminui. Movimento, pulo e um dash com breve invencibilidade ajudam a sobreviver.
 
 ## Como executar
 
@@ -115,11 +54,64 @@ chmod +x gradlew
 
 Na primeira execução, o Gradle baixa as dependências automaticamente. O launcher abre o jogo em tela cheia, usando uma resolução interna de `1280 × 720`.
 
-### IntelliJ IDEA
+<details>
+<summary>Abrir no IntelliJ IDEA</summary>
 
 1. Abra a pasta do repositório como um projeto Gradle.
 2. Selecione o JDK 21 para o projeto.
 3. Execute a task Gradle `run` ou a classe `com.bossfight.desktop.DesktopLauncher`.
+
+</details>
+
+## Controles
+
+| Ação | Controle |
+| --- | --- |
+| Mover | `A` / `D` |
+| Pular | `Espaço` |
+| Dash | `Shift esquerdo` |
+| Atirar | Segurar `botão esquerdo do mouse` |
+| Ataque especial | `Botão direito do mouse` |
+| Voltar ao menu | `Esc` |
+| Alternar tela cheia | `F11` |
+
+<details>
+<summary>Controles dos menus e da revanche</summary>
+
+| Ação | Controle |
+| --- | --- |
+| Navegar | `W` / `S` ou `↑` / `↓` |
+| Confirmar | `Enter` ou `Espaço` |
+| Jogar novamente | `R` na tela final |
+| Voltar ao menu | `Esc` ou `Enter` na tela final |
+
+</details>
+
+## Destaques
+
+- **Boss em múltiplas fases:** máquina de estados com padrões sorteados sem repetição imediata, transições próprias e uma etapa final mais agressiva.
+- **Combate responsivo:** pulo com coyote time e input buffer, dash, tiro contínuo, especial carregável, knockback e hitstop.
+- **Ataques legíveis:** telegraphs antecipam espinhos, sementes, bolotas, pólen e zonas de impacto.
+- **Direção de arte vintage:** cenário em camadas, animações desenhadas, textura de filme antigo e transições em íris.
+- **Feedback audiovisual:** partículas, camera shake, reações a acertos, locuções e trilhas que acompanham as fases da batalha.
+- **Experiência completa:** menu, introdução `READY? / GO!`, HUD, vitória, derrota e revanche rápida.
+
+<details>
+<summary><strong>Como a batalha evolui (contém spoilers de gameplay)</strong></summary>
+
+### Fase inicial
+
+O boss alterna entre golpes de espinhos em diferentes alturas, rajadas direcionadas e chuva de pólen com áreas de queda sinalizadas.
+
+### Segunda fase
+
+Ao chegar à metade da vida, a flor altera a arena e acelera o ritmo. Novos padrões incluem corredores de esporos, vinhas verticais, obstáculos em arco e ataques encadeados.
+
+### Fúria final
+
+Nos últimos 20% de vida, o tempo de recuperação diminui e as sequências ficam mais intensas até o knockout.
+
+</details>
 
 ## Tecnologias
 
@@ -134,6 +126,9 @@ Na primeira execução, o Gradle baixa as dependências automaticamente. O launc
 ## Arquitetura
 
 O código separa regras de combate, apresentação e fluxo de telas para manter a luta fácil de evoluir:
+
+<details>
+<summary>Mapa do código e dos assets</summary>
 
 ```text
 src/main/java/com/bossfight/
@@ -153,6 +148,8 @@ assets/
 ├── fonts/       # Fontes empacotadas e suas licenças
 └── sprites/     # Cenário, personagens, projéteis e interface
 ```
+
+</details>
 
 A lógica do boss usa o padrão **State**: cada ataque implementa seu próprio comportamento, telegraph e encerramento, enquanto `Boss` decide transições, fases e encadeamentos.
 
@@ -175,3 +172,5 @@ As origens e licenças de imagens, áudios e fontes estão documentadas em [`doc
 ## Licença
 
 O código-fonte deste projeto está disponível sob a [Licença MIT](LICENSE).
+
+<sub>Desenvolvido por <a href="https://github.com/matrodrigs">Mateus Rodrigues</a>.</sub>
